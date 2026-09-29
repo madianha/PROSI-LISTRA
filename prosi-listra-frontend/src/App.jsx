@@ -1,9 +1,18 @@
+import { Router, Route } from "@solidjs/router";
+import Navbar from "./components/Navbar";
 
-
-const App = () => {
+export default function App() {
   return (
-    <p class="text-4xl text-green-700 text-center py-20">Hello tailwind!</p>
+    <Router
+      root={(props) => (
+        <>
+          <Navbar />
+          {props.children}
+        </>
+      )}
+    >
+      {/* Define your routes here */}
+    </Router>
   );
-};
+}
 
-export default App;
