@@ -1,5 +1,6 @@
 import { Router, Route } from "@solidjs/router";
 import Navbar from "./components/Navbar";
+import Home from "./pages/home";
 import TentangKami from "./pages/tetang-kami";
 import Katalog from "./pages/katalog";
 import Testimoni from "./pages/testimoni";
@@ -19,6 +20,7 @@ export default function App() {
         </div>
       )}
     >
+      <Route path="/" component={Home} />
       <Route path="/tentang-kami" component={TentangKami} />
       <Route path="/katalog" component={Katalog} />
       <Route path="/testimoni" component={Testimoni} />
