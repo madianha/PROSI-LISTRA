@@ -2,6 +2,8 @@ import CatalogueCard from "../components/CatalogueCard";
 
 export default function Home() {
   return (
+    <>
+    
     <main className="grid w-full grid-cols-1 gap-6 p-5 sm:grid-cols-2 sm:p-8 xl:grid-cols-3">
       <CatalogueCard
               title="Tari Saman"
@@ -25,5 +27,7 @@ export default function Home() {
         tag="ENERGETIK & CERIA"
       />
     </main>
+    </>
+    
   );
 }
