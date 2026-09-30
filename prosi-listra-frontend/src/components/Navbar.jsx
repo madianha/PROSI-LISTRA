@@ -16,6 +16,7 @@ export default function Navbar() {
         <A href="/katalog" className="p-4">Katalog Kami</A>
         <A href="/testimoni" className="p-4">Testimoni</A>
       </div>
+
       <div>
         {/* button */}
         <CustomButton href="kontak" class="border-[#d4af37] border-2 text-[#d4af37]">

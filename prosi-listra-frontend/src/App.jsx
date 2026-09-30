@@ -1,6 +1,8 @@
 import { Router, Route } from "@solidjs/router";
 import Navbar from "./components/Navbar";
-import CatalogueCard from "./components/CatalogueCard";
+import TentangKami from "./pages/tetang-kami";
+import Katalog from "./pages/katalog";
+import Testimoni from "./pages/testimoni";
 
 export default function App() {
   return (
@@ -9,15 +11,17 @@ export default function App() {
         <div>
           <Navbar />
           <div className="bg-[#f5efeb] w-full h-full flex">
+            {/* <CatalogueCard />
             <CatalogueCard />
-            <CatalogueCard />
+            <CatalogueCard /> */}
             {props.children}
           </div>
         </div>
       )}
     >
-      {/* Define your routes here */}
+      <Route path="/tentang-kami" component={TentangKami} />
+      <Route path="/katalog" component={Katalog} />
+      <Route path="/testimoni" component={Testimoni} />
     </Router>
   );
 }
-
