@@ -1,14 +1,19 @@
 import { A } from "@solidjs/router";
 import CustomButton from "./CustomButton";
 import logoListra from "../img/logo-listra.PNG";
+import logoUnpar from "../img/Logo-UNPAR.PNG";
 
 export default function Navbar() {
   return (
     <nav className="bg-white text-black p-4 flex items-center justify-between">
-      <div>
+      <div className="flex gap-2  items-center">
         <A href="/">
-          <img src={logoListra} alt="Logo Listra" className="h-15 w-auto" />
+          <img src={logoListra} alt="Logo Listra" className="h-10 w-auto" />
         </A>
+        <A href="/">
+          <img src={logoUnpar} alt="Logo Listra" className="h-10 w-auto" />
+        </A>
+        <h1 className="text-2xl font-serif">LISTRA</h1>
       </div>
       <div className="flex items-center">
         <A href="/" className="p-4">Beranda</A>
