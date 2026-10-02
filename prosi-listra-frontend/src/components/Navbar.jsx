@@ -4,7 +4,7 @@ import logoListra from "../img/logo-listra.PNG";
 
 export default function Navbar() {
   return (
-    <nav className="bg-[#130205] text-white p-4 flex items-center justify-around">
+    <nav className="bg-white text-black p-4 flex items-center justify-between">
       <div>
         <A href="/">
           <img src={logoListra} alt="Logo Listra" className="h-15 w-auto" />
@@ -15,14 +15,15 @@ export default function Navbar() {
         <A href="/tentang-kami" className="p-4">Tentang Kami</A>
         <A href="/katalog" className="p-4">Katalog Kami</A>
         <A href="/testimoni" className="p-4">Testimoni</A>
+        <A href="/login" className="p-4">Masuk</A>
       </div>
 
-      <div>
+      {/* <div> */}
         {/* button */}
-        <CustomButton href="kontak" class="border-[#d4af37] border-2 text-[#d4af37]">
+        {/* <CustomButton href="kontak" class="border-[#d4af37] border-2 text-[#d4af37]">
           Hubungi Kami
-          </CustomButton>
-      </div>
+          </CustomButton> */}
+      {/* </div> */}
     </nav>
   );
 }
