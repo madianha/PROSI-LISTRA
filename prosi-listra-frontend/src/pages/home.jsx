@@ -15,24 +15,21 @@ export default function Home() {
         </div>
         <div id="katalog" className="grid w-full grid-cols-1 gap-6 p-5 sm:grid-cols-2 sm:p-8 xl:grid-cols-3">
           <CatalogueCard
-            title="Tari Saman"
-            category="ACEH • SINKRONISASI TEPUKAN PERKUSI"
-            description="Tarian seribu tangan yang memukau dengan
-      kekompakan ritme cepat tanpa jeda,
-      menciptakan suasana spektakuler dan
-      membangkitkan semangat audiens."
+            title="Tari Merak"
+            category="TARI • JAWA BARAT"
+            description="Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya."
             tag="BEST SELLER"
           />
           <CatalogueCard
-            title="Tari Merak"
-            category="JAWA BARAT • ANGGUN & MEGAH"
-            description="Menggambarkan pesona burung merak yang membentang anggun, ideal untuk penyambutan tamu kehormatan dan seremoni pembuka."
+            title="Tari Jaipong"
+            category="TARI • JAWAB BARAT"
+            description="Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik."
             tag="OPENING CEREMONY"
           />
           <CatalogueCard
-            title="Tari Bajidor Kahot"
-            category="SUNDA KREASI • KIPAS & SELENDANG"
-            description="Kombinasi dinamis kendang Jaipongan dan Ketuk Tilu yang memberikan kegembiraan untuk pesta pernikahan dan gathering."
+            title="Tari Saman"
+            category="TARI • ACEH"
+            description="Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak."
             tag="ENERGETIK & CERIA"
           />
         </div>
