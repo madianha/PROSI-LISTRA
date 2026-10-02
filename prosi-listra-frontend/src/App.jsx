@@ -4,6 +4,7 @@ import Home from "./pages/home";
 import TentangKami from "./pages/tetang-kami";
 import Katalog from "./pages/katalog";
 import Testimoni from "./pages/testimoni";
+import Footer from "./components/Footer";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <CatalogueCard /> */}
             {props.children}
           </div>
+          <Footer/>
         </div>
       )}
     >
