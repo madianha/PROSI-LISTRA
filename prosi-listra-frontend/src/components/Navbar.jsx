@@ -17,10 +17,12 @@ export default function Navbar() {
       </div>
       <div className="flex items-center">
         <A href="/" className="p-4">Beranda</A>
-        <A href="/tentang-kami" className="p-4">Tentang Kami</A>
-        <A href="/katalog" className="p-4">Katalog Kami</A>
+        {/* <A href="/tentang-kami" className="p-4">Tentang Kami</A> */}
+        <A href="/jasa" className="p-4">Jasa</A>
+        <A href="/jadwal" className="p-4">Jadwal Acara</A>
+        <A href="/berita" className="p-4">Berita</A>
         <A href="/testimoni" className="p-4">Testimoni</A>
-        <A href="/login" className="p-4">Masuk</A>
+  
       </div>
 
       {/* <div> */}
