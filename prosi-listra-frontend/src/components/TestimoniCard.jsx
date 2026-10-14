@@ -1,14 +1,27 @@
 export default function TestimoniCard(props) {
-  const rating = () => props.rating ?? 5;
+  // id
+  const idTestimoni = () => props.idTestimoni ?? "";
+  //nama_klien
+  const name = () => props.name ?? "Prof. Dr. Handoko Wijaya";
+  // instansi
+  const organization = () => props.organization ?? "Rektorat UNPAR";
+  // nama_acara
+  const event = () => props.event ?? "Acara: Opening Ceremony Dies Natalis ke-71";
+  // isi_testimoni
   const review = () =>
     props.review ??
     "Penampilan LISTRA sangat memukau dan tepat waktu. Koordinasi dengan panitia berjalan lancar.";
-  const name = () => props.name ?? "Prof. Dr. Handoko Wijaya";
-  const organization = () => props.organization ?? "Rektorat UNPAR";
-  const event = () => props.event ?? "Acara: Opening Ceremony Dies Natalis ke-71";
+  // rating
+  const rating = () => props.rating ?? 5;
+  // tanggal_input
+  const date = () => props.date ?? "";
+  
+  
+  
 
   return (
     <article className="w-full max-w-md rounded-[14px] border border-[#f0d9d8] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(84,20,29,0.06)]">
+      <p className="text-xs text-[#947c79]">{date}</p>
       <div className="flex items-center gap-2" aria-label={`Rating ${rating()} dari 5`}>
         <span className="tracking-[-0.08em] text-[#2d2020]" aria-hidden="true">
           {"★".repeat(rating())}{"☆".repeat(5 - rating())}
