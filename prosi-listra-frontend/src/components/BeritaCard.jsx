@@ -1,4 +1,4 @@
-import logoListra from "../img/logo-listra.PNG";
+import logoListra from "../img/logo-listra.png";
 
 export default function BeritaCard(props) {
   const date = () => props.date ?? "20 Sep 2026";
