@@ -1,7 +1,6 @@
 # PROSI-LISTRA Backend API
 
-Backend Express.js + PostgreSQL. Di branch ini: fitur **Berita** dan **upload gambar**.
-(Fitur Kontak WhatsApp ada di branch `feat/kontak-whatsapp`, struktur folder-nya sama.)
+Backend Express.js + PostgreSQL untuk fitur **Kontak WhatsApp**, **Berita**, dan **upload gambar**.
 
 ## Prasyarat
 
@@ -23,7 +22,28 @@ Backend Express.js + PostgreSQL. Di branch ini: fitur **Berita** dan **upload ga
    Copy-Item .env.example .env   # PowerShell
    ```
 
-3. Buat tabel berita (dan data awal) dengan menjalankan file
+3. Buat tabel kontak WhatsApp dengan menjalankan SQL berikut di pgAdmin
+   (jika tabel belum ada / belum ada data awal):
+
+   ```sql
+   CREATE TABLE kontak_whatsapp (
+       id INT PRIMARY KEY DEFAULT 1,
+       nomor_wa VARCHAR(50) NOT NULL,
+       nama_humas VARCHAR(255) NOT NULL,
+       template_pesan TEXT NOT NULL
+   );
+
+   INSERT INTO kontak_whatsapp (id, nomor_wa, nama_humas, template_pesan)
+   VALUES (
+       1,
+       '628123456789',
+       'Bagas Nugroho (Koor Humas)',
+       'Halo Humas LISTRA, saya tertarik dengan {jasa}. Boleh minta informasi lebih lanjut?'
+   )
+   ON CONFLICT (id) DO NOTHING;
+   ```
+
+   Lalu buat tabel berita (dan data awal) dengan menjalankan file
    `listra-web/db/berita.sql` di pgAdmin, atau:
 
    ```bash
@@ -44,6 +64,23 @@ Backend Express.js + PostgreSQL. Di branch ini: fitur **Berita** dan **upload ga
    ```bash
    npm test
    ```
+
+## Endpoint Kontak WhatsApp
+
+| Method | Path          | Deskripsi                                    |
+| ------ | ------------- | -------------------------------------------- |
+| GET    | `/api/kontak` | Ambil data kontak WhatsApp (baris `id = 1`)  |
+| PUT    | `/api/kontak` | Perbarui data kontak WhatsApp (baris `id = 1`) |
+
+Body PUT:
+
+```json
+{
+  "nomor_wa": "628123456789",
+  "nama_humas": "Bagas Nugroho (Koor Humas)",
+  "template_pesan": "Halo Humas LISTRA, saya tertarik dengan {jasa}."
+}
+```
 
 ## Endpoint Berita
 
