@@ -8,9 +8,9 @@ import FilterJasa from "../components/FilterJasa";
 const services = [
   {
     title: "Tari Merak",
-    category: "TARI • JAWA BARAT",
+    category: "Tari • Jawa Barat",
     description: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya.",
-    tag: "OPENING",
+    tag: "Opening",
     type: "Tari",
     culture: "Jawa",
     position: "Opening",
@@ -18,9 +18,9 @@ const services = [
   },
   {
     title: "Tari Jaipong",
-    category: "TARI • JAWA BARAT",
+    category: "Tari • Jawa Barat",
     description: "Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik.",
-    tag: "MIDDLE",
+    tag: "Middle",
     type: "Tari",
     culture: "Jawa",
     position: "Middle",
@@ -28,9 +28,9 @@ const services = [
   },
   {
     title: "Tari Saman",
-    category: "TARI • ACEH",
+    category: "Tari • Aceh",
     description: "Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak.",
-    tag: "OPENING",
+    tag: "Opening",
     type: "Tari",
     culture: "Sumatera",
     position: "Opening",
@@ -76,7 +76,7 @@ export default function Katalog() {
 
         <section className="min-w-0">
           <p className="mb-5 text-base text-[#9b8885]">{filteredServices().length} jasa</p>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <For each={filteredServices()}>
               {(service) => (
                 <CatalogueCard
