@@ -12,6 +12,7 @@ app.config.timestamp_*.js
 
 # dependencies
 /node_modules
+/public/tinymce
 
 # IDEs and editors
 /.idea
