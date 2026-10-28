@@ -38,8 +38,8 @@ export default function App() {
   return (
     <Router>
       {/* Public pages: Navbar + Footer */}
+      <Route path="/" component={() => <><Navbar /><Home /></>} />
       <Route path="/" component={PublicLayout}>
-        <Route path="/" component={Home} />
         {/* <Route path="/tentang-kami" component={TentangKami} /> */}
         <Route path="/jasa" component={Jasa} />
         <Route path="/jadwal" component={Jadwal} />

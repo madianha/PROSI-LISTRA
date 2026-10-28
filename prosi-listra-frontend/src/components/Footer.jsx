@@ -1,38 +1,31 @@
+import { A } from "@solidjs/router";
+import logoListra from "../img/logo-listra.png";
+import logoUnpar from "../img/Logo-UNPAR.png";
+
 export default function Footer() {
   return (
-    <div className="bg-[#4A0E17] text-white p-8 pt-16">
-      <div className="grid grid-cols-6 gap-2">
-        <div className="col-span-3">
-          <h2 className="text-[#dfae16]">LISTRA</h2>
-          <h3>LINGKAR SENI TRADISIONAL UNPAR</h3>
-          <p>Menghadirkan pesona mahakarya tradisional
-            Indonesia dengan kemegahan tata panggung, kostum
-            keraton otentik, dan integritas artistik tertinggi.</p>
+    <footer className="bg-[#39030c] px-6 py-5 text-[#bca9aa] sm:px-[8%]">
+      <div className="mx-auto grid max-w-[1110px] gap-5 sm:grid-cols-[1.2fr_1fr_1fr]">
+        <div>
+          <div className="flex items-center gap-1">
+            <img src={logoListra} alt="Logo LISTRA" className="h-7 w-7 object-contain" />
+            <img src={logoUnpar} alt="Logo UNPAR" className="h-7 w-7 object-contain" />
+          </div>
+          <h2 className="mt-1 font-serif text-base font-bold text-[#dfbd52]">LISTRA</h2>
+          <p className="mt-1 text-xs">Lingkung Seni Tradisional UNPAR</p>
         </div>
         <div>
-          <h3 className="text-[#dfae16] font-bold">NAVIGASI UTAMA</h3>
-          <p>Beranda</p>
-          <p>Tetang Kami</p>
-          <p>Katalog Harian</p>
-          <p>Testimoni Klien</p>
-
+          <h3 className="font-serif text-xs font-bold tracking-widest text-[#c7a431]">NAVIGASI</h3>
+          <div className="mt-1 flex flex-col text-xs leading-5">
+            <A href="/">Beranda</A><A href="/jasa">Jasa</A><A href="/jadwal">Jadwal Acara</A><A href="/berita">Berita</A><A href="/testimoni">Testimoni</A>
+          </div>
         </div>
-        <div className="col-span-2">
-          <h3 className="text-[#dfae16] font-bold">KONTAK SEKRETARIAT</h3>
-          <p>Gedung Rektorat UNPAR, Jl. Ciumbuleuit No. 94,
-            Bandung
-          </p>
-          <p>
-            listra@unpar.ac.id
-          </p>
-
+        <div>
+          <h3 className="font-serif text-xs font-bold tracking-widest text-[#c7a431]">KONTAK</h3>
+          <div className="mt-1 flex flex-col text-xs leading-5"><a href="/jadwal">WhatsApp Humas</a><a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a></div>
         </div>
-
       </div>
-      <div className="flex justify-around">
-        <p>© 2024 LISTRA UNPAR. Hak Cipta Dilindungi Undang-Undang.</p>
-        <p>Royal Heritage & Curatorial Archival Selection</p>
-      </div>
-    </div>
-  )
+      <div className="mx-auto mt-3 max-w-[1110px] border-t border-white/10 pt-2 text-center text-xs">© 2026 LISTRA – Lingkung Seni Tradisional UNPAR</div>
+    </footer>
+  );
 }
