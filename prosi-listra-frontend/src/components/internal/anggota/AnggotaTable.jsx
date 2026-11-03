@@ -1,4 +1,4 @@
-import { For, Show } from "solid-js";
+﻿import { For, Show } from "solid-js";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../Icon";
 import Toggle from "../Toggle";
@@ -7,15 +7,15 @@ export default function AnggotaTable(props) {
   return (
     <div class="overflow-x-auto">
       <table class="w-full min-w-[850px] text-left text-sm">
-        <thead class="border-b border-[#f0dedf] bg-[#fffaf9] text-xs uppercase tracking-wider text-[#685856]">
+        <thead class="border-b border-stone-200 bg-[#fffaf9] text-[11px] font-semibold uppercase tracking-wider text-stone-500">
           <tr>
-            <th class="px-4 py-3.5 font-medium">Nama & Kontak</th>
-            <th class="px-4 py-3.5 font-medium">NPM</th>
-            <th class="px-4 py-3.5 font-medium">Angkatan</th>
-            <th class="px-4 py-3.5 font-medium">Peran & Jabatan</th>
-            <th class="px-4 py-3.5 font-medium">Spesialisasi</th>
-            <th class="px-4 py-3.5 font-medium">Status</th>
-            <th class="px-4 py-3.5 text-right font-medium">Aksi</th>
+            <th class="px-4 py-3.5">Nama & Kontak</th>
+            <th class="px-4 py-3.5">NPM</th>
+            <th class="px-4 py-3.5">Angkatan</th>
+            <th class="px-4 py-3.5">Peran & Jabatan</th>
+            <th class="px-4 py-3.5">Spesialisasi</th>
+            <th class="px-4 py-3.5">Status</th>
+            <th class="px-4 py-3.5 text-right">Aksi</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[#f7ecec]">
@@ -29,8 +29,8 @@ export default function AnggotaTable(props) {
               return (
                 <tr class="transition hover:bg-[#fffdfd]">
                   <td class="px-4 py-3.5">
-                    <div class="font-semibold text-[#302929]">{item.nama}</div>
-                    <div class="mt-0.5 space-y-0.5 text-xs text-[#685856]">
+                    <div class="text-sm font-semibold tracking-tight text-stone-900">{item.nama}</div>
+                    <div class="mt-0.5 space-y-0.5 text-xs font-normal text-stone-500">
                       <Show when={item.email}>
                         <div>{item.email}</div>
                       </Show>
@@ -40,59 +40,61 @@ export default function AnggotaTable(props) {
                     </div>
                   </td>
 
-                  <td class="px-4 py-3.5 text-[#302929]">
+                  <td class="px-4 py-3.5 text-stone-700">
                     {item.npm ? (
-                      <span class="font-mono text-xs">{item.npm}</span>
+                      <span class="font-mono text-xs text-stone-600">{item.npm}</span>
                     ) : (
-                      <span class="text-xs text-[#a89a98]">-</span>
+                      <span class="text-xs text-stone-400">-</span>
                     )}
                   </td>
 
-                  <td class="whitespace-nowrap px-4 py-3.5 text-[#302929]">
+                  <td class="whitespace-nowrap px-4 py-3.5">
                     {item.angkatan_unpar ? (
-                      <span class="inline-flex rounded bg-[#f7ecec] px-2 py-0.5 text-xs font-semibold text-[#54141d]">
+                      <span class="inline-flex rounded-md bg-[#f7ecec] px-2.5 py-0.5 text-xs font-semibold text-[#54141d]">
                         '{String(item.angkatan_unpar).padStart(2, "0")}
                       </span>
                     ) : (
-                      <span class="text-xs text-[#a89a98]">-</span>
+                      <span class="text-xs text-stone-400">-</span>
                     )}
                   </td>
 
                   <td class="px-4 py-3.5">
-                    <span
-                      class={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        item.peran === "Kepengurusan"
-                          ? "bg-[#39000a]/10 text-[#39000a]"
-                          : item.peran === "Alumni"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {item.peran}
-                    </span>
-                    <Show when={item.jabatan}>
-                      <div class="mt-1 text-xs text-[#685856]">{item.jabatan}</div>
-                    </Show>
+                    <div class="flex flex-col items-start gap-1">
+                      <span
+                        class={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          item.peran === "Kepengurusan"
+                            ? "bg-[#39000a]/10 text-[#39000a]"
+                            : item.peran === "Alumni"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {item.peran}
+                      </span>
+                      <Show when={item.jabatan}>
+                        <span class="text-xs font-normal text-stone-500">{item.jabatan}</span>
+                      </Show>
+                    </div>
                   </td>
 
                   <td class="max-w-[260px] px-4 py-3.5">
-                    <div class="flex flex-wrap gap-1">
+                    <div class="flex flex-wrap gap-1.5">
                       <For each={tariSp()}>
                         {(sp) => (
-                          <span class="inline-block rounded-md border border-[#f0dedf] bg-[#fff5f5] px-2 py-0.5 text-[11px] font-medium text-[#7a1c2d]">
-                            💃 {sp.nama_spesialisasi}
+                          <span class="inline-block rounded-full border border-[#f3d3d9] bg-[#fbf2f4] px-2.5 py-0.5 text-xs font-medium text-[#4a0e17]">
+                            {sp.nama_spesialisasi}
                           </span>
                         )}
                       </For>
                       <For each={musikSp()}>
                         {(sp) => (
-                          <span class="inline-block rounded-md border border-[#e2e8f0] bg-[#f8fafc] px-2 py-0.5 text-[11px] font-medium text-[#2d3748]">
-                            🎵 {sp.nama_spesialisasi}
+                          <span class="inline-block rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+                            {sp.nama_spesialisasi}
                           </span>
                         )}
                       </For>
                       <Show when={tariSp().length === 0 && musikSp().length === 0}>
-                        <span class="text-xs text-[#a89a98]">-</span>
+                        <span class="text-xs text-stone-400">-</span>
                       </Show>
                     </div>
                   </td>
@@ -106,7 +108,7 @@ export default function AnggotaTable(props) {
                         onChange={() => props.onToggleStatus(item)}
                       />
                       <span
-                        class={`text-xs font-semibold ${
+                        class={`inline-block w-16 text-left whitespace-nowrap text-xs font-semibold ${
                           item.is_aktif ? "text-emerald-700" : "text-[#8a7977]"
                         }`}
                       >
@@ -119,7 +121,7 @@ export default function AnggotaTable(props) {
                     <button
                       type="button"
                       onClick={() => props.onEdit(item)}
-                      class="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[#54141d] hover:bg-[#fff7f6]"
+                      class="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[#54141d] transition hover:bg-[#fff7f6]"
                     >
                       <Icon icon={faPen} class="text-xs" /> Ubah
                     </button>
