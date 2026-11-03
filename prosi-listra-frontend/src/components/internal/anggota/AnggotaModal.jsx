@@ -14,59 +14,76 @@ export default function AnggotaModal(props) {
           <div
             role="dialog"
             aria-modal="true"
-            class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            class="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl border border-stone-200 overflow-hidden"
           >
-            <div class="flex items-center justify-between border-b border-[#f0dedf] pb-3">
-              <h2 class="font-serif text-xl font-bold text-[#39000a]">
-                {props.editingId ? "Ubah Data Anggota" : "Tambah Anggota Baru"}
-              </h2>
+            {/* Header: Sticky / Fixed at top */}
+            <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between shrink-0 bg-white">
+              <div>
+                <h2 class="font-serif text-xl font-bold text-[#39000a]">
+                  {props.editingId ? "Ubah Data Anggota" : "Tambah Anggota Baru"}
+                </h2>
+                <p class="mt-0.5 text-xs text-stone-500">
+                  {props.editingId
+                    ? "Perbarui informasi profil dan spesialisasi anggota sanggar."
+                    : "Lengkapi data diri dan spesialisasi kesenian anggota baru."}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={props.onClose}
-                class="rounded-lg p-1.5 text-[#685856] hover:bg-gray-100"
+                class="rounded-lg p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
               >
-                <Icon icon={faTimes} class="text-sm" />
+                <Icon icon={faTimes} class="text-base" />
               </button>
             </div>
 
-            <Show when={props.formError}>
-              <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                {props.formError}
-              </div>
-            </Show>
+            {/* Content Body: Scrollable with clean scrollbar */}
+            <form
+              id="anggota-form"
+              onSubmit={props.onSubmit}
+              class="flex-1 overflow-y-auto px-6 py-5 space-y-4 scrollbar-thin scrollbar-thumb-stone-200"
+            >
+              <Show when={props.formError}>
+                <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  {props.formError}
+                </div>
+              </Show>
 
-            <form onSubmit={props.onSubmit} class="mt-4 space-y-4">
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                  Nama Lengkap <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Bagas Nugroho"
-                  value={props.formData.nama}
-                  onInput={(e) => props.setFormData("nama", e.currentTarget.value)}
-                  class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
-                />
+              {/* Baris 1: Nama Lengkap & Email */}
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label class="mb-1 block text-xs font-semibold text-[#302929]">
+                    Nama Lengkap <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Contoh: Bagas Nugroho"
+                    value={props.formData.nama}
+                    onInput={(e) => props.setFormData("nama", e.currentTarget.value)}
+                    class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-xs font-semibold text-[#302929]">
+                    Email (Unpar / Pribadi)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="6182101050@student.unpar.ac.id"
+                    value={props.formData.email}
+                    onInput={(e) => props.onEmailChange(e.currentTarget.value)}
+                    class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                  />
+                  <p class="mt-1 text-[11px] text-[#8a7977]">
+                    Email unpar otomatis mengisi NPM & Angkatan.
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                  Email (Unpar / Pribadi)
-                </label>
-                <input
-                  type="email"
-                  placeholder="6182101050@student.unpar.ac.id"
-                  value={props.formData.email}
-                  onInput={(e) => props.onEmailChange(e.currentTarget.value)}
-                  class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
-                />
-                <p class="mt-1 text-[11px] text-[#8a7977]">
-                  Email unpar otomatis mengisi NPM & Angkatan.
-                </p>
-              </div>
-
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Baris 2: NPM & Angkatan */}
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">NPM</label>
                   <input
@@ -74,7 +91,7 @@ export default function AnggotaModal(props) {
                     placeholder="6182101050"
                     value={props.formData.npm}
                     onInput={(e) => props.setFormData("npm", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                    class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
                   />
                 </div>
 
@@ -87,12 +104,13 @@ export default function AnggotaModal(props) {
                     placeholder="21"
                     value={props.formData.angkatan_unpar}
                     onInput={(e) => props.setFormData("angkatan_unpar", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                    class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
                   />
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Baris 3: Peran & Jabatan */}
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
                     Peran <span class="text-red-500">*</span>
@@ -100,7 +118,7 @@ export default function AnggotaModal(props) {
                   <select
                     value={props.formData.peran}
                     onChange={(e) => props.setFormData("peran", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] bg-white px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                    class="w-full rounded-lg border border-[#d9cdca] bg-white px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
                   >
                     <For each={props.peranOptions}>{(opt) => <option value={opt}>{opt}</option>}</For>
                   </select>
@@ -115,23 +133,48 @@ export default function AnggotaModal(props) {
                     placeholder="Ketua, Koordinator Tari, Anggota..."
                     value={props.formData.jabatan}
                     onInput={(e) => props.setFormData("jabatan", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                    class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
                   />
                 </div>
               </div>
 
-              <div class="pt-2">
+              {/* Status Keanggotaan: High contrast matched card */}
+              <div class="flex items-center justify-between p-3.5 rounded-xl border border-stone-300 bg-[#f9f7f5] shadow-xs transition-colors">
+                <div>
+                  <div class="text-xs font-semibold text-stone-900">Status Keanggotaan</div>
+                  <div class="mt-0.5 text-xs text-stone-600">
+                    Aktif (Dapat ditugaskan dalam kegiatan/event)
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    id="is_aktif"
+                    checked={props.formData.is_aktif}
+                    onChange={(e) => props.setFormData("is_aktif", e.currentTarget.checked)}
+                    class="h-4 w-4 rounded border-stone-300 text-[#4a0e17] focus:ring-[#4a0e17] focus:ring-offset-0 cursor-pointer"
+                  />
+                  <span class="ml-2 text-xs font-semibold text-stone-700">
+                    {props.formData.is_aktif ? "Aktif" : "Non-aktif"}
+                  </span>
+                </label>
+              </div>
+
+              {/* Spesialisasi Seni: High contrast box */}
+              <div class="pt-0.5">
                 <label class="mb-1 block text-xs font-semibold text-[#302929]">
                   Spesialisasi Seni
                 </label>
-                <p class="mb-3 text-[11px] text-[#8a7977]">
+                <p class="mb-2.5 text-[11px] text-[#8a7977]">
                   Pilih keahlian tari atau alat musik tradisional yang dikuasai.
                 </p>
 
-                <div class="space-y-3 rounded-xl border border-[#f0dedf] bg-[#fdfbf9] p-3">
+                <div class="rounded-xl border border-stone-300 bg-[#f9f7f5] p-4 space-y-3.5 shadow-inner">
                   <div>
-                    <div class="mb-1.5 text-xs font-bold text-[#54141d]">💃 Spesialisasi Tari</div>
-                    <div class="flex flex-wrap gap-1.5">
+                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
+                      SPESIALISASI TARI
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-0.5">
                       <For each={props.spesialisasiTari}>
                         {(sp) => {
                           const isSelected = () =>
@@ -140,10 +183,10 @@ export default function AnggotaModal(props) {
                             <button
                               type="button"
                               onClick={() => props.onToggleSpesialisasi(sp.id_spesialisasi)}
-                              class={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                              class={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                 isSelected()
-                                  ? "bg-[#39000a] text-white shadow-sm"
-                                  : "border border-[#d9cdca] bg-white text-[#54141d] hover:bg-[#fff0f0]"
+                                  ? "bg-[#4a0e17] text-white border border-[#4a0e17] shadow-xs"
+                                  : "bg-white text-stone-800 border border-stone-300 shadow-2xs hover:border-stone-400 hover:bg-stone-50"
                               }`}
                             >
                               {sp.nama_spesialisasi}
@@ -154,9 +197,11 @@ export default function AnggotaModal(props) {
                     </div>
                   </div>
 
-                  <div class="border-t border-[#f0dedf] pt-2.5">
-                    <div class="mb-1.5 text-xs font-bold text-[#2d3748]">🎵 Alat Musik Tradisional</div>
-                    <div class="flex flex-wrap gap-1.5">
+                  <div class="border-t border-stone-200/90 pt-3">
+                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
+                      ALAT MUSIK TRADISIONAL
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-0.5">
                       <For each={props.spesialisasiMusik}>
                         {(sp) => {
                           const isSelected = () =>
@@ -165,10 +210,10 @@ export default function AnggotaModal(props) {
                             <button
                               type="button"
                               onClick={() => props.onToggleSpesialisasi(sp.id_spesialisasi)}
-                              class={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                              class={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                 isSelected()
-                                  ? "bg-[#2d3748] text-white shadow-sm"
-                                  : "border border-[#d9cdca] bg-white text-[#2d3748] hover:bg-slate-100"
+                                  ? "bg-slate-700 text-white border border-slate-700 shadow-xs"
+                                  : "bg-white text-stone-800 border border-stone-300 shadow-2xs hover:border-stone-400 hover:bg-stone-50"
                               }`}
                             >
                               {sp.nama_spesialisasi}
@@ -180,37 +225,26 @@ export default function AnggotaModal(props) {
                   </div>
                 </div>
               </div>
-
-              <div class="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="is_aktif"
-                  checked={props.formData.is_aktif}
-                  onChange={(e) => props.setFormData("is_aktif", e.currentTarget.checked)}
-                  class="h-4 w-4 rounded border-[#d9cdca] text-[#39000a] focus:ring-[#39000a]"
-                />
-                <label for="is_aktif" class="text-sm font-medium text-[#302929]">
-                  Anggota Aktif
-                </label>
-              </div>
-
-              <div class="mt-6 flex justify-end gap-3 border-t border-[#f0dedf] pt-4">
-                <button
-                  type="button"
-                  onClick={props.onClose}
-                  class="rounded-lg px-4 py-2 text-sm font-semibold text-[#685856] hover:bg-gray-100"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={props.isSubmitting}
-                  class="rounded-lg bg-[#39000a] px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-[#5a0c1a] disabled:opacity-50"
-                >
-                  {props.isSubmitting ? "Menyimpan..." : "Simpan Data"}
-                </button>
-              </div>
             </form>
+
+            {/* Footer: Sticky bottom action bar */}
+            <div class="px-6 py-3.5 bg-stone-50/90 backdrop-blur-sm border-t border-stone-100 flex justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={props.onClose}
+                class="rounded-lg px-4 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-200/60 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                form="anggota-form"
+                disabled={props.isSubmitting}
+                class="rounded-lg bg-[#39000a] px-5 py-2 text-sm font-semibold text-white shadow transition hover:bg-[#5a0c1a] disabled:opacity-50"
+              >
+                {props.isSubmitting ? "Menyimpan..." : "Simpan Data"}
+              </button>
+            </div>
           </div>
         </div>
       </Portal>
