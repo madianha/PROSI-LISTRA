@@ -7,7 +7,6 @@ const sampleData = [
     id_anggota: 1,
     nama: "Alexander Haryanto",
     email: "alexander@unpar.ac.id",
-    no_hp: "081234567890",
     npm: "6182101001",
     angkatan_unpar: 2021,
     peran: "Kepengurusan",
@@ -22,7 +21,6 @@ const sampleData = [
     id_anggota: 2,
     nama: "Budi Santoso",
     email: "",
-    no_hp: "",
     npm: null,
     angkatan_unpar: null,
     peran: "Anggota Biasa",
@@ -33,7 +31,7 @@ const sampleData = [
 ];
 
 describe("AnggotaTable Component", () => {
-  it("merender tabel data anggota dengan rapi tanpa emoji pada pill spesialisasi", () => {
+  it("merender tabel data anggota dengan rapi tanpa emoji pada pill spesialisasi dan tanpa nomor hp", () => {
     const onToggleStatus = vi.fn();
     const onEdit = vi.fn();
 
@@ -47,7 +45,24 @@ describe("AnggotaTable Component", () => {
     ));
 
     expect(screen.getByText("Alexander Haryanto")).toBeDefined();
-    expect(screen.getByText("Ketua Umum")).toBeDefined();
+    const namaEl = screen.getByText("Alexander Haryanto");
+    expect(namaEl.className).toContain("font-bold");
+
+    const emailEl = screen.getByText("alexander@unpar.ac.id");
+    expect(emailEl.className).toContain("text-stone-700");
+    expect(emailEl.className).toContain("font-medium");
+
+    // Header tabel Nama & Email
+    expect(screen.getByText("Nama & Email")).toBeDefined();
+
+    const jabatanEl = screen.getByText("Ketua Umum");
+    expect(jabatanEl.className).toContain("text-stone-600");
+    expect(jabatanEl.className).toContain("text-center");
+
+    const roleBadge = screen.getByText("Kepengurusan");
+    expect(roleBadge.className).toContain("min-w-[90px]");
+    expect(roleBadge.className).toContain("justify-center");
+
     expect(screen.getByText("Tari Saman")).toBeDefined();
     expect(screen.getByText("Gamelan Jawa")).toBeDefined();
 
@@ -63,8 +78,10 @@ describe("AnggotaTable Component", () => {
     const nonAktifLabel = screen.getByText("Non-aktif");
     expect(nonAktifLabel.className).toContain("w-16");
 
-    // Klik tombol ubah
+    // Klik tombol ubah dan cek styling
     const ubahButtons = screen.getAllByRole("button", { name: /ubah/i });
+    expect(ubahButtons[0].className).toContain("border-stone-300");
+    expect(ubahButtons[0].className).toContain("shadow-sm");
     fireEvent.click(ubahButtons[0]);
     expect(onEdit).toHaveBeenCalledWith(sampleData[0]);
 

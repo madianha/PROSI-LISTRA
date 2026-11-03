@@ -1,4 +1,4 @@
-import { For, Show } from "solid-js";
+﻿import { For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../Icon";
@@ -50,35 +50,20 @@ export default function AnggotaModal(props) {
                 />
               </div>
 
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                    Email (Unpar / Pribadi)
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="6182101050@student.unpar.ac.id"
-                    value={props.formData.email}
-                    onInput={(e) => props.onEmailChange(e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
-                  />
-                  <p class="mt-1 text-[11px] text-[#8a7977]">
-                    Email unpar otomatis mengisi NPM & Angkatan.
-                  </p>
-                </div>
-
-                <div>
-                  <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                    Nomor HP / WhatsApp
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="081234567890"
-                    value={props.formData.no_hp}
-                    onInput={(e) => props.setFormData("no_hp", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
-                  />
-                </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold text-[#302929]">
+                  Email (Unpar / Pribadi)
+                </label>
+                <input
+                  type="email"
+                  placeholder="6182101050@student.unpar.ac.id"
+                  value={props.formData.email}
+                  onInput={(e) => props.onEmailChange(e.currentTarget.value)}
+                  class="w-full rounded-lg border border-[#d9cdca] px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                />
+                <p class="mt-1 text-[11px] text-[#8a7977]">
+                  Email unpar otomatis mengisi NPM & Angkatan.
+                </p>
               </div>
 
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -9,10 +9,10 @@ export default function AnggotaTable(props) {
       <table class="w-full min-w-[850px] text-left text-sm">
         <thead class="border-b border-stone-200 bg-[#fffaf9] text-[11px] font-semibold uppercase tracking-wider text-stone-500">
           <tr>
-            <th class="px-4 py-3.5">Nama & Kontak</th>
+            <th class="px-4 py-3.5">Nama & Email</th>
             <th class="px-4 py-3.5">NPM</th>
             <th class="px-4 py-3.5">Angkatan</th>
-            <th class="px-4 py-3.5">Peran & Jabatan</th>
+            <th class="px-4 py-3.5 text-center">Peran & Jabatan</th>
             <th class="px-4 py-3.5">Spesialisasi</th>
             <th class="px-4 py-3.5">Status</th>
             <th class="px-4 py-3.5 text-right">Aksi</th>
@@ -29,15 +29,10 @@ export default function AnggotaTable(props) {
               return (
                 <tr class="transition hover:bg-[#fffdfd]">
                   <td class="px-4 py-3.5">
-                    <div class="text-sm font-semibold tracking-tight text-stone-900">{item.nama}</div>
-                    <div class="mt-0.5 space-y-0.5 text-xs font-normal text-stone-500">
-                      <Show when={item.email}>
-                        <div>{item.email}</div>
-                      </Show>
-                      <Show when={item.no_hp}>
-                        <div>{item.no_hp}</div>
-                      </Show>
-                    </div>
+                    <div class="text-sm font-bold tracking-tight text-stone-900">{item.nama}</div>
+                    <Show when={item.email}>
+                      <div class="mt-0.5 text-xs font-medium text-stone-700">{item.email}</div>
+                    </Show>
                   </td>
 
                   <td class="px-4 py-3.5 text-stone-700">
@@ -59,9 +54,9 @@ export default function AnggotaTable(props) {
                   </td>
 
                   <td class="px-4 py-3.5">
-                    <div class="flex flex-col items-start gap-1">
+                    <div class="flex flex-col items-center justify-center gap-1 text-center">
                       <span
-                        class={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        class={`inline-flex min-w-[90px] items-center justify-center rounded-full px-3 py-0.5 text-xs font-medium ${
                           item.peran === "Kepengurusan"
                             ? "bg-[#39000a]/10 text-[#39000a]"
                             : item.peran === "Alumni"
@@ -72,7 +67,7 @@ export default function AnggotaTable(props) {
                         {item.peran}
                       </span>
                       <Show when={item.jabatan}>
-                        <span class="text-xs font-normal text-stone-500">{item.jabatan}</span>
+                        <span class="text-center text-xs font-medium text-stone-600">{item.jabatan}</span>
                       </Show>
                     </div>
                   </td>
@@ -121,7 +116,7 @@ export default function AnggotaTable(props) {
                     <button
                       type="button"
                       onClick={() => props.onEdit(item)}
-                      class="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-[#54141d] transition hover:bg-[#fff7f6]"
+                      class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md border border-stone-300 bg-white text-stone-700 shadow-sm transition-all hover:bg-[#fbf2f4] hover:border-[#b86271] hover:text-[#4a0e17] active:scale-95"
                     >
                       <Icon icon={faPen} class="text-xs" /> Ubah
                     </button>

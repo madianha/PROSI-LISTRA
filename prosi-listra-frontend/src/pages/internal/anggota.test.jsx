@@ -19,7 +19,6 @@ const mockList = [
     nama: "Alexander Haryanto",
     email: "6182101001@student.unpar.ac.id",
     npm: "6182101001",
-    no_hp: "081234567890",
     peran: "Kepengurusan",
     angkatan_unpar: 2021,
     jabatan: "Ketua Umum",

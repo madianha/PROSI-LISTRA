@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+﻿import type { Request, Response } from "express";
 import * as anggotaRepo from "../repositories/anggotaRepository";
 
 const TIDAK_DITEMUKAN = { message: "Anggota tidak ditemukan." };
@@ -72,7 +72,6 @@ function validateAnggotaPayload(body: any): { ok: boolean; message?: string; dat
   }
 
   const npm = typeof body.npm === "string" ? body.npm.trim() : null;
-  const no_hp = typeof body.no_hp === "string" ? body.no_hp.trim() : null;
   const peran = typeof body.peran === "string" ? body.peran.trim() : "Kepengurusan";
   const jabatan = typeof body.jabatan === "string" ? body.jabatan.trim() : null;
   
@@ -103,7 +102,6 @@ function validateAnggotaPayload(body: any): { ok: boolean; message?: string; dat
       nama,
       email: email || null,
       npm: npm || null,
-      no_hp: no_hp || null,
       peran: peran || "Kepengurusan",
       jabatan: jabatan || null,
       angkatan_unpar,

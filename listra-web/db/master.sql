@@ -55,7 +55,6 @@ CREATE TABLE anggota (
     nama VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE,
     npm VARCHAR(20) UNIQUE,
-    no_hp VARCHAR(20),
     peran VARCHAR(50) NOT NULL DEFAULT 'Kepengurusan',
     angkatan_unpar INT,
     jabatan VARCHAR(255),
