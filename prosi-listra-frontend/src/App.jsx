@@ -7,6 +7,7 @@ import Jadwal from "./pages/jadwal"
 import Testimoni from "./pages/testimoni";
 import Footer from "./components/Footer";
 import Berita from "./pages/berita";
+import BeritaDetail from "./pages/berita-detail";
 import LoginInternal from "./pages/internal/login";
 
 import InternalLayout from "./components/internal/InternalLayout";
@@ -16,6 +17,7 @@ import InternalAlatMusik from "./pages/internal/alat-musik";
 import InternalAnggota from "./pages/internal/anggota";
 import InternalPeriode from "./pages/internal/periode";
 import InternalBerita from "./pages/internal/berita";
+import InternalBeritaForm from "./pages/internal/berita-form";
 import InternalTestimoni from "./pages/internal/testimoni";
 import InternalKontak from "./pages/internal/kontak";
 
@@ -44,6 +46,7 @@ export default function App() {
         <Route path="/jasa" component={Jasa} />
         <Route path="/jadwal" component={Jadwal} />
         <Route path="/berita" component={Berita} />
+        <Route path="/berita/:id" component={BeritaDetail} />
         <Route path="/testimoni" component={Testimoni} />
         <Route path="/loginInternal" component={LoginInternal} />
       </Route>
@@ -59,6 +62,8 @@ export default function App() {
         <Route path="/anggota" component={InternalAnggota} />
         <Route path="/periode" component={InternalPeriode} />
         <Route path="/berita" component={InternalBerita} />
+        <Route path="/berita/baru" component={InternalBeritaForm} />
+        <Route path="/berita/:id/ubah" component={InternalBeritaForm} />
         <Route path="/testimoni" component={InternalTestimoni} />
         <Route path="/kontak" component={InternalKontak} />
       </Route>
