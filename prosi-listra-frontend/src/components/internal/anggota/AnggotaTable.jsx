@@ -54,6 +54,7 @@ export default function AnggotaTable(props) {
                   </td>
 
                   <td class="px-4 py-3.5">
+                    {/* [LOGIKA TAMPILAN] Symmetrical Vertical Centering: flex-col dengan items-center & justify-center agar badge peran dan teks jabatan sejajar simetris */}
                     <div class="flex flex-col items-center justify-center gap-1 text-center">
                       <span
                         class={`inline-flex min-w-[90px] items-center justify-center rounded-full px-3 py-0.5 text-xs font-medium ${

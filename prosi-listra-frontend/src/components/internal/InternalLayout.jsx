@@ -1,7 +1,19 @@
+﻿import { onMount } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import TopBar from "./TopBar";
 import SideNav from "./SideNav";
+import { isAuthenticated } from "../../api/auth";
 
 export default function InternalLayout(props) {
+  const navigate = useNavigate();
+
+  onMount(() => {
+    // Route guard: periksa token autentikasi
+    if (!isAuthenticated()) {
+      navigate("/loginInternal", { replace: true });
+    }
+  });
+
   return (
     <div className="flex min-h-screen flex-col bg-[#f5efeb]">
       <TopBar />

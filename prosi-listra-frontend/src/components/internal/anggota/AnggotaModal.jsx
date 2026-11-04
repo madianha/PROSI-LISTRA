@@ -16,7 +16,6 @@ export default function AnggotaModal(props) {
             aria-modal="true"
             class="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl border border-stone-200 overflow-hidden"
           >
-            {/* Header: Sticky / Fixed at top */}
             <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between shrink-0 bg-white">
               <div>
                 <h2 class="font-serif text-xl font-bold text-[#39000a]">
@@ -37,7 +36,7 @@ export default function AnggotaModal(props) {
               </button>
             </div>
 
-            {/* Content Body: Scrollable with clean scrollbar */}
+            {/* Form Submission: penanganan pengiriman formulir dan validasi data anggota */}
             <form
               id="anggota-form"
               onSubmit={props.onSubmit}
@@ -69,6 +68,7 @@ export default function AnggotaModal(props) {
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
                     Email (Unpar / Pribadi)
                   </label>
+                  {/* Auto-Parsing Email: input email, untuk ekstraksi otomatis NPM & Angkatan */}
                   <input
                     type="email"
                     placeholder="6182101050@student.unpar.ac.id"
@@ -138,7 +138,7 @@ export default function AnggotaModal(props) {
                 </div>
               </div>
 
-              {/* Status Keanggotaan: High contrast matched card */}
+              {/* Status Keanggotaan */}
               <div class="flex items-center justify-between p-3.5 rounded-xl border border-stone-300 bg-[#f9f7f5] shadow-xs transition-colors">
                 <div>
                   <div class="text-xs font-semibold text-stone-900">Status Keanggotaan</div>
@@ -175,6 +175,7 @@ export default function AnggotaModal(props) {
                       SPESIALISASI TARI
                     </div>
                     <div class="flex flex-wrap gap-2 pt-0.5">
+                      {/* Multi-Select Toggle: memeriksa status seleksi ID dan memicu penambahan/penghapusan dari array */}
                       <For each={props.spesialisasiTari}>
                         {(sp) => {
                           const isSelected = () =>
@@ -227,7 +228,6 @@ export default function AnggotaModal(props) {
               </div>
             </form>
 
-            {/* Footer: Sticky bottom action bar */}
             <div class="px-6 py-3.5 bg-stone-50/90 backdrop-blur-sm border-t border-stone-100 flex justify-end gap-3 shrink-0">
               <button
                 type="button"

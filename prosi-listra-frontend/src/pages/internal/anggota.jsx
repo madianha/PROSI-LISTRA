@@ -32,6 +32,8 @@ export default function InternalAnggota() {
   const [filterAngkatan, setFilterAngkatan] = createSignal("Semua");
 
   const [spesialisasiList] = createResource(getSpesialisasiList);
+  // [LOGIKA BISNIS] Multi-criteria search & filter reaktif: memicu pemanggilan API anggota
+  // saat kata kunci pencarian (nama/NPM/email), filter peran, atau filter angkatan berubah.
   const [anggotaResource, { refetch: refetchAnggota, mutate: mutateAnggota }] = createResource(
     () => ({
       search: search(),
@@ -59,6 +61,8 @@ export default function InternalAnggota() {
     return (spesialisasiList() || []).filter((s) => s.kategori === "MUSIK");
   });
 
+  // [ALGORITMA] Safe Memoization & Ekstraksi Nilai Unik: mengisolasi daftar angkatan unik
+  // via Set(), mengurutkannya secara descending (b - a), dan dibentengi try-catch error guard.
   const listAngkatanOptions = createMemo(() => {
     if (anggotaResource.error) return [];
     let list = [];
@@ -114,6 +118,8 @@ export default function InternalAnggota() {
     setFormData((prev) => ({ ...prev, [key]: val }));
   };
 
+  // [ALGORITMA & LOGIKA BISNIS] Smart Auto-Fill Email Mahasiswa Unpar: mengekstrak pola 10 digit NPM
+  // dan mengkalkulasi tahun angkatan 2 digit secara otomatis jika input form belum diisi.
   const handleEmailChange = (val) => {
     const current = { ...formData(), email: val };
     const extracted = extractUnparEmail(val);
@@ -128,6 +134,8 @@ export default function InternalAnggota() {
     setFormData(current);
   };
 
+  // [ALGORITMA] Multi-Select Toggle: menambahkan ID spesialisasi baru ke array jika belum dipilih,
+  // atau melakukan filtering keluar (remove) jika ID sudah terdaftar sebelumnya.
   const toggleSpesialisasi = (id) => {
     const current = formData().spesialisasi_ids || [];
     if (current.includes(id)) {
@@ -143,6 +151,8 @@ export default function InternalAnggota() {
     }
   };
 
+  // [LOGIKA BISNIS] Payload Normalization & Sanitization: membersihkan string via .trim(),
+  // mengonversi field kosong menjadi null, dan memastikan tipe data sesuai kontrak API.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
