@@ -88,7 +88,9 @@ export default function AnggotaModal(props) {
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">NPM</label>
                   <input
                     type="text"
-                    placeholder="6182101050"
+                    placeholder="6182301027
+                    
+                    "
                     value={props.formData.npm}
                     onInput={(e) => props.setFormData("npm", e.currentTarget.value)}
                     class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
