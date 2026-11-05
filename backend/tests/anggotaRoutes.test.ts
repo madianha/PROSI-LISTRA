@@ -73,7 +73,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
   });
 
   describe("POST /api/anggota", () => {
-    it("creates anggota with is_penari, is_pemusik, and spesialisasi (junction table)", async () => {
+    it("creates anggota with password_hash default and spesialisasi junction table", async () => {
       const mockClient = {
         query: vi.fn(),
         release: vi.fn(),
@@ -82,6 +82,8 @@ describe("Anggota Routes with ERD v5 Schema", () => {
 
       // BEGIN
       mockClient.query.mockResolvedValueOnce({} as any);
+      // SELECT DISTINCT tipe_jasa FROM jasa WHERE id_jasa = ANY(...)
+      mockClient.query.mockResolvedValueOnce({ rows: [{ tipe_jasa: "Tari" }] } as any);
       // INSERT anggota RETURNING id_anggota
       mockClient.query.mockResolvedValueOnce({ rows: [{ id_anggota: 10 }] } as any);
       // INSERT spesialisasi
@@ -101,7 +103,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
         is_penari: true,
         is_pemusik: false,
         is_aktif: true,
-        spesialisasi: [{ id_spesialisasi: 1, nama_spesialisasi: "Gamelan", kategori: "Musik" }],
+        spesialisasi: [{ id_spesialisasi: 1, nama_spesialisasi: "Tari Merak", kategori: "Tari" }],
       };
       vi.mocked(pool.query).mockResolvedValueOnce({ rows: [createdAnggota] } as any);
 
@@ -113,7 +115,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
           npm: "6182101002",
           peran: "Kepengurusan",
           angkatan_unpar: 2021,
-          is_penari: true,
+          is_penari: false,
           is_pemusik: false,
           is_aktif: true,
           spesialisasi_ids: [1],
@@ -121,6 +123,17 @@ describe("Anggota Routes with ERD v5 Schema", () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toEqual(createdAnggota);
+
+      // Verify INSERT INTO anggota includes password_hash
+      const insertAnggotaCall = mockClient.query.mock.calls.find((call) =>
+        typeof call[0] === "string" && call[0].includes("INSERT INTO anggota")
+      );
+      expect(insertAnggotaCall).toBeDefined();
+      expect(insertAnggotaCall?.[0]).toContain("password_hash");
+      // Default bcrypt password hash '$2a$10$wT2v2sB4C6s0eY9IeB.yReM8x6yWv7jZ4M7g8Y5L5u9V1K1q3q7re'
+      expect(insertAnggotaCall?.[1]?.[1]).toBe("$2a$10$wT2v2sB4C6s0eY9IeB.yReM8x6yWv7jZ4M7g8Y5L5u9V1K1q3q7re");
+      // Verify is_penari inferred from tipe_jasa "Tari"
+      expect(insertAnggotaCall?.[1]?.[7]).toBe(true);
 
       // Verify INSERT spesialisasi table query
       const insertSpesialisasiCall = mockClient.query.mock.calls.find((call) =>
@@ -131,4 +144,3 @@ describe("Anggota Routes with ERD v5 Schema", () => {
     });
   });
 });
-

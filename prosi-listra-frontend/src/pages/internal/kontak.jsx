@@ -10,14 +10,11 @@ const JASA_CONTOH = "Tari Merak";
 
 const API_URL = "http://localhost:3000/api/kontak";
 
-// Normalisasi nomor telepon: buang semua non-digit, lalu "0" di awal -> "62".
-// Contoh: "0813-8573-1538" / "+62 813-8573-1538" / "6281385731538" -> "6281385731538".
 function normalizePhoneNumber(input) {
   const digits = String(input ?? "").replace(/\D/g, "");
   return digits.replace(/^0/, "62");
 }
 
-// Format tampilan: "6281385731538" -> "+62-813-8573-1538".
 function formatPhoneNumberDisplay(normalized) {
   const digits = normalized.startsWith("62") ? normalized.slice(2) : normalized;
   if (!digits) return normalized;
@@ -34,13 +31,12 @@ const inputClass =
 
 const labelClass = "text-[#8C7A3E] font-bold text-xs uppercase tracking-widest";
 const valueClass = "font-bold text-lg text-gray-900";
-const helpClass = "text-[#8C7A3E] font-bold text-[10px] mt-1";
 
 function Field(props) {
   return (
     <div>
       <p className={labelClass}>{props.label}</p>
-      <p className={`mt-2 ${valueClass}`}>{props.value}</p>
+      <p className={`mt-2 ${valueClass}`}>{props.value || "-"}</p>
     </div>
   );
 }
@@ -67,16 +63,16 @@ function ArrowUpRightIcon() {
 
 function KontakModal(props) {
   const pratinjauPesan = () =>
-    props.draftTemplatePesan().replace("{jasa}", JASA_CONTOH);
+    (props.draftTemplatePesan() || "").replace("{jasa}", JASA_CONTOH);
 
   return (
     <Show when={props.open()}>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         onClick={props.onClose}
       >
         <div
-          className="w-full max-w-lg rounded-xl bg-[#FDFBF9] p-6 shadow-xl"
+          className="w-full max-w-lg rounded-xl border border-[#EEE3DC] bg-[#FDFBF9] p-6 shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-4">
@@ -86,13 +82,13 @@ function KontakModal(props) {
             <button
               type="button"
               onClick={props.onClose}
-              aria-label="Tutup"
-              className="text-[#4A0E17] transition-colors hover:opacity-60"
+              className="text-gray-400 hover:text-gray-600"
+              aria-label="Tutup modal"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -121,7 +117,7 @@ function KontakModal(props) {
               <input
                 id="field-nomor"
                 type="tel"
-                value={props.draftNomor()}
+                value={props.draftNomor() ?? ""}
                 onInput={(e) => props.setDraftNomor(e.currentTarget.value)}
                 class={inputClass}
               />
@@ -134,7 +130,7 @@ function KontakModal(props) {
               <input
                 id="field-humas"
                 type="text"
-                value={props.draftNamaHumas()}
+                value={props.draftNamaHumas() ?? ""}
                 onInput={(e) => props.setDraftNamaHumas(e.currentTarget.value)}
                 class={inputClass}
               />
@@ -147,7 +143,7 @@ function KontakModal(props) {
               <textarea
                 id="field-template"
                 rows="4"
-                value={props.draftTemplatePesan()}
+                value={props.draftTemplatePesan() ?? ""}
                 onInput={(e) => props.setDraftTemplatePesan(e.currentTarget.value)}
                 class={`${inputClass} resize-none`}
               />
@@ -209,17 +205,16 @@ export default function InternalKontak() {
 
   const [kontak, { refetch }] = createResource(fetchKontak);
 
-  // Sinkronkan data dari backend ke sinyal lokal agar UI mengikuti database.
   createEffect(() => {
     const data = kontak();
     if (!data) return;
-    setNomor(normalizePhoneNumber(data.nomor_wa));
-    setNamaHumas(data.nama_humas);
-    setTemplatePesan(data.template_pesan);
+    setNomor(normalizePhoneNumber(data.nomor_tujuan || data.nomor_wa || data.no_telepon || ""));
+    setNamaHumas(data.nama_humas ?? data.nama ?? "");
+    setTemplatePesan(data.template_pesan ?? "");
   });
 
   const whatsappLink = createMemo(() => {
-    const pesan = templatePesan().replace("{jasa}", JASA_CONTOH);
+    const pesan = (templatePesan() || "").replace("{jasa}", JASA_CONTOH);
     return `https://wa.me/${normalizePhoneNumber(nomor())}?text=${encodeURIComponent(pesan)}`;
   });
 
@@ -241,6 +236,7 @@ export default function InternalKontak() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nomor_tujuan: normalizePhoneNumber(draftNomor()),
           nomor_wa: normalizePhoneNumber(draftNomor()),
           nama_humas: draftNamaHumas(),
           template_pesan: draftTemplatePesan(),
@@ -255,9 +251,9 @@ export default function InternalKontak() {
 
       const data = await response.json();
 
-      setNomor(data.nomor_wa);
-      setNamaHumas(data.nama_humas);
-      setTemplatePesan(data.template_pesan);
+      setNomor(data.nomor_tujuan || data.nomor_wa || draftNomor());
+      setNamaHumas(data.nama_humas ?? data.nama ?? draftNamaHumas());
+      setTemplatePesan(data.template_pesan ?? draftTemplatePesan());
 
       await refetch();
       setIsModalOpen(false);
@@ -307,7 +303,7 @@ export default function InternalKontak() {
                 </div>
               }
             >
-              <p>Memuat data kontakâ€¦</p>
+              <p>Memuat data kontak…</p>
             </Show>
           </section>
         }
@@ -315,7 +311,7 @@ export default function InternalKontak() {
         <section className="mt-6 rounded-xl border border-[#EEE3DC] bg-[#FDFBF9] p-6 shadow-[0_2px_10px_rgba(84,20,29,0.06)] sm:p-8">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             <Field label="Nomor" value={formatPhoneNumberDisplay(nomor())} />
-            <Field label="Humas" value={namaHumas()} />
+            <Field label="Humas" value={namaHumas() || kontak()?.nama_humas || kontak()?.nama || "-"} />
           </div>
 
           <div className="mt-8">
@@ -352,4 +348,3 @@ export default function InternalKontak() {
     </>
   );
 }
-

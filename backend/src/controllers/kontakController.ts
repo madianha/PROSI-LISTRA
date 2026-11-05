@@ -19,7 +19,7 @@ export async function updateKontak(req: Request, res: Response): Promise<void> {
   try {
     const body = req.body as Record<string, unknown>;
     const rawNomor = body.nomor_tujuan || body.nomor_wa || body.nomor_whatsapp || body.no_telepon;
-    const rawNama = body.nama_humas || "";
+    const rawNama = body.nama_humas !== undefined ? body.nama_humas : body.nama;
     const rawTemplate = body.template_pesan;
 
     if (
@@ -34,9 +34,11 @@ export async function updateKontak(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const namaToSave = typeof rawNama === "string" ? rawNama.trim() : null;
+
     const updated = await kontakRepository.updateKontak(
       rawNomor.trim(),
-      typeof rawNama === "string" ? rawNama.trim() : "",
+      namaToSave,
       rawTemplate,
     );
 
