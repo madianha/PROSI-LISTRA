@@ -6,6 +6,7 @@ import * as authApi from "../../api/auth";
 const mockNavigate = vi.fn();
 vi.mock("@solidjs/router", () => ({
   useNavigate: () => mockNavigate,
+  A: (props) => <a href={props.href} class={props.class}>{props.children}</a>,
 }));
 
 describe("LoginInternal Component", () => {
@@ -22,6 +23,22 @@ describe("LoginInternal Component", () => {
     expect(screen.getByPlaceholderText("nama@student.unpar.ac.id")).toBeDefined();
     expect(screen.getByPlaceholderText("••••••••")).toBeDefined();
     expect(screen.getByRole("button", { name: /masuk/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: "Toggle password visibility" })).toBeDefined();
+  });
+
+  it("dapat toggle visibilitas kata sandi antara password dan text", () => {
+    render(() => <LoginInternal />);
+
+    const passwordInput = screen.getByPlaceholderText("••••••••");
+    const toggleBtn = screen.getByRole("button", { name: "Toggle password visibility" });
+
+    expect(passwordInput.type).toBe("password");
+
+    fireEvent.click(toggleBtn);
+    expect(passwordInput.type).toBe("text");
+
+    fireEvent.click(toggleBtn);
+    expect(passwordInput.type).toBe("password");
   });
 
   it("menampilkan pesan error jika login gagal", async () => {

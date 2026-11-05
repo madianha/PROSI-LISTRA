@@ -39,6 +39,9 @@ function PublicLayout(props) {
 export default function App() {
   return (
     <Router>
+      {/* Internal login page: standalone layout with clean minimal header */}
+      <Route path="/loginInternal" component={LoginInternal} />
+
       {/* Public pages: Navbar + Footer */}
       <Route path="/" component={PublicLayout}>
         <Route path="/" component={Home} />
@@ -48,7 +51,6 @@ export default function App() {
         <Route path="/berita" component={Berita} />
         <Route path="/berita/:id" component={BeritaDetail} />
         <Route path="/testimoni" component={Testimoni} />
-        <Route path="/loginInternal" component={LoginInternal} />
       </Route>
 
       {/* /internal alone goes to the login page */}
