@@ -97,7 +97,7 @@ export default function AnggotaModal(props) {
 
                 <div>
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                    Angkatan (2 Digit)
+                    Angkatan
                   </label>
                   <input
                     type="number"
@@ -128,13 +128,30 @@ export default function AnggotaModal(props) {
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
                     Jabatan / Posisi
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Ketua, Koordinator Tari, Anggota..."
-                    value={props.formData.jabatan}
-                    onInput={(e) => props.setFormData("jabatan", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
-                  />
+                  {(() => {
+                    const isRoleDisabled = () =>
+                      props.formData.peran === "Anggota Biasa" || props.formData.peran === "Alumni";
+                    const getPlaceholder = () => {
+                      if (props.formData.peran === "Pelatih") {
+                        return "Contoh: Pelatih Tari Tradisional, Pelatih Degung";
+                      }
+                      if (props.formData.peran === "Kepengurusan" || props.formData.peran === "Admin") {
+                        return "Contoh: Ketua, Koor Humas, Bendahara";
+                      }
+                      return "Tidak berlaku untuk peran ini";
+                    };
+
+                    return (
+                      <input
+                        type="text"
+                        placeholder={getPlaceholder()}
+                        value={isRoleDisabled() ? "" : props.formData.jabatan}
+                        disabled={isRoleDisabled()}
+                        onInput={(e) => props.setFormData("jabatan", e.currentTarget.value)}
+                        class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] placeholder:text-stone-400 focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a] disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed transition-colors"
+                      />
+                    );
+                  })()}
                 </div>
               </div>
 

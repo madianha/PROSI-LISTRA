@@ -13,7 +13,7 @@ import {
 } from "../../api/anggota";
 import { extractUnparEmail } from "../../utils/anggota";
 
-const PERAN_OPTIONS = ["Kepengurusan", "Anggota Biasa", "Alumni"];
+const PERAN_OPTIONS = ["Admin", "Kepengurusan", "Pelatih", "Anggota Biasa", "Alumni"];
 
 const INITIAL_FORM = {
   nama: "",
@@ -111,7 +111,13 @@ export default function InternalAnggota() {
   };
 
   const updateFormField = (key, val) => {
-    setFormData((prev) => ({ ...prev, [key]: val }));
+    setFormData((prev) => {
+      const next = { ...prev, [key]: val };
+      if (key === "peran" && (val === "Anggota Biasa" || val === "Alumni")) {
+        next.jabatan = "";
+      }
+      return next;
+    });
   };
 
   const handleEmailChange = (val) => {

@@ -57,8 +57,12 @@ export default function AnggotaTable(props) {
                     <div class="flex flex-col items-center justify-center gap-1 text-center">
                       <span
                         class={`inline-flex min-w-[90px] items-center justify-center rounded-full px-3 py-0.5 text-xs font-medium ${
-                          item.peran === "Kepengurusan"
+                          item.peran === "Admin"
+                            ? "bg-purple-100 text-purple-800"
+                            : item.peran === "Kepengurusan"
                             ? "bg-[#39000a]/10 text-[#39000a]"
+                            : item.peran === "Pelatih"
+                            ? "bg-teal-100 text-teal-800"
                             : item.peran === "Alumni"
                             ? "bg-amber-100 text-amber-800"
                             : "bg-blue-100 text-blue-800"
