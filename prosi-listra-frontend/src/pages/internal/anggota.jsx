@@ -11,7 +11,7 @@ import {
   toggleStatusAktif,
   updateAnggota,
 } from "../../api/anggota";
-import { extractUnparEmail } from "../../utils/anggota";
+import { extractUnparEmail, normalizeYear } from "../../utils/anggota";
 
 const PERAN_OPTIONS = ["Admin", "Kepengurusan", "Pelatih", "Anggota Biasa", "Alumni"];
 
@@ -30,6 +30,9 @@ export default function InternalAnggota() {
   const [search, setSearch] = createSignal("");
   const [filterPeran, setFilterPeran] = createSignal("Semua");
   const [filterAngkatan, setFilterAngkatan] = createSignal("Semua");
+
+  const [masterAnggotaResource, { refetch: refetchMasterAnggota, mutate: mutateMasterAnggota }] =
+    createResource(() => listAnggota());
 
   const [spesialisasiList] = createResource(getSpesialisasiList);
   const [anggotaResource, { refetch: refetchAnggota, mutate: mutateAnggota }] = createResource(
@@ -59,19 +62,21 @@ export default function InternalAnggota() {
     return (spesialisasiList() || []).filter((s) => s.kategori === "MUSIK");
   });
 
-  const listAngkatanOptions = createMemo(() => {
-    if (anggotaResource.error) return [];
+  const availableAngkatan = createMemo(() => {
+    if (masterAnggotaResource.error) return [];
     let list = [];
     try {
-      list = anggotaResource() || [];
+      list = masterAnggotaResource() || [];
     } catch {
       return [];
     }
-    const set = new Set();
-    for (const item of list) {
-      if (item.angkatan_unpar) set.add(item.angkatan_unpar);
-    }
-    return Array.from(set).sort((a, b) => b - a);
+    const years = list
+      .map((m) => m.angkatan_unpar || m.angkatan)
+      .filter(Boolean)
+      .map(normalizeYear);
+    return Array.from(new Set(years.filter((y) => y !== null && y !== undefined))).sort(
+      (a, b) => b - a
+    );
   });
 
   const resetFilter = () => {
@@ -177,9 +182,13 @@ export default function InternalAnggota() {
         mutateAnggota((prev) =>
           prev ? prev.map((a) => (a.id_anggota === editingId() ? updated : a)) : [updated]
         );
+        mutateMasterAnggota((prev) =>
+          prev ? prev.map((a) => (a.id_anggota === editingId() ? updated : a)) : [updated]
+        );
       } else {
         const created = await createAnggota(payload);
         mutateAnggota((prev) => (prev ? [created, ...prev] : [created]));
+        mutateMasterAnggota((prev) => (prev ? [created, ...prev] : [created]));
       }
       closeModal();
     } catch (err) {
@@ -196,6 +205,9 @@ export default function InternalAnggota() {
     try {
       const updated = await toggleStatusAktif(id, nextVal);
       mutateAnggota((prev) =>
+        prev ? prev.map((a) => (a.id_anggota === id ? updated : a)) : []
+      );
+      mutateMasterAnggota((prev) =>
         prev ? prev.map((a) => (a.id_anggota === id ? updated : a)) : []
       );
     } catch (err) {
@@ -277,8 +289,8 @@ export default function InternalAnggota() {
                 class="w-full rounded-lg border border-[#d9cdca] bg-white px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
               >
                 <option value="Semua">Semua Angkatan</option>
-                <For each={listAngkatanOptions()}>
-                  {(akt) => <option value={akt}>20{String(akt).padStart(2, "0")} ({akt})</option>}
+                <For each={availableAngkatan()}>
+                  {(akt) => <option value={akt}>{akt}</option>}
                 </For>
               </select>
             </div>
@@ -306,7 +318,10 @@ export default function InternalAnggota() {
               Data anggota gagal dimuat.{" "}
               <button
                 type="button"
-                onClick={() => refetchAnggota()}
+                onClick={() => {
+                  refetchAnggota();
+                  refetchMasterAnggota();
+                }}
                 class="font-semibold text-[#54141d] underline"
               >
                 Coba lagi

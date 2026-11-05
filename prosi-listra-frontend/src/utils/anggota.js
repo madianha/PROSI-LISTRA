@@ -1,3 +1,13 @@
+export function normalizeYear(val) {
+  if (val === null || val === undefined || val === "") return null;
+  const num = parseInt(String(val).trim(), 10);
+  if (Number.isNaN(num) || num <= 0) return null;
+  if (num < 100) {
+    return 2000 + num;
+  }
+  return num;
+}
+
 export function extractUnparEmail(email) {
   if (!email || typeof email !== "string") return null;
   const trimmed = email.trim();

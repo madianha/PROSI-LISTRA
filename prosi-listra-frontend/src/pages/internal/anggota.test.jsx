@@ -1,4 +1,4 @@
-﻿import { screen, waitFor } from "@solidjs/testing-library";
+﻿import { fireEvent, screen, waitFor } from "@solidjs/testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderRoute } from "../../test/renderRoute";
 
@@ -22,6 +22,17 @@ const mockList = [
     peran: "Kepengurusan",
     angkatan_unpar: 2021,
     jabatan: "Ketua Umum",
+    is_aktif: true,
+    spesialisasi: [],
+  },
+  {
+    id_anggota: 2,
+    nama: "Budi Santoso",
+    email: "6182301002@student.unpar.ac.id",
+    npm: "6182301002",
+    peran: "Anggota Biasa",
+    angkatan_unpar: 23,
+    jabatan: null,
     is_aktif: true,
     spesialisasi: [],
   },
@@ -64,5 +75,46 @@ describe("Internal Anggota Page", () => {
       expect(screen.getByText(/Data anggota gagal dimuat/i)).toBeDefined();
     });
     expect(screen.queryByText("Memuat data anggota...")).toBeNull();
+  });
+
+  it("menormalkan opsi angkatan menjadi 4 digit bersih dan tidak hilang saat filter aktif", async () => {
+    listAnggota.mockImplementation((params) => {
+      if (params?.angkatan && params.angkatan !== "Semua") {
+        return Promise.resolve(
+          mockList.filter((item) => String(item.angkatan_unpar) === String(params.angkatan))
+        );
+      }
+      return Promise.resolve(mockList);
+    });
+
+    renderHalaman();
+
+    await waitFor(() => {
+      expect(screen.getByText("Alexander Haryanto")).toBeDefined();
+    });
+
+    const angkatanSelect = screen
+      .getAllByRole("combobox")
+      .find((el) => el.innerHTML.includes("Semua Angkatan"));
+
+    expect(angkatanSelect).toBeDefined();
+    expect(angkatanSelect.innerHTML).toContain("<option value=\"2023\">2023</option>");
+    expect(angkatanSelect.innerHTML).toContain("<option value=\"2021\">2021</option>");
+    expect(angkatanSelect.innerHTML).not.toContain("202023");
+    expect(angkatanSelect.innerHTML).not.toContain("(2023)");
+
+    fireEvent.change(angkatanSelect, { target: { value: "2023" } });
+
+    await waitFor(() => {
+      expect(angkatanSelect.value).toBe("2023");
+    });
+
+    expect(angkatanSelect.innerHTML).toContain("<option value=\"2023\">2023</option>");
+    expect(angkatanSelect.innerHTML).toContain("<option value=\"2021\">2021</option>");
+
+    const resetButton = screen.getByTitle("Reset Filter");
+    fireEvent.click(resetButton);
+
+    expect(angkatanSelect.value).toBe("Semua");
   });
 });
