@@ -37,7 +37,7 @@ export default function AnggotaModal(props) {
               </button>
             </div>
 
-            {/* Content Body: Scrollable with clean scrollbar */}
+            {/* Clean scrollbar */}
             <form
               id="anggota-form"
               onSubmit={props.onSubmit}
@@ -101,7 +101,7 @@ export default function AnggotaModal(props) {
                   </label>
                   <input
                     type="number"
-                    placeholder="21"
+                    placeholder="Contoh: 2021"
                     value={props.formData.angkatan_unpar}
                     onInput={(e) => props.setFormData("angkatan_unpar", e.currentTarget.value)}
                     class="w-full rounded-lg border border-[#d9cdca] px-3.5 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"

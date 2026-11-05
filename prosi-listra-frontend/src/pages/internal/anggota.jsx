@@ -100,7 +100,10 @@ export default function InternalAnggota() {
       npm: item.npm || "",
       peran: item.peran || "Kepengurusan",
       jabatan: item.jabatan || "",
-      angkatan_unpar: item.angkatan_unpar != null ? String(item.angkatan_unpar) : "",
+      angkatan_unpar:
+        item.angkatan_unpar != null
+          ? String(normalizeYear(item.angkatan_unpar) ?? item.angkatan_unpar)
+          : "",
       is_aktif: item.is_aktif ?? true,
       spesialisasi_ids: (item.spesialisasi || []).map((s) => s.id_spesialisasi),
     });
@@ -133,7 +136,8 @@ export default function InternalAnggota() {
         current.npm = extracted.npm;
       }
       if (extracted.angkatan && !current.angkatan_unpar) {
-        current.angkatan_unpar = String(extracted.angkatan);
+        const normalized = normalizeYear(extracted.angkatan);
+        current.angkatan_unpar = normalized ? String(normalized) : String(extracted.angkatan);
       }
     }
     setFormData(current);
@@ -352,7 +356,7 @@ export default function InternalAnggota() {
         </Switch>
       </div>
 
-      {/* Confirmation Modal for Toggle Status */}
+      {/* Confirmation Modal untuk Toggle Status */}
       <Show when={konfirmasiStatus()}>
         {(item) => (
           <KonfirmasiModal
@@ -366,7 +370,7 @@ export default function InternalAnggota() {
         )}
       </Show>
 
-      {/* Add / Edit Anggota Modal */}
+      {/* Edit Anggota Modal */}
       <AnggotaModal
         isOpen={isModalOpen()}
         editingId={editingId()}

@@ -1,7 +1,12 @@
 export function normalizeYear(val) {
   if (val === null || val === undefined || val === "") return null;
-  const num = parseInt(String(val).trim(), 10);
+
+  const cleanStr = String(val).replace(/\D/g, "");
+  if (!cleanStr) return null;
+
+  const num = parseInt(cleanStr, 10);
   if (Number.isNaN(num) || num <= 0) return null;
+
   if (num < 100) {
     return 2000 + num;
   }
