@@ -1,4 +1,4 @@
-﻿import { For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 import { faPen } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../Icon";
 import Toggle from "../Toggle";
@@ -22,9 +22,15 @@ export default function AnggotaTable(props) {
           <For each={props.data}>
             {(item) => {
               const tariSp = () =>
-                (item.spesialisasi || []).filter((s) => s.kategori === "TARI");
+                (item.spesialisasi || []).filter((s) => {
+                  const cat = String(s.kategori || s.tipe_jasa || "").toLowerCase();
+                  return cat === "tari" || cat.includes("tari");
+                });
               const musikSp = () =>
-                (item.spesialisasi || []).filter((s) => s.kategori === "MUSIK");
+                (item.spesialisasi || []).filter((s) => {
+                  const cat = String(s.kategori || s.tipe_jasa || "").toLowerCase();
+                  return cat === "musik" || cat.includes("musik");
+                });
 
               return (
                 <tr class="transition hover:bg-[#fffdfd]">
@@ -81,14 +87,14 @@ export default function AnggotaTable(props) {
                       <For each={tariSp()}>
                         {(sp) => (
                           <span class="inline-block rounded-full border border-[#f3d3d9] bg-[#fbf2f4] px-2.5 py-0.5 text-xs font-medium text-[#4a0e17]">
-                            {sp.nama_spesialisasi}
+                            {sp.nama_spesialisasi || sp.nama_jasa}
                           </span>
                         )}
                       </For>
                       <For each={musikSp()}>
                         {(sp) => (
                           <span class="inline-block rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                            {sp.nama_spesialisasi}
+                            {sp.nama_spesialisasi || sp.nama_jasa}
                           </span>
                         )}
                       </For>
@@ -134,3 +140,4 @@ export default function AnggotaTable(props) {
     </div>
   );
 }
+

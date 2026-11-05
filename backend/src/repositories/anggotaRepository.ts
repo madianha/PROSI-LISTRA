@@ -1,9 +1,12 @@
-﻿import { pool } from "../db";
+import { pool } from "../db";
 
 export interface Spesialisasi {
   id_spesialisasi: number;
   nama_spesialisasi: string;
-  kategori: "TARI" | "MUSIK";
+  kategori: string;
+  id_jasa?: number;
+  nama_jasa?: string;
+  tipe_jasa?: string;
 }
 
 export interface Anggota {
@@ -14,11 +17,13 @@ export interface Anggota {
   peran: string;
   angkatan_unpar: number | null;
   jabatan: string | null;
+  is_penari: boolean;
+  is_pemusik: boolean;
   is_aktif: boolean;
   spesialisasi: Array<{
     id_spesialisasi: number;
     nama_spesialisasi: string;
-    kategori: "TARI" | "MUSIK";
+    kategori: string;
   }>;
 }
 
@@ -29,6 +34,8 @@ export interface AnggotaInput {
   peran?: string;
   angkatan_unpar?: number | null;
   jabatan?: string | null;
+  is_penari?: boolean;
+  is_pemusik?: boolean;
   is_aktif?: boolean;
   spesialisasi_ids?: number[];
 }
@@ -41,9 +48,16 @@ export interface FilterAnggota {
 
 export async function getSpesialisasiList(): Promise<Spesialisasi[]> {
   const result = await pool.query<Spesialisasi>(
-    `SELECT id_spesialisasi, nama_spesialisasi, kategori
-     FROM spesialisasi
-     ORDER BY kategori DESC, nama_spesialisasi ASC`
+    `SELECT 
+       id_jasa AS id_spesialisasi,
+       nama_jasa AS nama_spesialisasi,
+       tipe_jasa AS kategori,
+       id_jasa,
+       nama_jasa,
+       tipe_jasa
+     FROM jasa
+     WHERE is_aktif = TRUE
+     ORDER BY tipe_jasa ASC, nama_jasa ASC;`
   );
   return result.rows;
 }
@@ -77,31 +91,36 @@ export async function getAnggota(filters: FilterAnggota = {}): Promise<Anggota[]
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const query = `
-    SELECT
+    SELECT 
       a.id_anggota,
-      a.nama,
       a.email,
+      a.nama,
       a.npm,
-      a.peran,
       a.angkatan_unpar,
       a.jabatan,
+      a.peran,
+      a.is_penari,
+      a.is_pemusik,
       a.is_aktif,
       COALESCE(
         json_agg(
           json_build_object(
-            'id_spesialisasi', s.id_spesialisasi,
-            'nama_spesialisasi', s.nama_spesialisasi,
-            'kategori', s.kategori
-          )
-        ) FILTER (WHERE s.id_spesialisasi IS NOT NULL),
+            'id_jasa', j.id_jasa,
+            'id_spesialisasi', j.id_jasa,
+            'nama_spesialisasi', j.nama_jasa,
+            'nama_jasa', j.nama_jasa,
+            'kategori', j.tipe_jasa,
+            'tipe_jasa', j.tipe_jasa
+          ) ORDER BY j.tipe_jasa ASC, j.nama_jasa ASC
+        ) FILTER (WHERE j.id_jasa IS NOT NULL),
         '[]'
       ) AS spesialisasi
     FROM anggota a
-    LEFT JOIN anggota_spesialisasi ag ON a.id_anggota = ag.id_anggota
-    LEFT JOIN spesialisasi s ON ag.id_spesialisasi = s.id_spesialisasi
+    LEFT JOIN spesialisasi s ON a.id_anggota = s.id_anggota
+    LEFT JOIN jasa j ON s.id_jasa = j.id_jasa
     ${whereClause}
     GROUP BY a.id_anggota
-    ORDER BY a.id_anggota DESC
+    ORDER BY a.id_anggota ASC
   `;
 
   const result = await pool.query(query, values);
@@ -110,28 +129,33 @@ export async function getAnggota(filters: FilterAnggota = {}): Promise<Anggota[]
 
 export async function getAnggotaById(id: number): Promise<Anggota | null> {
   const query = `
-    SELECT
+    SELECT 
       a.id_anggota,
-      a.nama,
       a.email,
+      a.nama,
       a.npm,
-      a.peran,
       a.angkatan_unpar,
       a.jabatan,
+      a.peran,
+      a.is_penari,
+      a.is_pemusik,
       a.is_aktif,
       COALESCE(
         json_agg(
           json_build_object(
-            'id_spesialisasi', s.id_spesialisasi,
-            'nama_spesialisasi', s.nama_spesialisasi,
-            'kategori', s.kategori
-          )
-        ) FILTER (WHERE s.id_spesialisasi IS NOT NULL),
+            'id_jasa', j.id_jasa,
+            'id_spesialisasi', j.id_jasa,
+            'nama_spesialisasi', j.nama_jasa,
+            'nama_jasa', j.nama_jasa,
+            'kategori', j.tipe_jasa,
+            'tipe_jasa', j.tipe_jasa
+          ) ORDER BY j.tipe_jasa ASC, j.nama_jasa ASC
+        ) FILTER (WHERE j.id_jasa IS NOT NULL),
         '[]'
       ) AS spesialisasi
     FROM anggota a
-    LEFT JOIN anggota_spesialisasi ag ON a.id_anggota = ag.id_anggota
-    LEFT JOIN spesialisasi s ON ag.id_spesialisasi = s.id_spesialisasi
+    LEFT JOIN spesialisasi s ON a.id_anggota = s.id_anggota
+    LEFT JOIN jasa j ON s.id_jasa = j.id_jasa
     WHERE a.id_anggota = $1
     GROUP BY a.id_anggota
   `;
@@ -146,8 +170,8 @@ export async function createAnggota(data: AnggotaInput): Promise<Anggota> {
     await client.query("BEGIN");
 
     const insertAnggotaQuery = `
-      INSERT INTO anggota (nama, email, npm, peran, angkatan_unpar, jabatan, is_aktif)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO anggota (nama, email, npm, peran, angkatan_unpar, jabatan, is_penari, is_pemusik, is_aktif)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id_anggota
     `;
     const anggotaResult = await client.query(insertAnggotaQuery, [
@@ -157,6 +181,8 @@ export async function createAnggota(data: AnggotaInput): Promise<Anggota> {
       data.peran ?? "Kepengurusan",
       data.angkatan_unpar ?? null,
       data.jabatan ?? null,
+      data.is_penari ?? false,
+      data.is_pemusik ?? false,
       data.is_aktif ?? true,
     ]);
 
@@ -165,7 +191,7 @@ export async function createAnggota(data: AnggotaInput): Promise<Anggota> {
     if (data.spesialisasi_ids && data.spesialisasi_ids.length > 0) {
       for (const spId of data.spesialisasi_ids) {
         await client.query(
-          `INSERT INTO anggota_spesialisasi (id_anggota, id_spesialisasi)
+          `INSERT INTO spesialisasi (id_anggota, id_jasa)
            VALUES ($1, $2)
            ON CONFLICT DO NOTHING`,
           [newId, spId]
@@ -193,8 +219,8 @@ export async function updateAnggota(id: number, data: AnggotaInput): Promise<Ang
     const updateQuery = `
       UPDATE anggota
       SET nama = $1, email = $2, npm = $3, peran = $4,
-          angkatan_unpar = $5, jabatan = $6, is_aktif = $7
-      WHERE id_anggota = $8
+          angkatan_unpar = $5, jabatan = $6, is_penari = $7, is_pemusik = $8, is_aktif = $9
+      WHERE id_anggota = $10
       RETURNING id_anggota
     `;
     const result = await client.query(updateQuery, [
@@ -204,6 +230,8 @@ export async function updateAnggota(id: number, data: AnggotaInput): Promise<Ang
       data.peran ?? "Kepengurusan",
       data.angkatan_unpar ?? null,
       data.jabatan ?? null,
+      data.is_penari ?? false,
+      data.is_pemusik ?? false,
       data.is_aktif ?? true,
       id,
     ]);
@@ -214,11 +242,11 @@ export async function updateAnggota(id: number, data: AnggotaInput): Promise<Ang
     }
 
     if (data.spesialisasi_ids !== undefined) {
-      await client.query(`DELETE FROM anggota_spesialisasi WHERE id_anggota = $1`, [id]);
+      await client.query(`DELETE FROM spesialisasi WHERE id_anggota = $1`, [id]);
       if (data.spesialisasi_ids.length > 0) {
         for (const spId of data.spesialisasi_ids) {
           await client.query(
-            `INSERT INTO anggota_spesialisasi (id_anggota, id_spesialisasi)
+            `INSERT INTO spesialisasi (id_anggota, id_jasa)
              VALUES ($1, $2)
              ON CONFLICT DO NOTHING`,
             [id, spId]
@@ -247,3 +275,5 @@ export async function toggleStatusAktif(id: number, is_aktif: boolean): Promise<
   }
   return await getAnggotaById(id);
 }
+
+

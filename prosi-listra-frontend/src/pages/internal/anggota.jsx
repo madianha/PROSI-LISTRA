@@ -1,4 +1,4 @@
-﻿import { createResource, createSignal, createMemo, For, Match, Show, Switch } from "solid-js";
+import { createResource, createSignal, createMemo, For, Match, Show, Switch } from "solid-js";
 import { faPlus, faRotateLeft, faSearch } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../components/Icon";
 import KonfirmasiModal from "../../components/internal/KonfirmasiModal";
@@ -389,6 +389,7 @@ export default function InternalAnggota() {
     </div>
   );
 }
+
 
 
 

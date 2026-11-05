@@ -31,8 +31,9 @@ export function getAnggotaDetail(id) {
   return request(`/api/anggota/${id}`);
 }
 
-export function getSpesialisasiList() {
-  return request("/api/anggota/spesialisasi");
+export async function getSpesialisasiList() {
+  const res = await request("/api/anggota/spesialisasi");
+  return Array.isArray(res) ? res : (res?.data?.data || res?.data || []);
 }
 
 export function createAnggota(data) {

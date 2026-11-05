@@ -1,4 +1,4 @@
-﻿import type { Request, Response } from "express";
+import type { Request, Response } from "express";
 import * as anggotaRepo from "../repositories/anggotaRepository";
 
 const TIDAK_DITEMUKAN = { message: "Anggota tidak ditemukan." };
@@ -74,6 +74,16 @@ function validateAnggotaPayload(body: any): { ok: boolean; message?: string; dat
   const npm = typeof body.npm === "string" ? body.npm.trim() : null;
   const peran = typeof body.peran === "string" ? body.peran.trim() : "Kepengurusan";
   const jabatan = typeof body.jabatan === "string" ? body.jabatan.trim() : null;
+
+  let is_penari = false;
+  if (typeof body.is_penari === "boolean") {
+    is_penari = body.is_penari;
+  }
+
+  let is_pemusik = false;
+  if (typeof body.is_pemusik === "boolean") {
+    is_pemusik = body.is_pemusik;
+  }
   
   let angkatan_unpar: number | null = null;
   if (body.angkatan_unpar !== undefined && body.angkatan_unpar !== null && body.angkatan_unpar !== "") {
@@ -105,6 +115,8 @@ function validateAnggotaPayload(body: any): { ok: boolean; message?: string; dat
       peran: peran || "Kepengurusan",
       jabatan: jabatan || null,
       angkatan_unpar,
+      is_penari,
+      is_pemusik,
       is_aktif,
       spesialisasi_ids,
     },
