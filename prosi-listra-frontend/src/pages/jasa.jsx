@@ -1,45 +1,75 @@
-import { createMemo, createSignal, For } from "solid-js";
+import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import CatalogueCard from "../components/CatalogueCard";
 import CustomHeader from "../components/CustomHeader";
 import FilterJasa from "../components/FilterJasa";
 
+const API_URL = "http://localhost:3000/api/jasa";
 
-// nanti ambil dari Backend
-const services = [
-  {
-    title: "Tari Merak",
-    category: "Tari • Jawa Barat",
-    description: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya.",
-    tag: "Opening",
-    type: "Tari",
-    culture: "Jawa",
-    position: "Opening",
-    price: "Rp 2.500.000 – Rp 5.000.000",
-  },
-  {
-    title: "Tari Jaipong",
-    category: "Tari • Jawa Barat",
-    description: "Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik.",
-    tag: "Middle",
-    type: "Tari",
-    culture: "Jawa",
-    position: "Middle",
-    price: "Rp 3.000.000 – Rp 6.000.000",
-  },
-  {
-    title: "Tari Saman",
-    category: "Tari • Aceh",
-    description: "Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak.",
-    tag: "Opening",
-    type: "Tari",
-    culture: "Sumatera",
-    position: "Opening",
-    price: "Rp 4.000.000 – Rp 7.500.000",
-  },
-];
+function formatRupiah(num) {
+  return "Rp " + Number(num).toLocaleString("id-ID");
+}
+
+function formatPrice(min, max) {
+  if (min != null && max != null) {
+    return `${formatRupiah(min)} – ${formatRupiah(max)}`;
+  }
+  if (min != null) return formatRupiah(min);
+  if (max != null) return formatRupiah(max);
+  return "Hubungi untuk harga";
+}
+
+const fetchServices = async () => {
+  const response = await fetch(API_URL);
+  if (!response.ok) {
+    throw new Error(`Gagal memuat data jasa (status ${response.status})`);
+  }
+  const data = await response.json();
+
+  return data.map((item) => {
+    // Normalisasi kapital (tari -> Tari, musik -> Musik)
+    const type = item.tipe_jasa
+      ? item.tipe_jasa.charAt(0).toUpperCase() + item.tipe_jasa.slice(1).toLowerCase()
+      : "Tari";
+
+    // Normalisasi kultur agar selaras dengan filter options di FilterJasa
+    let culture = item.kultur || "";
+
+    // Nusa Tenggara
+    if (culture === "Bali") culture = "Bali & Nusa Tenggara";
+    if (culture === "Nusa Tenggara Timur") culture = "Bali & Nusa Tenggara";
+    if (culture === "Nusa Tenggara Barat") culture = "Bali & Nusa Tenggara";
+
+    // Jawa
+    if (culture === "Jawa Barat") culture = "Jawa";
+    if (culture === "Jawa Tengah") culture = "Jawa";
+    if (culture === "Banten") culture = "Jawa";
+    if (culture === "Jawa Timur") culture = "Jawa";
+    // Sumatera
+    if (culture === "Aceh") culture = "Sumatera";
+    if (culture === "Batak") culture = "Sumatera";
+
+    const position = item.nama_kecocokan || "";
+
+    return {
+      id: item.id_jasa,
+      title: item.nama,
+      category: `${type} • ${item.kultur || "Nusantara"}`,
+      description: item.deskripsi || "",
+      tag: position,
+      type,
+      culture,
+      position,
+      price: formatPrice(item.harga_minimum, item.harga_maximum),
+      image: item.link_image,
+    };
+  });
+};
 
 export default function Katalog() {
+  const [services] = createResource(fetchServices);
   const [selected, setSelected] = createSignal({ type: [], culture: [], position: [] });
+
+  const servicesList = () => services() || [];
 
   const toggleFilter = (key, value) => {
     const current = selected()[key];
@@ -52,7 +82,7 @@ export default function Katalog() {
   };
 
   const filteredServices = createMemo(() =>
-    services.filter((service) =>
+    servicesList().filter((service) =>
       Object.entries(selected()).every(([key, values]) =>
         values.length === 0 || values.includes(service[key]),
       ),
@@ -60,7 +90,7 @@ export default function Katalog() {
   );
 
   const optionCount = (key, value) =>
-    services.filter((service) => service[key] === value).length;
+    servicesList().filter((service) => service[key] === value).length;
 
   return (
     <>
@@ -75,25 +105,43 @@ export default function Katalog() {
         <FilterJasa selected={selected} onToggle={toggleFilter} count={optionCount} />
 
         <section className="min-w-0">
-          <p className="mb-5 text-base text-[#9b8885]">{filteredServices().length} jasa</p>
-          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <For each={filteredServices()}>
-              {(service) => (
-                <CatalogueCard
-                  title={service.title}
-                  category={service.category}
-                  description={service.description}
-                  tag={service.tag}
-                  price={service.price}
-                />
-              )}
-            </For>
-            {filteredServices().length === 0 && (
-              <p className="rounded-xl border border-[#f0d9d8] bg-white p-6 text-[#7d6966]">
-                Tidak ada jasa yang cocok dengan filter ini.
+          <Show when={services.loading}>
+            <p className="rounded-xl border border-[#f0d9d8] bg-white p-6 text-[#7d6966]">
+              Memuat data jasa dari database...
+            </p>
+          </Show>
+
+          <Show when={services.error}>
+            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
+              <p className="font-semibold">Gagal memuat katalog jasa dari server.</p>
+              <p className="mt-1 text-sm text-red-600">
+                Pastikan backend di port 3000 berjalan dan terhubung ke PostgreSQL.
               </p>
-            )}
-          </div>
+            </div>
+          </Show>
+
+          <Show when={!services.loading && !services.error}>
+            <p className="mb-5 text-base text-[#9b8885]">{filteredServices().length} jasa</p>
+            <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <For each={filteredServices()}>
+                {(service) => (
+                  <CatalogueCard
+                    title={service.title}
+                    category={service.category}
+                    description={service.description}
+                    tag={service.tag}
+                    price={service.price}
+                    image={service.image}
+                  />
+                )}
+              </For>
+              {filteredServices().length === 0 && (
+                <p className="rounded-xl border border-[#f0d9d8] bg-white p-6 text-[#7d6966]">
+                  Tidak ada jasa yang cocok dengan filter ini.
+                </p>
+              )}
+            </div>
+          </Show>
         </section>
       </main>
     </>

@@ -10,8 +10,7 @@ const JASA_CONTOH = "Tari Merak";
 
 const API_URL = "http://localhost:3000/api/kontak";
 
-// Normalisasi nomor telepon: buang semua non-digit, lalu "0" di awal -> "62".
-// Contoh: "0813-8573-1538" / "+62 813-8573-1538" / "6281385731538" -> "6281385731538".
+// Contoh: "081385731538" -> "6281385731538".
 function normalizePhoneNumber(input) {
   const digits = String(input ?? "").replace(/\D/g, "");
   return digits.replace(/^0/, "62");
