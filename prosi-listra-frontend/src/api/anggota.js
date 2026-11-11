@@ -17,14 +17,14 @@ function kirimJson(method, data) {
   };
 }
 
-export function listAnggota({ search = "", peran = "", angkatan = "" } = {}) {
+export function listAnggota({ search = "", peran = "", angkatan = "", signal } = {}) {
   const params = new URLSearchParams();
   if (search) params.append("search", search);
   if (peran && peran !== "Semua") params.append("peran", peran);
   if (angkatan && angkatan !== "Semua") params.append("angkatan", angkatan);
 
   const qs = params.toString();
-  return request(`/api/anggota${qs ? `?${qs}` : ""}`);
+  return request(`/api/anggota${qs ? `?${qs}` : ""}`, { signal });
 }
 
 export function getAnggotaDetail(id) {

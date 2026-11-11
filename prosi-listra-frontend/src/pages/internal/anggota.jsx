@@ -1,5 +1,14 @@
-import { createResource, createSignal, createMemo, For, Match, Show, Switch } from "solid-js";
-import { faPlus, faRotateLeft, faSearch } from "@fortawesome/free-solid-svg-icons";
+import {
+  createResource,
+  createSignal,
+  createMemo,
+  For,
+  Match,
+  onCleanup,
+  Show,
+  Switch,
+} from "solid-js";
+import { faCircleNotch, faPlus, faRotateLeft, faSearch } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../components/Icon";
 import KonfirmasiModal from "../../components/internal/KonfirmasiModal";
 import AnggotaTable from "../../components/internal/anggota/AnggotaTable";
@@ -28,8 +37,25 @@ const INITIAL_FORM = {
 
 export default function InternalAnggota() {
   const [search, setSearch] = createSignal("");
+  const [debouncedSearch, setDebouncedSearch] = createSignal("");
   const [filterPeran, setFilterPeran] = createSignal("Semua");
   const [filterAngkatan, setFilterAngkatan] = createSignal("Semua");
+
+  let searchTimeoutId = null;
+  let activeAbortController = null;
+
+  const handleSearchInput = (value) => {
+    setSearch(value);
+    if (searchTimeoutId) clearTimeout(searchTimeoutId);
+    searchTimeoutId = setTimeout(() => {
+      setDebouncedSearch(value);
+    }, 300);
+  };
+
+  onCleanup(() => {
+    if (searchTimeoutId) clearTimeout(searchTimeoutId);
+    if (activeAbortController) activeAbortController.abort();
+  });
 
   const [masterAnggotaResource, { refetch: refetchMasterAnggota, mutate: mutateMasterAnggota }] =
     createResource(() => listAnggota());
@@ -37,11 +63,26 @@ export default function InternalAnggota() {
   const [spesialisasiList] = createResource(getSpesialisasiList);
   const [anggotaResource, { refetch: refetchAnggota, mutate: mutateAnggota }] = createResource(
     () => ({
-      search: search(),
+      search: debouncedSearch(),
       peran: filterPeran(),
       angkatan: filterAngkatan(),
     }),
-    (params) => listAnggota(params)
+    async (params) => {
+      if (activeAbortController) {
+        activeAbortController.abort();
+      }
+      activeAbortController = new AbortController();
+      try {
+        const result = await listAnggota({ ...params, signal: activeAbortController.signal });
+        return result;
+      } catch (err) {
+        if (err.name === "AbortError") {
+          // If aborted, retain current data instead of throwing error state
+          return anggotaResource() || [];
+        }
+        throw err;
+      }
+    }
   );
 
   const [konfirmasiStatus, setKonfirmasiStatus] = createSignal(null);
@@ -80,7 +121,9 @@ export default function InternalAnggota() {
   });
 
   const resetFilter = () => {
+    if (searchTimeoutId) clearTimeout(searchTimeoutId);
     setSearch("");
+    setDebouncedSearch("");
     setFilterPeran("Semua");
     setFilterAngkatan("Semua");
   };
@@ -262,9 +305,14 @@ export default function InternalAnggota() {
                 type="text"
                 placeholder="Cari nama, NPM, atau email..."
                 value={search()}
-                onInput={(e) => setSearch(e.currentTarget.value)}
-                class="w-full rounded-lg border border-[#d9cdca] py-2 pl-9 pr-3 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                onInput={(e) => handleSearchInput(e.currentTarget.value)}
+                class="w-full rounded-lg border border-[#d9cdca] py-2 pl-9 pr-8 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
               />
+              <Show when={anggotaResource.loading && Boolean(anggotaResource())}>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[#39000a]/70">
+                  <Icon icon={faCircleNotch} class="animate-spin text-xs" />
+                </span>
+              </Show>
             </div>
           </div>
 
@@ -311,47 +359,56 @@ export default function InternalAnggota() {
       </div>
 
       {/* Member Table */}
-      <div class="mt-6 overflow-hidden rounded-xl border border-[#f0dedf] bg-white shadow-sm">
+      <div class="relative mt-6 min-h-[420px] overflow-hidden rounded-xl border border-[#f0dedf] bg-white shadow-sm">
         <Switch>
-          <Match when={anggotaResource.loading}>
-            <p class="p-8 text-center text-sm text-[#685856]">Memuat data anggota...</p>
+          <Match when={anggotaResource.loading && !anggotaResource()}>
+            <div class="flex min-h-[420px] flex-col items-center justify-center gap-2 p-8 text-center text-sm text-[#685856]">
+              <Icon icon={faCircleNotch} class="animate-spin text-lg text-[#39000a]" />
+              <p>Memuat data anggota...</p>
+            </div>
           </Match>
 
-          <Match when={anggotaResource.error}>
-            <div class="p-8 text-center text-sm text-[#685856]">
-              Data anggota gagal dimuat.{" "}
+          <Match when={anggotaResource.error && !anggotaResource()}>
+            <div class="flex min-h-[420px] flex-col items-center justify-center gap-2 p-8 text-center text-sm text-[#685856]">
+              <p>Data anggota gagal dimuat.</p>
               <button
                 type="button"
                 onClick={() => {
                   refetchAnggota();
                   refetchMasterAnggota();
                 }}
-                class="font-semibold text-[#54141d] underline"
+                class="font-semibold text-[#54141d] underline hover:text-[#39000a]"
               >
                 Coba lagi
               </button>
             </div>
           </Match>
 
-          <Match when={anggotaResource()?.length === 0}>
-            <div class="p-8 text-center text-sm text-[#685856]">
+          <Match when={!anggotaResource.loading && anggotaResource()?.length === 0}>
+            <div class="flex min-h-[420px] items-center justify-center p-8 text-center text-sm text-[#685856]">
               Tidak ada data anggota yang cocok dengan filter.
             </div>
           </Match>
 
           <Match when={anggotaResource()}>
-            <AnggotaTable
-              data={anggotaResource() || []}
-              updatingStatusId={updatingStatusId()}
-              onEdit={openEditModal}
-              onToggleStatus={(item) =>
-                setKonfirmasiStatus({
-                  id: item.id_anggota,
-                  nama: item.nama,
-                  currentStatus: item.is_aktif,
-                })
-              }
-            />
+            <div
+              class={`transition-opacity duration-200 ${
+                anggotaResource.loading ? "pointer-events-none opacity-60" : ""
+              }`}
+            >
+              <AnggotaTable
+                data={anggotaResource() || []}
+                updatingStatusId={updatingStatusId()}
+                onEdit={openEditModal}
+                onToggleStatus={(item) =>
+                  setKonfirmasiStatus({
+                    id: item.id_anggota,
+                    nama: item.nama,
+                    currentStatus: item.is_aktif,
+                  })
+                }
+              />
+            </div>
           </Match>
         </Switch>
       </div>
