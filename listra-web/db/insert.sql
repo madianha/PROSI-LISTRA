@@ -1,15 +1,33 @@
+-- =========================================
+-- DATA ACUAN (aktif; isi tetap, wajib ada sebelum data jasa)
+-- kecocokan: 1=Opening, 2=Middle, 3=Closing (dipakai jasa_kecocokan)
+-- provinsi : kultur jasa (jasa.id_provinsi)
+-- =========================================
+
+INSERT INTO kecocokan (nama_kecocokan) VALUES
+    ('Opening'),
+    ('Middle'),
+    ('Closing');
+
+INSERT INTO provinsi (nama_provinsi, pulau) VALUES
+    ('Aceh', 'Sumatera'), ('Sumatera Utara', 'Sumatera'), ('Sumatera Barat', 'Sumatera'),
+    ('Riau', 'Sumatera'), ('Kepulauan Riau', 'Sumatera'), ('Jambi', 'Sumatera'),
+    ('Bengkulu', 'Sumatera'), ('Sumatera Selatan', 'Sumatera'),
+    ('Kepulauan Bangka Belitung', 'Sumatera'), ('Lampung', 'Sumatera'),
+    ('Banten', 'Jawa'), ('DKI Jakarta', 'Jawa'), ('Jawa Barat', 'Jawa'), ('Jawa Tengah', 'Jawa'),
+    ('DI Yogyakarta', 'Jawa'), ('Jawa Timur', 'Jawa'),
+    ('Bali', 'Bali & Nusa Tenggara'), ('Nusa Tenggara Barat', 'Bali & Nusa Tenggara'),
+    ('Nusa Tenggara Timur', 'Bali & Nusa Tenggara'),
+    ('Kalimantan Barat', 'Kalimantan'), ('Kalimantan Tengah', 'Kalimantan'),
+    ('Kalimantan Selatan', 'Kalimantan'), ('Kalimantan Timur', 'Kalimantan'),
+    ('Kalimantan Utara', 'Kalimantan'),
+    ('Sulawesi Utara', 'Sulawesi'), ('Gorontalo', 'Sulawesi'), ('Sulawesi Tengah', 'Sulawesi'),
+    ('Sulawesi Barat', 'Sulawesi'), ('Sulawesi Selatan', 'Sulawesi'), ('Sulawesi Tenggara', 'Sulawesi'),
+    ('Maluku', 'Maluku'), ('Maluku Utara', 'Maluku'),
+    ('Papua', 'Papua'), ('Papua Barat', 'Papua'), ('Papua Barat Daya', 'Papua'),
+    ('Papua Tengah', 'Papua'), ('Papua Pegunungan', 'Papua'), ('Papua Selatan', 'Papua');
+
 -- gw komenin dulu, nanti di benerin
-
--- -- =========================================
--- -- KECOCOKAN
--- -- Required first — jasa.id_kecocokan is a FK
--- -- IDs: 1=Opening, 2=Middle, 3=Closing
--- -- =========================================
-
--- INSERT INTO kecocokan (nama_kecocokan) VALUES
---     ('Opening'),
---     ('Middle'),
---     ('Closing');
 
 -- -- =========================================
 -- -- JASA
