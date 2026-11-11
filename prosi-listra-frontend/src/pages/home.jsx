@@ -8,9 +8,9 @@ import Footer from "../components/Footer";
 import { testimoni } from "../data/testimoni";
 
 const services = [
-  { title: "Tari Merak", type: "Tari", region: "Jawa Barat", tag: "Opening", price: "Rp 2.500.000 – Rp 5.000.000", image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85", description: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya." },
-  { title: "Tari Jaipong", type: "Tari", region: "Jawa Barat", tag: "Middle", price: "Rp 3.000.000 – Rp 6.000.000", image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=900&q=85", description: "Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik." },
-  { title: "Tari Saman", type: "Tari", region: "Aceh", tag: "Opening", price: "Rp 4.000.000 – Rp 7.500.000", image: "https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85", description: "Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak." },
+  { id_jasa: 1, nama: "Tari Merak", tipe_jasa: "TARI", kultur: "Jawa Barat", nama_kecocokan: "Opening", harga_minimum: 2500000, harga_maximum: 5000000, min_performer: 4, link_image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85", deskripsi: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya." },
+  { id_jasa: 2, nama: "Tari Jaipong", tipe_jasa: "TARI", kultur: "Jawa Barat", nama_kecocokan: "Middle", harga_minimum: 3000000, harga_maximum: 6000000, min_performer: 4, link_image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=900&q=85", deskripsi: "Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik." },
+  { id_jasa: 3, nama: "Tari Saman", tipe_jasa: "TARI", kultur: "Aceh", nama_kecocokan: "Opening", harga_minimum: 4000000, harga_maximum: 7500000, min_performer: 8, link_image: "https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85", deskripsi: "Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak." },
 ];
 
 const news = [
