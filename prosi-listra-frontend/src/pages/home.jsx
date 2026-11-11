@@ -5,6 +5,7 @@ import BeritaCard from "../components/BeritaCard";
 import TestimoniCard from "../components/TestimoniCard";
 import CustomButton from "../components/CustomButton";
 import Footer from "../components/Footer";
+import { testimoni } from "../data/testimoni";
 
 const services = [
   { title: "Tari Merak", type: "Tari", region: "Jawa Barat", tag: "Opening", price: "Rp 2.500.000 – Rp 5.000.000", image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85", description: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya." },
@@ -33,7 +34,7 @@ export default function Home() {
 
     <section id="katalog" className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KATALOG" title="Jasa Pilihan" description="Satu rentang harga per jasa; rinciannya dibahas lewat WhatsApp." /><div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3">{services.map((service) => <CatalogueCard {...service} detailHref="/jasa" />)}</div><div className="mt-4 text-center"><CustomButton href="/jasa" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Lihat Semua Jasa</CustomButton></div></section>
 
-    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3"><TestimoniCard review="Penampilan LISTRA sangat memukau dan tepat waktu. Koordinasi dengan panitia berjalan lancar." name="Prof. Dr. Handoko Wijaya" organization="Rektorat UNPAR" event="Acara: Opening Ceremony Dies Natalis ke-71" /><TestimoniCard review="Tamu undangan sangat terkesan. Kostumnya rapi dan penarinya profesional." name="Ibu Ratna Sari" organization="PT Nusantara Jaya" event="Acara: Gala Dinner Perusahaan" /><TestimoniCard review="Terima kasih LISTRA, Tari Topeng-nya jadi momen paling berkesan di resepsi kami." name="Dinda Permatasari" organization="" event="Acara: Acara privat" /></div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
+    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3">{testimoni.filter((row) => row.is_aktif).slice(0, 3).map((row) => <TestimoniCard key={row.id_testimoni} {...row} />)}</div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
 
     <section className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KABAR" title="Berita Terbaru" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3">{news.map((item) => <BeritaCard {...item} />)}</div><div className="mt-4 text-center"><CustomButton href="/berita" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Berita</CustomButton></div></section>
 
