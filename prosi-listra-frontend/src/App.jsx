@@ -48,11 +48,13 @@ export default function App() {
         <Route path="/berita" component={Berita} />
         <Route path="/berita/:id" component={BeritaDetail} />
         <Route path="/testimoni" component={Testimoni} />
-        <Route path="/loginInternal" component={LoginInternal} />
       </Route>
 
+      <Route path="/internal/login" component={LoginInternal} />
+      <Route path="/loginInternal" component={() => <Navigate href="/internal/login" />} />
+
       {/* /internal alone goes to the login page */}
-      <Route path="/internal" component={() => <Navigate href="/loginInternal" />} />
+      <Route path="/internal" component={() => <Navigate href="/internal/login" />} />
 
       {/* Internal pages: TopBar + SideNav */}
       <Route path="/internal" component={InternalLayout}>
