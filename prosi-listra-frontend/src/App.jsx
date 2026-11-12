@@ -51,7 +51,6 @@ export default function App() {
       </Route>
 
       <Route path="/internal/login" component={LoginInternal} />
-      <Route path="/loginInternal" component={() => <Navigate href="/internal/login" />} />
 
       {/* /internal alone goes to the login page */}
       <Route path="/internal" component={() => <Navigate href="/internal/login" />} />
