@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import anggotaRoutes from "./routes/anggotaRoutes";
+import authRoutes from "./routes/authRoutes";
 import beritaRoutes from "./routes/beritaRoutes";
 import kontakRoutes from "./routes/kontakRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
@@ -15,6 +16,7 @@ app.get("/", (_req, res) => {
   res.json({ message: "PROSI-LISTRA API berjalan." });
 });
 
+app.use("/api/auth", authRoutes);
 app.use("/api/anggota", anggotaRoutes);
 app.use("/api/berita", beritaRoutes);
 app.use("/api/kontak", kontakRoutes);
