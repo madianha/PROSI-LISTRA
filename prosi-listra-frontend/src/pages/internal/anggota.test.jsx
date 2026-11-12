@@ -34,7 +34,7 @@ const mockAnggotaList = [
     nama: "Siti Rahma",
     email: "siti@unpar.ac.id",
     npm: "6182001002",
-    peran: "Anggota Biasa",
+    peran: "Anggota",
     jabatan: "",
     angkatan_unpar: 2021,
     is_aktif: false,
@@ -180,5 +180,20 @@ describe("Internal Anggota Management", () => {
     );
 
     vi.useRealTimers();
+  });
+
+  it("tidak menampilkan opsi peran Admin pada modal Tambah Anggota Baru", async () => {
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("Tambah Anggota"));
+
+    const dialog = await screen.findByRole("dialog");
+    const roleSelect = dialog.querySelector("select");
+    const options = Array.from(roleSelect.querySelectorAll("option")).map((o) => o.value);
+    expect(options).not.toContain("Admin");
+    expect(options).toEqual(["Kepengurusan", "Pelatih", "Anggota", "Alumni"]);
   });
 });

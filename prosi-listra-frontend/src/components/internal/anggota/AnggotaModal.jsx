@@ -163,12 +163,20 @@ export default function AnggotaModal(props) {
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">Peran</label>
                   <select
                     value={props.formData?.peran || ""}
+                    disabled={props.editingId && props.formData?.peran === "Admin"}
                     onChange={(e) => props.setFormData("peran", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-[#302929] shadow-2xs focus:border-[#4a0e17] focus:ring-1 focus:ring-[#4a0e17] focus:outline-none"
+                    class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-[#302929] shadow-2xs focus:border-[#4a0e17] focus:ring-1 focus:ring-[#4a0e17] focus:outline-none disabled:bg-stone-100 disabled:cursor-not-allowed"
                   >
-                    <For each={props.peranOptions}>
-                      {(p) => <option value={p}>{p}</option>}
-                    </For>
+                    <Show
+                      when={props.editingId && props.formData?.peran === "Admin"}
+                      fallback={
+                        <For each={(props.peranOptions || []).filter((p) => p !== "Admin")}>
+                          {(p) => <option value={p}>{p}</option>}
+                        </For>
+                      }
+                    >
+                      <option value="Admin">Admin</option>
+                    </Show>
                   </select>
                 </div>
                 <div>
@@ -180,7 +188,7 @@ export default function AnggotaModal(props) {
                     placeholder="Contoh: Ketua, Koor Humas (opsional)"
                     value={props.formData?.jabatan || ""}
                     disabled={
-                      props.formData?.peran === "Anggota Biasa" ||
+                      props.formData?.peran === "Anggota" ||
                       props.formData?.peran === "Alumni"
                     }
                     onInput={(e) => props.setFormData("jabatan", e.currentTarget.value)}
@@ -258,7 +266,7 @@ export default function AnggotaModal(props) {
 
                   <div class="border-t border-stone-200/90 pt-3">
                     <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
-                      ALAT MUSIK TRADISIONAL
+                      SPESIALISASI MUSIK
                     </div>
                     <div class="flex flex-wrap gap-2 pt-0.5">
                       <For
