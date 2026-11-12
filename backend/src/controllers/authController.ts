@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import type { Request, Response } from "express";
 import { pool } from "../db";
 
-function signJwt(payload: Record<string, unknown>, secret: string): string {
+export function signJwt(payload: Record<string, unknown>, secret: string): string {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
   const body = Buffer.from(
     JSON.stringify({
@@ -17,6 +17,24 @@ function signJwt(payload: Record<string, unknown>, secret: string): string {
     .update(`${header}.${body}`)
     .digest("base64url");
   return `${header}.${body}.${signature}`;
+}
+
+/** Cek token buatan signJwt. Hasilnya isi token, atau null bila tanda tangan salah / kedaluwarsa. */
+export function verifyJwt(token: string): Record<string, unknown> | null {
+  const [header, body, signature] = token.split(".");
+  if (!header || !body || !signature) return null;
+  const secret = process.env.JWT_SECRET || "listra_dev_secret";
+  const expected = crypto.createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString());
+    if (typeof payload.exp !== "number" || payload.exp < Date.now() / 1000) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 export async function login(req: Request, res: Response): Promise<void> {

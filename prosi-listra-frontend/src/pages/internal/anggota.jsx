@@ -19,6 +19,7 @@ import {
   listAnggota,
   toggleStatusAktif,
   updateAnggota,
+  bolehAturPassword,
 } from "../../api/anggota";
 import { extractUnparEmail, normalizeYear } from "../../utils/anggota";
 
@@ -33,6 +34,7 @@ const INITIAL_FORM = {
   angkatan_unpar: "",
   is_aktif: true,
   spesialisasi_ids: [],
+  password: "",
 };
 
 export default function InternalAnggota() {
@@ -151,6 +153,8 @@ export default function InternalAnggota() {
           : "",
       is_aktif: item.is_aktif ?? true,
       spesialisasi_ids: (item.spesialisasi || []).map((s) => s.id_spesialisasi),
+      // kosong = kata sandi lama tidak diubah
+      password: "",
     });
     setFormError("");
     setIsModalOpen(true);
@@ -222,6 +226,8 @@ export default function InternalAnggota() {
       angkatan_unpar: data.angkatan_unpar ? Number(data.angkatan_unpar) : null,
       is_aktif: data.is_aktif,
       spesialisasi_ids: data.spesialisasi_ids,
+      // kata sandi hanya dikirim bila diisi (kolomnya hanya tampil untuk Admin/LISTRA)
+      ...(data.password ? { password: data.password } : {}),
     };
 
     setIsSubmitting(true);
@@ -444,6 +450,7 @@ export default function InternalAnggota() {
         onEmailChange={handleEmailChange}
         onToggleSpesialisasi={toggleSpesialisasi}
         onSubmit={handleSubmit}
+        bolehAturPassword={bolehAturPassword()}
       />
     </div>
   );

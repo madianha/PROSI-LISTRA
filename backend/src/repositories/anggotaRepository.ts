@@ -63,7 +63,8 @@ function mapAnggotaRow(row: Anggota): Anggota {
   };
 }
 
-const DEFAULT_PASSWORD_HASH = "$2a$10$wT2v2sB4C6s0eY9IeB.yReM8x6yWv7jZ4M7g8Y5L5u9V1K1q3q7re";
+// hash bcrypt dari "password123", dipakai bila anggota baru dibuat tanpa kata sandi
+const DEFAULT_PASSWORD_HASH = "$2b$10$51hy9WpPoBTAetHUOAGFFOe.rxh0I4VKAL3TRBMn4Kpvu5TVZ5XL2";
 
 export async function getSpesialisasiList(): Promise<Spesialisasi[]> {
   const result = await pool.query<Spesialisasi>(
@@ -295,6 +296,11 @@ export async function updateAnggota(id: number, data: AnggotaInput): Promise<Ang
     if (result.rowCount === 0) {
       await client.query("ROLLBACK");
       return null;
+    }
+
+    // kata sandi hanya diganti bila dikirim (sudah di-hash dan dicek izinnya di controller)
+    if (data.password_hash) {
+      await client.query("UPDATE anggota SET password_hash = $1 WHERE id_anggota = $2", [data.password_hash, id]);
     }
 
     if (spIds !== undefined) {

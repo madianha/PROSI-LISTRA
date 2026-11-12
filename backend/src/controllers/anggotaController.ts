@@ -1,8 +1,40 @@
+import bcrypt from "bcryptjs";
 import type { Request, Response } from "express";
 import * as anggotaRepo from "../repositories/anggotaRepository";
+import { verifyJwt } from "./authController";
 
 const TIDAK_DITEMUKAN = { message: "Anggota tidak ditemukan." };
 const ERROR_SERVER = { message: "Terjadi kesalahan pada server." };
+
+// hanya peran ini yang boleh mengatur kata sandi anggota lain
+const PERAN_PENGATUR_PASSWORD = ["admin", "listra"];
+const MIN_PANJANG_PASSWORD = 8;
+
+/** true bila pengirim request login sebagai Admin atau LISTRA (dari header Authorization: Bearer <token>). */
+function bolehAturPassword(req: Request): boolean {
+  const header = req.headers.authorization ?? "";
+  if (!header.startsWith("Bearer ")) return false;
+  const payload = verifyJwt(header.slice(7));
+  return typeof payload?.peran === "string" && PERAN_PENGATUR_PASSWORD.includes(payload.peran);
+}
+
+/**
+ * Ubah body.password (teks biasa) menjadi password_hash di data.
+ * Mengembalikan pesan error + status bila ditolak, atau null bila aman lanjut.
+ */
+async function siapkanPassword(
+  req: Request,
+  data: anggotaRepo.AnggotaInput & { password?: string },
+): Promise<{ status: number; message: string } | null> {
+  const password = data.password;
+  delete data.password;
+  if (password === undefined) return null;
+  if (!bolehAturPassword(req)) {
+    return { status: 403, message: "Hanya Admin atau LISTRA yang boleh mengatur kata sandi." };
+  }
+  data.password_hash = await bcrypt.hash(password, 10);
+  return null;
+}
 
 function parseId(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null;
@@ -78,7 +110,7 @@ export async function getAnggotaDetail(req: Request, res: Response): Promise<voi
 function validateAnggotaPayload(
   body: any,
   isCreate: boolean = false
-): { ok: boolean; message?: string; data?: anggotaRepo.AnggotaInput } {
+): { ok: boolean; message?: string; data?: anggotaRepo.AnggotaInput & { password?: string } } {
   if (!body || typeof body !== "object") {
     return { ok: false, message: "Data tidak valid." };
   }
@@ -135,10 +167,14 @@ function validateAnggotaPayload(
       .filter((n: number) => Number.isSafeInteger(n) && n > 0);
   }
 
-  const password_hash =
-    typeof body.password_hash === "string" && body.password_hash.trim() !== ""
-      ? body.password_hash.trim()
-      : undefined;
+  // kata sandi dikirim sebagai teks biasa lalu di-hash di server; password_hash dari luar diabaikan
+  let password: string | undefined;
+  if (typeof body.password === "string" && body.password !== "") {
+    if (body.password.length < MIN_PANJANG_PASSWORD) {
+      return { ok: false, message: `Kata sandi minimal ${MIN_PANJANG_PASSWORD} karakter.` };
+    }
+    password = body.password;
+  }
 
   return {
     ok: true,
@@ -152,7 +188,7 @@ function validateAnggotaPayload(
       is_penari,
       is_pemusik,
       is_aktif,
-      password_hash,
+      password,
       spesialisasi_ids,
     },
   };
@@ -171,6 +207,11 @@ export async function createAnggota(req: Request, res: Response): Promise<void> 
   }
 
   try {
+    const ditolak = await siapkanPassword(req, validation.data);
+    if (ditolak) {
+      res.status(ditolak.status).json({ message: ditolak.message });
+      return;
+    }
     const created = await anggotaRepo.createAnggota(validation.data);
     res.status(201).json(created);
   } catch (error: any) {
@@ -209,6 +250,11 @@ export async function updateAnggota(req: Request, res: Response): Promise<void> 
         res.status(400).json({ message: "Peran Admin hanya dapat ditambahkan langsung melalui database." });
         return;
       }
+    }
+    const ditolak = await siapkanPassword(req, validation.data);
+    if (ditolak) {
+      res.status(ditolak.status).json({ message: ditolak.message });
+      return;
     }
     const updated = await anggotaRepo.updateAnggota(id, validation.data);
     if (!updated) {

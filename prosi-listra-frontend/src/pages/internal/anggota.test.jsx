@@ -8,10 +8,12 @@ vi.mock("../../api/anggota", () => ({
   createAnggota: vi.fn(),
   updateAnggota: vi.fn(),
   toggleStatusAktif: vi.fn(),
+  bolehAturPassword: vi.fn(() => false),
 }));
 
 import InternalAnggota from "./anggota";
 import {
+  bolehAturPassword,
   getSpesialisasiList,
   listAnggota,
   toggleStatusAktif,
@@ -200,5 +202,29 @@ describe("Internal Anggota Management", () => {
     const options = Array.from(roleSelect.querySelectorAll("option")).map((o) => o.value);
     expect(options).not.toContain("Admin");
     expect(options).toEqual(["Kepengurusan", "Pelatih", "Anggota", "Alumni"]);
+  });
+
+  it("kolom kata sandi tampil untuk Admin/LISTRA", async () => {
+    bolehAturPassword.mockReturnValue(true);
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+    fireEvent.click(screen.getByText("Tambah Anggota"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.querySelector('input[type="password"]')).toBeTruthy();
+  });
+
+  it("kolom kata sandi tidak tampil untuk peran lain", async () => {
+    bolehAturPassword.mockReturnValue(false);
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+    fireEvent.click(screen.getByText("Tambah Anggota"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.querySelector('input[type="password"]')).toBeNull();
   });
 });
