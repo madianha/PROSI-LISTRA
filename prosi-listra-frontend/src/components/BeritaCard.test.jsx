@@ -34,6 +34,8 @@ describe("BeritaCard", () => {
     expect(link.textContent).toContain("unpar.ac.id");
     expect(link.textContent).toContain("1 Des 2023");
     expect(screen.getByRole("heading").textContent).toBe("LISTRA Juara 1");
+    // pembaca layar diberi tahu bahwa link membuka tab baru
+    expect(link.textContent).toContain("(membuka tab baru)");
   });
 
   it("artikel: tidak ada label sumber dan menuju /berita/:id", () => {

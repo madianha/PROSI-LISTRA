@@ -7,6 +7,7 @@ import { Portal } from "solid-js/web";
  * props.onKonfirmasi  = dipanggil saat tombol konfirmasi diklik
  * props.onBatal       = dipanggil saat Batal, tombol Esc, atau klik di luar jendela
  * props.labelKonfirmasi (opsional) = teks tombol konfirmasi, bawaan "Ya, ubah"
+ * props.bahaya          (opsional) = tombol konfirmasi merah, untuk aksi seperti hapus
  * Tampilkan dengan <Show when={...}>; jendela muncul saat komponen ini dirender.
  */
 export default function KonfirmasiModal(props) {
@@ -14,9 +15,16 @@ export default function KonfirmasiModal(props) {
   // elemen yang sedang fokus sebelum jendela dibuka, dikembalikan saat ditutup
   const fokusSebelumnya = document.activeElement;
   let tombolBatal;
+  let tombolKonfirmasi;
 
   const tekanTombol = (e) => {
     if (e.key === "Escape") props.onBatal();
+    // Tab hanya berputar di antara Batal dan tombol konfirmasi, tidak ke halaman di belakang
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ke = document.activeElement === tombolBatal ? tombolKonfirmasi : tombolBatal;
+      ke.focus();
+    }
   };
 
   onMount(() => {
@@ -51,14 +59,19 @@ export default function KonfirmasiModal(props) {
               ref={tombolBatal}
               type="button"
               onClick={() => props.onBatal()}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-[#685856] hover:bg-gray-100"
+              className="min-h-11 cursor-pointer rounded-lg px-4 text-sm font-semibold text-[#685856] hover:bg-[#f5efeb] hover:text-[#302929] active:bg-[#ece4df]"
             >
               Batal
             </button>
             <button
+              ref={tombolKonfirmasi}
               type="button"
               onClick={() => props.onKonfirmasi()}
-              className="rounded-lg bg-[#39000a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#5a0c1a]"
+              className={`min-h-11 cursor-pointer rounded-lg px-4 text-sm font-semibold text-white ${
+                props.bahaya
+                  ? "bg-red-700 hover:bg-red-800 active:bg-red-900"
+                  : "bg-[#39000a] hover:bg-[#5a0c1a] active:bg-[#2a0007]"
+              }`}
             >
               {props.labelKonfirmasi ?? "Ya, ubah"}
             </button>

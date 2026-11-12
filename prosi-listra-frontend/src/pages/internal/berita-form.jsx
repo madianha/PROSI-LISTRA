@@ -2,22 +2,37 @@ import { A, useNavigate, useParams } from "@solidjs/router";
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
 import { createStore } from "solid-js/store";
 import { faArrowLeft, faFileLines, faImage, faLink } from "@fortawesome/free-solid-svg-icons";
+import GambarSampul from "../../components/GambarSampul";
 import Icon from "../../components/Icon";
 import RichTextEditor from "../../components/internal/RichTextEditor";
 import Toggle from "../../components/internal/Toggle";
 import { createBerita, getBerita, updateBerita, uploadGambar } from "../../api/berita";
 import { hariIni, jenisBerita, toPayload, validateBeritaForm } from "../../utils/berita";
 
+// border #948280 = kontras 3:1 dengan latar putih dan krem, jadi kotak isian terlihat jelas
 const INPUT =
-  "w-full rounded-lg border border-[#e3d6d3] bg-white px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]";
+  "min-h-11 w-full rounded-lg border border-[#948280] bg-white px-3 py-2 text-sm text-[#302929] placeholder:text-[#8a7a77] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]";
 
-/** Label + input + pesan error di bawahnya. */
+/**
+ * Label + input + pesan error di bawahnya.
+ * props.for     = id input yang diberi label
+ * props.labelId = dipakai bila isinya bukan input biasa (mis. editor); label jadi teks ber-id
+ */
 function Kolom(props) {
   return (
     <div>
-      <label for={props.for} className="mb-1.5 block text-sm font-medium text-[#302929]">
-        {props.label}
-      </label>
+      <Show
+        when={props.for}
+        fallback={
+          <p id={props.labelId} className="mb-1.5 block text-sm font-medium text-[#302929]">
+            {props.label}
+          </p>
+        }
+      >
+        <label for={props.for} className="mb-1.5 block text-sm font-medium text-[#302929]">
+          {props.label}
+        </label>
+      </Show>
       {props.children}
       <Show when={props.error}>
         <p className="mt-1 text-xs text-red-700">{props.error}</p>
@@ -33,8 +48,10 @@ function PilihJenis(props) {
       type="button"
       aria-pressed={props.value === nilai}
       onClick={() => props.onChange(nilai)}
-      className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-        props.value === nilai ? "bg-[#39000a] text-white" : "text-[#685856] hover:text-[#302929]"
+      className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors ${
+        props.value === nilai
+          ? "bg-[#39000a] text-white"
+          : "text-[#685856] hover:bg-[#f5efeb] hover:text-[#302929] active:bg-[#ece4df]"
       }`}
     >
       <Icon icon={icon} class="text-xs" /> {label}
@@ -42,7 +59,7 @@ function PilihJenis(props) {
   );
 
   return (
-    <div className="flex gap-1 rounded-lg border border-[#e3d6d3] bg-white p-1 sm:max-w-sm">
+    <div className="flex gap-1 rounded-lg border border-[#948280] bg-white p-1 sm:max-w-sm">
       {tombol("artikel", "Artikel", faFileLines)}
       {tombol("tautan", "Tautan", faLink)}
     </div>
@@ -116,7 +133,7 @@ function FormBerita(props) {
   return (
     <form onSubmit={simpan} noValidate className="mt-6 flex flex-col gap-6">
       <Show when={!b}>
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-[#e3d6d3] bg-white px-4 py-3">
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-[#f0dedf] bg-white px-4 py-2">
           <div>
             <p className="text-sm font-medium text-[#302929]">Publik</p>
             <p className="mt-0.5 text-xs text-[#685856]">
@@ -130,15 +147,16 @@ function FormBerita(props) {
       </Show>
 
       <Show when={!b}>
-        <div>
-          <p className="mb-1.5 text-sm font-medium text-[#302929]">Jenis</p>
+        {/* fieldset + legend = pembaca layar mengumumkan "Jenis" untuk kedua tombol */}
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium text-[#302929]">Jenis</legend>
           <PilihJenis value={jenis()} onChange={setJenis} />
           <p className="mt-1.5 text-xs text-[#685856]">
             {jenis() === "artikel"
               ? "Ditulis di sini dan dibaca langsung di website LISTRA."
               : "Mengarahkan pengunjung ke berita di media lain, mis. unpar.ac.id."}
           </p>
-        </div>
+        </fieldset>
       </Show>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_200px]">
@@ -166,14 +184,15 @@ function FormBerita(props) {
       <Kolom label="Gambar sampul" for="sampul" error={errors().url_gambar}>
         <div className="flex flex-wrap items-center gap-4">
           <Show when={values.url_gambar}>
-            <img
+            <GambarSampul
               src={values.url_gambar}
               alt="Pratinjau sampul"
-              className="aspect-[16/10] w-48 rounded-lg border border-[#f0dedf] object-cover"
+              class="aspect-[16/10] w-48 rounded-lg border border-[#f0dedf] object-cover"
             />
           </Show>
           {/* input file disembunyikan (sr-only), diklik lewat label yang terlihat seperti tombol */}
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#e3d6d3] bg-white px-4 py-2 text-sm font-semibold text-[#54141d] hover:bg-[#fff7f6]">
+          {/* focus-within = label diberi garis fokus saat input di dalamnya dipilih dengan Tab */}
+          <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#948280] bg-white px-4 text-sm font-semibold text-[#54141d] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#39000a] hover:bg-[#fff7f6] hover:underline active:bg-[#f5efeb] has-disabled:cursor-not-allowed has-disabled:opacity-60">
             <Icon icon={faImage} class="text-xs" />
             {mengunggah() ? "Mengunggah..." : values.url_gambar ? "Ganti gambar" : "Pilih gambar"}
             <input
@@ -191,8 +210,8 @@ function FormBerita(props) {
 
       <Switch>
         <Match when={jenis() === "artikel"}>
-          <Kolom label="Konten" for="konten" error={errors().konten}>
-            <div className="overflow-hidden rounded-lg border border-[#e3d6d3]">
+          <Kolom label="Konten" labelId="label-konten" error={errors().konten}>
+            <div className="overflow-hidden rounded-lg border border-[#948280]">
               <RichTextEditor
                 ref={(api) => (editor = api)}
                 value={values.konten}
@@ -235,13 +254,16 @@ function FormBerita(props) {
       </Show>
 
       <div className="flex justify-end gap-3 border-t border-[#f0dedf] pt-5">
-        <A href="/internal/berita" className="rounded-lg px-4 py-2 text-sm font-semibold text-[#685856] hover:bg-white">
+        <A
+          href="/internal/berita"
+          className="inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-semibold text-[#685856] hover:bg-white hover:text-[#302929] active:bg-[#ece4df]"
+        >
           Batal
         </A>
         <button
           type="submit"
           disabled={menyimpan() || mengunggah()}
-          className="rounded-lg bg-[#39000a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a0c1a] disabled:opacity-60"
+          className="min-h-11 cursor-pointer rounded-lg bg-[#39000a] px-5 text-sm font-semibold text-white hover:bg-[#5a0c1a] active:bg-[#2a0007] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {menyimpan() ? "Menyimpan..." : b ? "Simpan perubahan" : publik() ? "Terbitkan" : "Simpan draf"}
         </button>
@@ -262,7 +284,7 @@ export default function InternalBeritaForm() {
       <Show when={params.id}>
         <A
           href="/internal/berita"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[#54141d] hover:underline"
+          className="mb-2 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#54141d] hover:underline"
         >
           <Icon icon={faArrowLeft} class="text-xs" /> Kelola Berita
         </A>

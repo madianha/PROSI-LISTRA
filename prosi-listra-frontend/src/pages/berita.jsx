@@ -2,10 +2,12 @@ import { createResource, For, Match, Switch } from "solid-js";
 import BeritaCard from "../components/BeritaCard";
 import CustomHeader from "../components/CustomHeader";
 import { listBerita } from "../api/berita";
+import { useJudulHalaman } from "../utils/judulHalaman";
 
 export default function Berita() {
   // tanpa { semua: true }: hanya berita yang publik
   const [berita, { refetch }] = createResource(() => listBerita());
+  useJudulHalaman(() => "Berita");
 
   return (
     <>
@@ -26,7 +28,7 @@ export default function Berita() {
                 <button
                   type="button"
                   onClick={refetch}
-                  className="mt-3 text-sm font-semibold text-[#54141d] underline underline-offset-4"
+                  className="mt-2 min-h-11 cursor-pointer px-3 text-sm font-semibold text-[#54141d] underline underline-offset-4 hover:text-[#39000a] hover:decoration-2"
                 >
                   Coba lagi
                 </button>
@@ -39,7 +41,10 @@ export default function Berita() {
 
             <Match when={berita()}>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <For each={berita()}>{(item) => <BeritaCard berita={item} />}</For>
+                {/* berita terbaru tampil lebar di atas, sisanya grid biasa */}
+                <For each={berita()}>
+                  {(item, i) => <BeritaCard berita={item} prioritas={i() < 3} />}
+                </For>
               </div>
             </Match>
           </Switch>

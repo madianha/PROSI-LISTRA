@@ -1,9 +1,11 @@
 import { A, useParams } from "@solidjs/router";
 import { createResource, Match, Switch } from "solid-js";
 import { faArrowLeft, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import GambarSampul from "../components/GambarSampul";
 import Icon from "../components/Icon";
 import { getBerita } from "../api/berita";
 import { formatTanggal, jenisBerita } from "../utils/berita";
+import { useJudulHalaman } from "../utils/judulHalaman";
 
 // Gaya untuk HTML dari TinyMCE. [&_p]:mb-4 = semua <p> di dalam div ini diberi margin bawah, dst.
 const GAYA_KONTEN = [
@@ -22,12 +24,15 @@ const GAYA_KONTEN = [
 export default function BeritaDetail() {
   const params = useParams();
   const [berita] = createResource(() => params.id, (id) => getBerita(id));
+  // judul tab browser = judul berita (juga yang muncul saat link dibagikan)
+  // berita() melempar error bila gagal dimuat, jadi hanya dibaca saat sudah siap
+  useJudulHalaman(() => (berita.state === "ready" ? berita().judul : ""));
 
   return (
     <article className="mx-auto w-full max-w-3xl px-6 py-10">
       <A
         href="/berita"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#54141d] hover:underline"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#54141d] hover:underline"
       >
         <Icon icon={faArrowLeft} class="text-xs" /> Kembali ke Berita
       </A>
@@ -51,10 +56,11 @@ export default function BeritaDetail() {
             </h1>
           </header>
 
-          <img
+          {/* fetchpriority="high" = sampul adalah elemen terbesar, dimuat paling dulu */}
+          <GambarSampul
             src={berita().url_gambar}
-            alt=""
-            className="mt-8 aspect-[16/9] w-full rounded-xl object-cover"
+            fetchpriority="high"
+            class="mt-8 aspect-[16/9] w-full rounded-xl object-cover"
           />
 
           <Switch>
@@ -63,10 +69,11 @@ export default function BeritaDetail() {
                 href={berita().url_artikel}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 inline-flex items-center gap-2 font-semibold text-[#54141d] underline underline-offset-4"
+                className="mt-8 inline-flex min-h-11 items-center gap-2 font-semibold text-[#54141d] underline underline-offset-4 hover:decoration-2"
               >
                 Baca selengkapnya di {berita().sumber}
                 <Icon icon={faArrowUpRightFromSquare} class="text-xs" />
+                <span className="sr-only">(membuka tab baru)</span>
               </a>
             </Match>
             <Match when={jenisBerita(berita()) === "artikel"}>

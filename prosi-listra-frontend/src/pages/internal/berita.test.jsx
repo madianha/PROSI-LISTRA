@@ -68,16 +68,20 @@ describe("Kelola Berita", () => {
     ]);
   });
 
-  it("Hapus meminta konfirmasi dulu, Batal tidak menghapus", async () => {
+  it("Hapus meminta konfirmasi lewat jendela dulu, Batal tidak menghapus", async () => {
     listBerita.mockResolvedValue(daftar);
     renderHalaman();
 
     const [hapusPertama] = await screen.findAllByRole("button", { name: /Hapus/ });
     fireEvent.click(hapusPertama);
-    expect(screen.getByText("Hapus berita ini?")).toBeTruthy();
+    expect(
+      screen.getByRole("dialog", {
+        name: "Hapus berita “LISTRA Juara 1”? Berita yang dihapus tidak bisa dikembalikan.",
+      }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Batal" }));
-    expect(screen.queryByText("Hapus berita ini?")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(deleteBerita).not.toHaveBeenCalled();
   });
 
@@ -90,7 +94,12 @@ describe("Kelola Berita", () => {
     fireEvent.click(hapusPertama);
     fireEvent.click(screen.getByRole("button", { name: "Ya, hapus" }));
 
-    await waitFor(() => expect(screen.queryByText("LISTRA Juara 1")).toBeNull());
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // tombol Hapus yang difokus sudah hilang, fokus pindah ke judul halaman
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Kelola Berita" })),
+    );
+    expect(screen.queryByText("LISTRA Juara 1")).toBeNull();
     expect(deleteBerita).toHaveBeenCalledWith(1);
     expect(listBerita).toHaveBeenCalledTimes(2);
   });
@@ -105,6 +114,7 @@ describe("Kelola Berita", () => {
     fireEvent.click(screen.getByRole("button", { name: "Ya, hapus" }));
 
     expect((await screen.findByRole("alert")).textContent).toBe("Berita tidak ditemukan.");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("menampilkan pesan bila belum ada berita", async () => {
@@ -179,6 +189,21 @@ describe("Kelola Berita - toggle Publik", () => {
     expect(dialog()).toBeNull();
     expect(setPublik).not.toHaveBeenCalled();
     expect(saklar("LISTRA Juara 1").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("Tab tetap di dalam jendela, tidak pindah ke halaman di belakang", async () => {
+    await bukaHalaman();
+    fireEvent.click(saklar("LISTRA Juara 1"));
+    const batal = screen.getByRole("button", { name: "Batal" });
+    const ubah = screen.getByRole("button", { name: "Ya, ubah" });
+
+    expect(document.activeElement).toBe(batal);
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(ubah);
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(batal);
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(ubah);
   });
 
   it("tombol Esc juga membatalkan", async () => {
