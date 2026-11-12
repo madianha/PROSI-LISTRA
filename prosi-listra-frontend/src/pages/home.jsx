@@ -1,5 +1,5 @@
 import { A } from "@solidjs/router";
-import { createResource, For, Show } from "solid-js";
+import { createResource, For, Match, Switch } from "solid-js";
 import CustomHeader from "../components/CustomHeader";
 import CatalogueCard from "../components/CatalogueCard";
 import BeritaCard from "../components/BeritaCard";
@@ -34,7 +34,17 @@ export default function Home() {
 
     <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3"><TestimoniCard review="Penampilan LISTRA sangat memukau dan tepat waktu. Koordinasi dengan panitia berjalan lancar." name="Prof. Dr. Handoko Wijaya" organization="Rektorat UNPAR" event="Acara: Opening Ceremony Dies Natalis ke-71" /><TestimoniCard review="Tamu undangan sangat terkesan. Kostumnya rapi dan penarinya profesional." name="Ibu Ratna Sari" organization="PT Nusantara Jaya" event="Acara: Gala Dinner Perusahaan" /><TestimoniCard review="Terima kasih LISTRA, Tari Topeng-nya jadi momen paling berkesan di resepsi kami." name="Dinda Permatasari" organization="" event="Acara: Acara privat" /></div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
 
-    <section className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KABAR" title="Berita Terbaru" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3"><For each={berita()?.slice(0, 3)}>{(item) => <BeritaCard berita={item} />}</For></div><Show when={berita.loading || berita.error || berita()?.length === 0}><p className="mt-4 text-center text-sm text-[#685856]">{berita.loading ? "Memuat berita..." : berita.error ? "Berita belum bisa dimuat." : "Belum ada berita."}</p></Show><div className="mt-4 text-center"><CustomButton href="/berita" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Berita</CustomButton></div></section>
+    <section className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KABAR" title="Berita Terbaru" />
+      {/* Switch = hanya satu keadaan yang tampil; error dicek dulu karena membaca berita() yang gagal akan melempar error */}
+      <Switch>
+        <Match when={berita.loading}><p className="mt-4 text-center text-sm text-[#685856]">Memuat berita...</p></Match>
+        <Match when={berita.error}><p className="mt-4 text-center text-sm text-[#685856]">Berita belum bisa dimuat.</p></Match>
+        <Match when={berita()?.length === 0}><p className="mt-4 text-center text-sm text-[#685856]">Belum ada berita.</p></Match>
+        <Match when={berita()}>
+          <div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3"><For each={berita().slice(0, 3)}>{(item) => <BeritaCard berita={item} />}</For></div>
+        </Match>
+      </Switch>
+      <div className="mt-4 text-center"><CustomButton href="/berita" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Berita</CustomButton></div></section>
 
     <A href="/jadwal" aria-label="Hubungi LISTRA" className="fixed bottom-5 right-5 z-20 rounded-full bg-[#dfb83b] px-4 py-3 text-xs font-bold text-[#3d1017] shadow-lg hover:bg-[#edca5d]">☏ &nbsp; Hubungi Kami</A>
     <Footer />
