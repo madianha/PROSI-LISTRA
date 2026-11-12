@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@solidjs/testing-library";
+import { fireEvent, screen, waitFor, within } from "@solidjs/testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderRoute } from "../../test/renderRoute";
 
@@ -17,6 +17,7 @@ import {
   getSpesialisasiList,
   listAnggota,
   toggleStatusAktif,
+  updateAnggota,
 } from "../../api/anggota";
 
 const mockAnggotaList = [
@@ -226,5 +227,21 @@ describe("Internal Anggota Management", () => {
 
     const dialog = await screen.findByRole("dialog");
     expect(dialog.querySelector('input[type="password"]')).toBeNull();
+  });
+
+  it("menyimpan perubahan anggota lalu menutup modal tanpa error", async () => {
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    updateAnggota.mockResolvedValue({ ...mockAnggotaList[0], nama: "Budi Baru" });
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+    fireEvent.click(screen.getAllByText("Ubah")[0]);
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByText("Simpan Perubahan"));
+
+    await waitFor(() => expect(updateAnggota).toHaveBeenCalledWith(1, expect.any(Object)));
+    expect(await screen.findByText("Budi Baru")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 });

@@ -237,9 +237,6 @@ export default function InternalAnggota() {
         mutateAnggota((prev) =>
           prev ? prev.map((a) => (a.id_anggota === editingId() ? updated : a)) : [updated]
         );
-        mutateMasterAnggota((prev) =>
-          prev ? prev.map((a) => (a.id_anggota === editingId() ? updated : a)) : [updated]
-        );
       } else {
         const created = await createAnggota(payload);
         mutateAnggota((prev) => (prev ? [created, ...prev] : [created]));
@@ -381,10 +378,7 @@ export default function InternalAnggota() {
               <p>Data anggota gagal dimuat.</p>
               <button
                 type="button"
-                onClick={() => {
-                  refetchAnggota();
-                  refetchMasterAnggota();
-                }}
+                onClick={() => refetchAnggota()}
                 class="font-semibold text-[#54141d] underline hover:text-[#39000a]"
               >
                 Coba lagi
