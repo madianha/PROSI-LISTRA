@@ -145,7 +145,7 @@ export default function AnggotaModal(props) {
                 </div>
                 <div>
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                    Angkatan
+                    Angkatan Unpar
                   </label>
                   <input
                     type="number"

@@ -165,7 +165,7 @@ describe("Internal Anggota Management", () => {
     fireEvent.input(searchInput, { target: { value: "Budi" } });
     expect(searchInput.value).toBe("Budi");
 
-    const angkatanInput = screen.getByPlaceholderText("Cari tahun (cth: 1999)...");
+    const angkatanInput = screen.getByPlaceholderText(/Cari tahun/i);
     fireEvent.input(angkatanInput, { target: { value: "1999" } });
     expect(angkatanInput.value).toBe("1999");
 
