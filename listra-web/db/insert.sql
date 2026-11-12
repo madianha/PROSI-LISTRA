@@ -101,3 +101,18 @@ INSERT INTO provinsi (nama_provinsi, pulau) VALUES
 --     ('Admin',  NULL, NULL, NULL, NULL, TRUE),
 --     ('LISTRA', NULL, NULL, NULL, NULL, TRUE),
 --     ('Kang Rizal', NULL, NULL, NULL, Pelatih, TRUE);
+
+-- =========================================
+-- ANGGOTA PLACEHOLDER, SATU AKUN PER PERAN
+-- Semua kata sandi: password123 (hash bcrypt), ganti sebelum dipakai sungguhan
+-- =========================================
+
+INSERT INTO anggota (email, password_hash, nama, peran)
+VALUES
+    ('admin@gmail.com',   '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Admin',   'admin'),
+    ('listra@gmail.com',  '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'LISTRA',  'listra'),
+    ('humas@gmail.com',   '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Humas',   'humas'),
+    ('pelatih@gmail.com', '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Pelatih', 'pelatih'),
+    ('anggota@gmail.com', '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Anggota', 'anggota'),
+    ('alumni@gmail.com',  '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Alumni',  'alumni')
+ON CONFLICT (email) DO NOTHING;
