@@ -116,3 +116,83 @@ VALUES
     ('anggota@gmail.com', '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Anggota', 'anggota'),
     ('alumni@gmail.com',  '$2b$10$y829.cM0UcUwmMsVkCACc.nsYugjI.w0h76aQKbq3nJnfQDBCgAra', 'Alumni',  'alumni')
 ON CONFLICT (email) DO NOTHING;
+
+
+-- =========================================
+-- KONTAK WHATSAPP (satu baris, id_kontak selalu 1)
+-- =========================================
+
+INSERT INTO kontak_whatsapp (id_kontak, nomor_wa, nama_humas, template_pesan)
+VALUES (
+    1,
+    '628123456789',
+    'Bagas Nugroho (Koor Humas)',
+    'Halo Humas LISTRA, saya tertarik dengan {jasa}. Boleh minta informasi lebih lanjut?'
+)
+ON CONFLICT (id_kontak) DO NOTHING;
+
+
+-- =========================================
+-- BERITA PLACEHOLDER
+--   tautan  (dari media lain) -> url_artikel + sumber diisi, konten NULL
+--   artikel (ditulis di TinyMCE) -> konten diisi, url_artikel + sumber NULL
+-- =========================================
+
+INSERT INTO berita (judul, tanggal, url_gambar, sumber, url_artikel, is_publik) VALUES
+(
+    'LISTRA UNPAR Harumkan Nama Indonesia Lewat Lomba Internasional di Hong Kong',
+    '2026-08-27',
+    'https://unpar.ac.id/wp-content/uploads/2026/08/LISTRA-UNPAR-Harumkan-Nama-Indonesia-di-Hong-Kong-400x250.jpeg',
+    'unpar.ac.id',
+    'https://unpar.ac.id/listra-unpar-harumkan-nama-indonesia-lewat-lomba-internasional-di-hong-kong/',
+    TRUE
+),
+(
+    'LISTRA UNPAR Kembali Ukir Prestasi Lewat Misi Budaya di Korea Selatan',
+    '2024-10-23',
+    'https://unpar.ac.id/wp-content/uploads/2024/10/Listra-Misi-Budaya-Korea-Selatan-400x250.jpg',
+    'unpar.ac.id',
+    'https://unpar.ac.id/listra-unpar-kembali-ukir-prestasi-lewat-misi-budaya-di-korea-selatan/',
+    TRUE
+),
+(
+    'LISTRA UNPAR Juara 1 Lomba Tari Kreasi Geotourism Festival 2023',
+    '2023-12-01',
+    'https://unpar.ac.id/wp-content/uploads/2024/01/Listra-Unpar-Juara-1-Lomba-Tari-Kreasi-Geotourism-Festival-2023-400x250.jpeg',
+    'unpar.ac.id',
+    'https://unpar.ac.id/listra-unpar-juara-1-lomba-tari-kreasi-geotourism-festival-2023/',
+    TRUE
+),
+(
+    'Misi Budaya LISTRA UNPAR dalam Festival Budaya Internasional di Yunani',
+    '2023-10-03',
+    'https://unpar.ac.id/wp-content/uploads/2023/10/LISTRA-UNPAR-Wakili-Indonesia-dan-Asia-Tenggara-dalam-Festival-Budaya-Internasional-di-Yunani-400x250.jpg',
+    'unpar.ac.id',
+    'https://unpar.ac.id/misi-budaya-listra-unpar-dalam-festival-budaya-internasional-di-yunani/',
+    TRUE
+),
+(
+    'Gelar Pamit Listra Jelang Misi Budaya',
+    '2023-07-25',
+    'https://unpar.ac.id/wp-content/uploads/2023/07/Gelar-Pamit-Listra-Jelang-Misi-Budaya-400x250.jpg',
+    'unpar.ac.id',
+    'https://unpar.ac.id/gelar-pamit-listra-jelang-misi-budaya/',
+    TRUE
+),
+(
+    'LISTRA UNPAR Juara Harapan 1 di Ajang The 17th National Folklore Festival',
+    '2023-03-28',
+    'https://unpar.ac.id/wp-content/uploads/2023/03/LISTRA-UNPAR-Juara-Harapan-1-di-Ajang-The-17th-National-Folklore-Festival-400x250.jpg',
+    'unpar.ac.id',
+    'https://unpar.ac.id/listra-unpar-juara-harapan-1-di-ajang-the-17th-national-folklore-festival/',
+    TRUE
+);
+
+INSERT INTO berita (judul, tanggal, url_gambar, konten, is_publik) VALUES
+(
+    '(Contoh) Persiapan Gelar Karya LISTRA 2026',
+    '2026-11-01',
+    'https://unpar.ac.id/wp-content/uploads/2023/07/Gelar-Pamit-Listra-Jelang-Misi-Budaya-400x250.jpg',
+    '<p>Ini contoh artikel yang ditulis langsung di editor. Ganti atau hapus lewat halaman Kelola Berita.</p><p>LISTRA UNPAR sedang mempersiapkan <strong>Gelar Karya 2026</strong> dengan penampilan tari dan musik tradisional dari berbagai daerah.</p>',
+    TRUE
+);
