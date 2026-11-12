@@ -101,9 +101,10 @@ export async function getAnggota(filters: FilterAnggota = {}): Promise<Anggota[]
     paramIdx++;
   }
 
-  if (filters.angkatan && !Number.isNaN(Number(filters.angkatan))) {
-    conditions.push(`a.angkatan_unpar = $${paramIdx}`);
-    values.push(Number(filters.angkatan));
+  const angkatanStr = filters.angkatan !== undefined && filters.angkatan !== null ? String(filters.angkatan).trim() : "";
+  if (angkatanStr && angkatanStr !== "Semua") {
+    conditions.push(`CAST(a.angkatan_unpar AS TEXT) ILIKE $${paramIdx}`);
+    values.push(`%${angkatanStr}%`);
     paramIdx++;
   }
 

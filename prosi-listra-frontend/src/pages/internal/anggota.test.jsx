@@ -90,7 +90,7 @@ describe("Internal Anggota Management", () => {
       expect.objectContaining({
         search: "Budi",
         peran: "Semua",
-        angkatan: "Semua",
+        angkatan: "",
       })
     );
 
@@ -165,17 +165,22 @@ describe("Internal Anggota Management", () => {
     fireEvent.input(searchInput, { target: { value: "Budi" } });
     expect(searchInput.value).toBe("Budi");
 
+    const angkatanInput = screen.getByPlaceholderText("Cari tahun (cth: 1999)...");
+    fireEvent.input(angkatanInput, { target: { value: "1999" } });
+    expect(angkatanInput.value).toBe("1999");
+
     const resetButton = screen.getByTitle("Reset Filter");
     fireEvent.click(resetButton);
 
     expect(searchInput.value).toBe("");
+    expect(angkatanInput.value).toBe("");
 
     await vi.advanceTimersByTimeAsync(500);
     expect(listAnggota).toHaveBeenLastCalledWith(
       expect.objectContaining({
         search: "",
         peran: "Semua",
-        angkatan: "Semua",
+        angkatan: "",
       })
     );
 

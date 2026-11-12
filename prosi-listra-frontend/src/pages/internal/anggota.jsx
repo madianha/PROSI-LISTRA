@@ -39,12 +39,13 @@ export default function InternalAnggota() {
   const [search, setSearch] = createSignal("");
   const [debouncedSearch, setDebouncedSearch] = createSignal("");
   const [filterPeran, setFilterPeran] = createSignal("Semua");
-  const [filterAngkatan, setFilterAngkatan] = createSignal("Semua");
+  const [filterAngkatan, setFilterAngkatan] = createSignal("");
+  const [debouncedAngkatan, setDebouncedAngkatan] = createSignal("");
 
   let searchTimeoutId = null;
+  let angkatanTimeoutId = null;
   let activeAbortController = null;
   let lastKnownAnggota = [];
-  const [cachedAngkatan, setCachedAngkatan] = createSignal([]);
 
   const handleSearchInput = (value) => {
     setSearch(value);
@@ -54,8 +55,18 @@ export default function InternalAnggota() {
     }, 300);
   };
 
+  const handleAngkatanInput = (value) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 4);
+    setFilterAngkatan(cleaned);
+    if (angkatanTimeoutId) clearTimeout(angkatanTimeoutId);
+    angkatanTimeoutId = setTimeout(() => {
+      setDebouncedAngkatan(cleaned);
+    }, 300);
+  };
+
   onCleanup(() => {
     if (searchTimeoutId) clearTimeout(searchTimeoutId);
+    if (angkatanTimeoutId) clearTimeout(angkatanTimeoutId);
     if (activeAbortController) activeAbortController.abort();
   });
 
@@ -64,7 +75,7 @@ export default function InternalAnggota() {
     () => ({
       search: debouncedSearch(),
       peran: filterPeran(),
-      angkatan: filterAngkatan(),
+      angkatan: debouncedAngkatan(),
     }),
     async (params) => {
       if (activeAbortController) {
@@ -76,14 +87,6 @@ export default function InternalAnggota() {
       try {
         const result = await listAnggota({ ...params, signal: controller.signal });
         lastKnownAnggota = Array.isArray(result) ? result : [];
-        if (!params.search && params.peran === "Semua" && params.angkatan === "Semua") {
-          const years = lastKnownAnggota
-            .map((m) => m.angkatan_unpar || m.angkatan)
-            .filter(Boolean)
-            .map(normalizeYear)
-            .filter((y) => y !== null && y !== undefined);
-          setCachedAngkatan(Array.from(new Set(years)).sort((a, b) => b - a));
-        }
         return lastKnownAnggota;
       } catch (err) {
         if (err.name === "AbortError") {
@@ -117,30 +120,14 @@ export default function InternalAnggota() {
     return (spesialisasiList() || []).filter((s) => s.kategori === "MUSIK");
   });
 
-  const availableAngkatan = createMemo(() => {
-    if (cachedAngkatan().length > 0) return cachedAngkatan();
-    if (anggotaResource.error) return [];
-    let list = [];
-    try {
-      list = anggotaResource() || [];
-    } catch {
-      return [];
-    }
-    const years = list
-      .map((m) => m.angkatan_unpar || m.angkatan)
-      .filter(Boolean)
-      .map(normalizeYear);
-    return Array.from(new Set(years.filter((y) => y !== null && y !== undefined))).sort(
-      (a, b) => b - a
-    );
-  });
-
   const resetFilter = () => {
     if (searchTimeoutId) clearTimeout(searchTimeoutId);
+    if (angkatanTimeoutId) clearTimeout(angkatanTimeoutId);
     setSearch("");
     setDebouncedSearch("");
     setFilterPeran("Semua");
-    setFilterAngkatan("Semua");
+    setFilterAngkatan("");
+    setDebouncedAngkatan("");
   };
 
   const openAddModal = () => {
@@ -346,16 +333,20 @@ export default function InternalAnggota() {
               <label class="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#685856]">
                 Angkatan
               </label>
-              <select
-                value={filterAngkatan()}
-                onChange={(e) => setFilterAngkatan(e.currentTarget.value)}
-                class="w-full rounded-lg border border-[#d9cdca] bg-white px-3 py-2 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
-              >
-                <option value="Semua">Semua Angkatan</option>
-                <For each={availableAngkatan()}>
-                  {(akt) => <option value={akt}>{akt}</option>}
-                </For>
-              </select>
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#a89a98]">
+                  <Icon icon={faSearch} class="text-xs" />
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="Cari tahun..."
+                  value={filterAngkatan()}
+                  onInput={(e) => handleAngkatanInput(e.currentTarget.value)}
+                  class="w-full rounded-lg border border-[#d9cdca] bg-white py-2 pl-9 pr-3 text-sm text-[#302929] focus:border-[#39000a] focus:outline-none focus:ring-1 focus:ring-[#39000a]"
+                />
+              </div>
             </div>
             <button
               type="button"
