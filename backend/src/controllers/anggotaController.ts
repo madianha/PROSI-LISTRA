@@ -165,6 +165,11 @@ export async function createAnggota(req: Request, res: Response): Promise<void> 
     return;
   }
 
+  if (validation.data.peran === "admin") {
+    res.status(400).json({ message: "Peran Admin hanya dapat ditambahkan langsung melalui database." });
+    return;
+  }
+
   try {
     const created = await anggotaRepo.createAnggota(validation.data);
     res.status(201).json(created);
@@ -198,6 +203,13 @@ export async function updateAnggota(req: Request, res: Response): Promise<void> 
   }
 
   try {
+    if (validation.data.peran === "admin") {
+      const existing = await anggotaRepo.getAnggotaById(id);
+      if (existing && existing.peran !== "Admin") {
+        res.status(400).json({ message: "Peran Admin hanya dapat ditambahkan langsung melalui database." });
+        return;
+      }
+    }
     const updated = await anggotaRepo.updateAnggota(id, validation.data);
     if (!updated) {
       res.status(404).json(TIDAK_DITEMUKAN);

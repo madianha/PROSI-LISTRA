@@ -52,7 +52,7 @@ const DB_TO_PERAN_LABEL: Record<string, string> = {
   listra: "Kepengurusan",
   humas: "Humas",
   pelatih: "Pelatih",
-  anggota: "Anggota Biasa",
+  anggota: "Anggota",
   alumni: "Alumni",
 };
 
