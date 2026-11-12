@@ -2,35 +2,23 @@ import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import CatalogueCard from "../components/CatalogueCard";
 import CustomHeader from "../components/CustomHeader";
 import FilterJasa from "../components/FilterJasa";
+import { jasa as sampleJasa } from "../data/jasa";
 
 const API_URL = "http://localhost:3000/api/jasa";
 
-function formatRupiah(num) {
-  return "Rp " + Number(num).toLocaleString("id-ID");
-}
-
-function formatPrice(min, max) {
-  if (min != null && max != null) {
-    return `${formatRupiah(min)} – ${formatRupiah(max)}`;
-  }
-  if (min != null) return formatRupiah(min);
-  if (max != null) return formatRupiah(max);
-  return "Hubungi untuk harga";
-}
-
 const fetchServices = async () => {
-  const response = await fetch(API_URL);
-  if (!response.ok) {
-    throw new Error(`Gagal memuat data jasa (status ${response.status})`);
+  let data;
+  try {
+    const response = await fetch(API_URL);
+    if (!response.ok) throw new Error(`Gagal memuat data jasa (status ${response.status})`);
+    data = await response.json();
+  } catch {
+    // Keep the catalogue visible for local UI review when the API is offline.
+    data = sampleJasa;
   }
-  const data = await response.json();
 
-  return data.map((item) => {
+  return data.filter((item) => item.is_aktif !== false).map((item) => {
     // Normalisasi kapital (tari -> Tari, musik -> Musik)
-    const type = item.tipe_jasa
-      ? item.tipe_jasa.charAt(0).toUpperCase() + item.tipe_jasa.slice(1).toLowerCase()
-      : "Tari";
-
     // Normalisasi kultur agar selaras dengan filter options di FilterJasa
     let culture = item.kultur || "";
 
@@ -49,18 +37,17 @@ const fetchServices = async () => {
     if (culture === "Batak") culture = "Sumatera";
 
     const position = item.nama_kecocokan || "";
+    const type = item.tipe_jasa
+      ? item.tipe_jasa.charAt(0).toUpperCase() + item.tipe_jasa.slice(1).toLowerCase()
+      : "Tari";
 
     return {
-      id: item.id_jasa,
-      title: item.nama,
-      category: `${type} • ${item.kultur || "Nusantara"}`,
-      description: item.deskripsi || "",
-      tag: position,
-      type,
+      ...item,
+      kultur: item.kultur || "Nusantara",
       culture,
+      nama_kecocokan: position,
+      type,
       position,
-      price: formatPrice(item.harga_minimum, item.harga_maximum),
-      image: item.link_image,
     };
   });
 };
@@ -126,12 +113,7 @@ export default function Katalog() {
               <For each={filteredServices()}>
                 {(service) => (
                   <CatalogueCard
-                    title={service.title}
-                    category={service.category}
-                    description={service.description}
-                    tag={service.tag}
-                    price={service.price}
-                    image={service.image}
+                    {...service}
                   />
                 )}
               </For>

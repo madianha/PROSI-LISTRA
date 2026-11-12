@@ -7,11 +7,12 @@ import TestimoniCard from "../components/TestimoniCard";
 import CustomButton from "../components/CustomButton";
 import Footer from "../components/Footer";
 import { listBerita } from "../api/berita";
+import { testimoni } from "../data/testimoni";
 
 const services = [
-  { title: "Tari Merak", type: "Tari", region: "Jawa Barat", tag: "Opening", price: "Rp 2.500.000 – Rp 5.000.000", image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85", description: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya." },
-  { title: "Tari Jaipong", type: "Tari", region: "Jawa Barat", tag: "Middle", price: "Rp 3.000.000 – Rp 6.000.000", image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=900&q=85", description: "Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik." },
-  { title: "Tari Saman", type: "Tari", region: "Aceh", tag: "Opening", price: "Rp 4.000.000 – Rp 7.500.000", image: "https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85", description: "Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak." },
+  { id_jasa: 1, nama: "Tari Merak", tipe_jasa: "TARI", kultur: "Jawa Barat", nama_kecocokan: "Opening", harga_minimum: 2500000, harga_maximum: 5000000, min_performer: 4, link_image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85", deskripsi: "Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya." },
+  { id_jasa: 2, nama: "Tari Jaipong", tipe_jasa: "TARI", kultur: "Jawa Barat", nama_kecocokan: "Middle", harga_minimum: 3000000, harga_maximum: 6000000, min_performer: 4, link_image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=900&q=85", deskripsi: "Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik." },
+  { id_jasa: 3, nama: "Tari Saman", tipe_jasa: "TARI", kultur: "Aceh", nama_kecocokan: "Opening", harga_minimum: 4000000, harga_maximum: 7500000, min_performer: 8, link_image: "https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85", deskripsi: "Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak." },
 ];
 
 function SectionHeading(props) {
@@ -32,7 +33,7 @@ export default function Home() {
 
     <section id="katalog" className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KATALOG" title="Jasa Pilihan" description="Satu rentang harga per jasa; rinciannya dibahas lewat WhatsApp." /><div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3">{services.map((service) => <CatalogueCard {...service} detailHref="/jasa" />)}</div><div className="mt-4 text-center"><CustomButton href="/jasa" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Lihat Semua Jasa</CustomButton></div></section>
 
-    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3"><TestimoniCard review="Penampilan LISTRA sangat memukau dan tepat waktu. Koordinasi dengan panitia berjalan lancar." name="Prof. Dr. Handoko Wijaya" organization="Rektorat UNPAR" event="Acara: Opening Ceremony Dies Natalis ke-71" /><TestimoniCard review="Tamu undangan sangat terkesan. Kostumnya rapi dan penarinya profesional." name="Ibu Ratna Sari" organization="PT Nusantara Jaya" event="Acara: Gala Dinner Perusahaan" /><TestimoniCard review="Terima kasih LISTRA, Tari Topeng-nya jadi momen paling berkesan di resepsi kami." name="Dinda Permatasari" organization="" event="Acara: Acara privat" /></div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
+    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3">{testimoni.filter((row) => row.is_aktif).slice(0, 3).map((row) => <TestimoniCard key={row.id_testimoni} {...row} />)}</div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
 
     <section className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KABAR" title="Berita Terbaru" />
       {/* Switch = hanya satu keadaan yang tampil; error dicek dulu karena membaca berita() yang gagal akan melempar error */}
