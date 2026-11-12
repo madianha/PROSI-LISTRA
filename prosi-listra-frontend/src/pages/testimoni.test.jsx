@@ -4,6 +4,19 @@ import { renderRoute } from "../test/renderRoute";
 
 vi.mock("../api/testimoni", () => ({ listTestimoni: vi.fn(), kirimTestimoni: vi.fn() }));
 
+// Widget Cloudflare diganti tombol palsu: klik = lolos, dapat token "tok-uji"
+const turnstileReset = vi.fn();
+vi.mock("../components/Turnstile", () => ({
+  default: (props) => {
+    props.ref?.({ reset: turnstileReset });
+    return (
+      <button type="button" onClick={() => props.onToken("tok-uji")}>
+        Saya bukan robot
+      </button>
+    );
+  },
+}));
+
 import Testimoni from "./testimoni";
 import { kirimTestimoni, listTestimoni } from "../api/testimoni";
 
@@ -46,11 +59,12 @@ describe("Halaman Testimoni publik", () => {
     fireEvent.input(within(form).getByLabelText(/^Nama \*/), { target: { value: "Budi" } });
     fireEvent.input(within(form).getByLabelText(/^Testimoni/), { target: { value: "Keren sekali" } });
     fireEvent.click(within(form).getByLabelText("4 bintang"));
+    fireEvent.click(within(form).getByText("Saya bukan robot"));
     fireEvent.submit(form);
 
     await waitFor(() =>
       expect(kirimTestimoni).toHaveBeenCalledWith(
-        expect.objectContaining({ nama_klien: "Budi", isi_testimoni: "Keren sekali", rating: 4 }),
+        expect.objectContaining({ nama_klien: "Budi", isi_testimoni: "Keren sekali", rating: 4, turnstile_token: "tok-uji" }),
       ),
     );
     // pengunjung tidak bisa memilih sumber / tampil
@@ -66,8 +80,22 @@ describe("Halaman Testimoni publik", () => {
 
     fireEvent.click(await screen.findByText("Tulis Testimoni"));
     const form = await screen.findByRole("dialog");
+    fireEvent.click(within(form).getByText("Saya bukan robot"));
     fireEvent.submit(form);
 
     expect(await within(form).findByRole("alert")).toHaveProperty("textContent", "Isi testimoni wajib diisi.");
+    // token sudah terpakai, jadi widget diminta centang ulang
+    expect(turnstileReset).toHaveBeenCalled();
+  });
+
+  it("tombol Kirim terkunci sampai lolos centang bukan robot", async () => {
+    listTestimoni.mockResolvedValue([]);
+    renderRoute(Testimoni, { path: "/testimoni" });
+
+    fireEvent.click(await screen.findByText("Tulis Testimoni"));
+    const form = await screen.findByRole("dialog");
+    expect(within(form).getByText("Kirim").disabled).toBe(true);
+    fireEvent.click(within(form).getByText("Saya bukan robot"));
+    expect(within(form).getByText("Kirim").disabled).toBe(false);
   });
 });

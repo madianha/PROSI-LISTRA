@@ -111,6 +111,8 @@ describe("Halaman Kelola Testimoni", () => {
     await waitFor(() =>
       expect(kirimTestimoni).toHaveBeenCalledWith(expect.objectContaining({ sumber: "whatsapp", is_aktif: true })),
     );
+    // pengurus sudah login: tanpa centang bukan robot
+    expect(kirimTestimoni.mock.calls[0][0]).not.toHaveProperty("turnstile_token");
     expect(await screen.findByText("Dewi")).toBeTruthy();
   });
 });

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { bacaPengguna } from "../middleware/wajibLogin";
 import * as repo from "../repositories/testimoniRepository";
+import { verifikasiTurnstile } from "../services/turnstile";
 import { STATUS_TESTIMONI, SUMBER_TESTIMONI, validateTestimoni } from "../validation/testimoniValidation";
 
 const TIDAK_DITEMUKAN = { message: "Testimoni tidak ditemukan." };
@@ -47,7 +48,22 @@ export async function createTestimoni(req: Request, res: Response): Promise<void
   }
 
   let extra = { status: "menunggu", sumber: "web", is_aktif: false };
-  if (bacaPengguna(req)) {
+  if (!bacaPengguna(req)) {
+    // pengunjung wajib lolos pemeriksaan bot (Cloudflare Turnstile); pengurus yang login tidak perlu
+    let lolos: boolean;
+    try {
+      lolos = await verifikasiTurnstile(req.body?.turnstile_token, req.ip);
+    } catch (error) {
+      // mis. TURNSTILE_SECRET_KEY belum diisi di production
+      console.error("Turnstile belum dikonfigurasi:", error);
+      res.status(500).json(ERROR_SERVER);
+      return;
+    }
+    if (!lolos) {
+      res.status(400).json({ message: "Verifikasi \"bukan robot\" gagal. Centang ulang lalu kirim lagi." });
+      return;
+    }
+  } else {
     const sumber = req.body?.sumber ?? "web";
     if (!SUMBER_TESTIMONI.includes(sumber)) {
       res.status(400).json({ message: "Sumber harus web atau whatsapp." });

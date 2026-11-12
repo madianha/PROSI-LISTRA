@@ -11,7 +11,11 @@ vi.mock("../src/repositories/testimoniRepository", () => ({
   deleteTestimoni: vi.fn(),
 }));
 
+// pemeriksaan bot di-mock: test tidak menghubungi Cloudflare
+vi.mock("../src/services/turnstile", () => ({ verifikasiTurnstile: vi.fn() }));
+
 import app from "../src/app";
+import { verifikasiTurnstile } from "../src/services/turnstile";
 import { signJwt } from "../src/controllers/authController";
 import * as repo from "../src/repositories/testimoniRepository";
 
@@ -34,7 +38,10 @@ const baris = {
 
 const body = { nama_klien: "Ibu Ratna", isi_testimoni: "Penampilannya memukau.", rating: 5 };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(verifikasiTurnstile).mockResolvedValue(true);
+});
 
 describe("GET /api/testimoni (publik)", () => {
   it("mengembalikan testimoni yang tampil, tanpa login", async () => {
@@ -58,6 +65,35 @@ describe("POST /api/testimoni", () => {
       sumber: "web",
       is_aktif: false,
     });
+  });
+
+  it("pengunjung: token Turnstile diteruskan ke Cloudflare", async () => {
+    mocked.createTestimoni.mockResolvedValue(baris);
+    await request(app).post("/api/testimoni").send({ ...body, turnstile_token: "tok-123" });
+    expect(verifikasiTurnstile).toHaveBeenCalledWith("tok-123", expect.anything());
+  });
+
+  it("pengunjung: ditolak bila gagal pemeriksaan bot, tidak disimpan", async () => {
+    vi.mocked(verifikasiTurnstile).mockResolvedValue(false);
+    const res = await request(app).post("/api/testimoni").send(body);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/bukan robot/);
+    expect(mocked.createTestimoni).not.toHaveBeenCalled();
+  });
+
+  it("secret Turnstile belum diisi di production = 500, bukan menggantung", async () => {
+    vi.mocked(verifikasiTurnstile).mockRejectedValue(new Error("TURNSTILE_SECRET_KEY belum diisi"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await request(app).post("/api/testimoni").send(body);
+    expect(res.status).toBe(500);
+    expect(mocked.createTestimoni).not.toHaveBeenCalled();
+  });
+
+  it("pengurus login: tidak perlu pemeriksaan bot", async () => {
+    mocked.createTestimoni.mockResolvedValue(baris);
+    const res = await request(app).post("/api/testimoni").set("Authorization", login).send(body);
+    expect(res.status).toBe(201);
+    expect(verifikasiTurnstile).not.toHaveBeenCalled();
   });
 
   it("pengurus login: langsung disetujui dan boleh memilih sumber whatsapp", async () => {

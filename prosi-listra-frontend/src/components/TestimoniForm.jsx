@@ -2,6 +2,7 @@ import { createSignal, createUniqueId, For, onCleanup, onMount, Show } from "sol
 import { Portal } from "solid-js/web";
 import { faStar, faTimes } from "@fortawesome/free-solid-svg-icons";
 import Icon from "./Icon";
+import Turnstile from "./Turnstile";
 
 // kelas input yang sama untuk semua kolom
 const INPUT =
@@ -11,7 +12,8 @@ const LABEL = "mb-1 block text-xs font-semibold text-[#302929]";
 /**
  * Jendela form testimoni.
  * props.judul    = judul jendela
- * props.internal = (opsional) tampilkan pilihan Sumber dan Tampilkan, untuk pengurus
+ * props.internal = (opsional) tampilkan pilihan Sumber dan Tampilkan, untuk pengurus.
+ *                  Form publik (bukan internal) wajib lolos centang "bukan robot" (Turnstile).
  * props.onKirim  = async (data) => ..., lempar Error bila gagal (pesannya ditampilkan)
  * props.onTutup  = dipanggil saat Batal, Esc, atau klik di luar jendela
  */
@@ -29,6 +31,9 @@ export default function TestimoniForm(props) {
   });
   const [mengirim, setMengirim] = createSignal(false);
   const [pesanError, setPesanError] = createSignal("");
+  // token Turnstile; null = belum dicentang / kedaluwarsa. Tidak dipakai di form internal.
+  const [token, setToken] = createSignal(null);
+  let turnstile;
   const ubah = (kolom, nilai) => setData((d) => ({ ...d, [kolom]: nilai }));
   let kolomPertama;
 
@@ -53,10 +58,12 @@ export default function TestimoniForm(props) {
         rating: d.rating,
         isi_testimoni: d.isi_testimoni,
         // sumber & is_aktif hanya dipakai backend bila pengirimnya login
-        ...(props.internal ? { sumber: d.sumber, is_aktif: d.is_aktif } : {}),
+        ...(props.internal ? { sumber: d.sumber, is_aktif: d.is_aktif } : { turnstile_token: token() }),
       });
     } catch (error) {
       setPesanError(error.message);
+      // token sudah terpakai oleh kiriman yang gagal, jadi minta centang ulang
+      turnstile?.reset();
     } finally {
       setMengirim(false);
     }
@@ -221,6 +228,13 @@ export default function TestimoniForm(props) {
             </Show>
           </div>
 
+          {/* Form publik: centang "bukan robot" dari Cloudflare sebelum bisa mengirim */}
+          <Show when={!props.internal}>
+            <div className="mt-4">
+              <Turnstile onToken={setToken} ref={(r) => (turnstile = r)} />
+            </div>
+          </Show>
+
           <div className="mt-6 flex justify-end gap-2">
             <button
               type="button"
@@ -231,7 +245,8 @@ export default function TestimoniForm(props) {
             </button>
             <button
               type="submit"
-              disabled={mengirim()}
+              // form publik: Kirim baru aktif setelah lolos centang "bukan robot"
+              disabled={mengirim() || (!props.internal && !token())}
               className="min-h-11 cursor-pointer rounded-lg bg-[#39000a] px-4 text-sm font-semibold text-white hover:bg-[#5a0c1a] active:bg-[#2a0007] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {mengirim() ? "Mengirim..." : "Kirim"}
