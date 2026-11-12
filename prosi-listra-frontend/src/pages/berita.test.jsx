@@ -42,6 +42,15 @@ describe("Halaman Berita publik", () => {
     expect(screen.getByText("Persiapan Gelar Karya")).toBeTruthy();
   });
 
+  it("berita terbaru tampil sebagai kartu biasa, sama dengan yang lain", async () => {
+    listBerita.mockResolvedValue(daftar);
+    renderRoute(Berita, { path: "/berita" });
+
+    const [pertama, kedua] = await screen.findAllByRole("link");
+    expect(pertama.className).not.toContain("col-span");
+    expect(kedua.className).not.toContain("col-span");
+  });
+
   it("hanya meminta berita publik (tanpa semua: true)", async () => {
     listBerita.mockResolvedValue(daftar);
     renderRoute(Berita, { path: "/berita" });
@@ -76,6 +85,18 @@ describe("Halaman detail berita", () => {
     expect(screen.getByText("10 Okt 2026")).toBeTruthy();
     expect(screen.getByText("Latihan dimulai.")).toBeTruthy();
     expect(container.querySelector("img").getAttribute("src")).toBe("/uploads/sampul.jpg");
+    expect(container.querySelector("img").getAttribute("fetchpriority")).toBe("high");
+  });
+
+  it("judul tab browser = judul berita, dikembalikan saat halaman ditutup", async () => {
+    document.title = "Solid App";
+    getBerita.mockResolvedValue(daftar[1]);
+    const { unmount } = renderRoute(BeritaDetail, { path: "/berita/:id", url: "/berita/2" });
+
+    await screen.findByRole("heading", { name: "Persiapan Gelar Karya" });
+    expect(document.title).toBe("Persiapan Gelar Karya | LISTRA UNPAR");
+    unmount();
+    expect(document.title).toBe("Solid App");
   });
 
   it("untuk tautan menampilkan link ke sumber", async () => {

@@ -2,7 +2,13 @@
 // URL relatif: saat development, vite.config.js meneruskan /api ke backend (port 3001).
 
 async function request(url, options) {
-  const res = await fetch(url, options);
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch {
+    // fetch gagal total (server mati / offline); pesan bawaan browser "Failed to fetch" tidak ditampilkan
+    throw new Error("Tidak bisa terhubung ke server. Coba lagi nanti.");
+  }
   if (res.status === 204) return null;
 
   const body = await res.json().catch(() => null);

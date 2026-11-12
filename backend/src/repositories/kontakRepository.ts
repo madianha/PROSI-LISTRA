@@ -9,7 +9,7 @@ export interface KontakWhatsapp {
 
 export async function getKontak(): Promise<KontakWhatsapp | null> {
   const result = await pool.query<KontakWhatsapp>(
-    "SELECT * FROM kontak_whatsapp WHERE id = 1",
+    "SELECT id_kontak AS id, nomor_wa, nama_humas, template_pesan FROM kontak_whatsapp WHERE id_kontak = 1",
   );
   return result.rows[0] ?? null;
 }
@@ -20,7 +20,7 @@ export async function updateKontak(
   template: string,
 ): Promise<KontakWhatsapp | null> {
   const result = await pool.query<KontakWhatsapp>(
-    "UPDATE kontak_whatsapp SET nomor_wa = $1, nama_humas = $2, template_pesan = $3 WHERE id = 1 RETURNING *",
+    "UPDATE kontak_whatsapp SET nomor_wa = $1, nama_humas = $2, template_pesan = $3 WHERE id_kontak = 1 RETURNING id_kontak AS id, nomor_wa, nama_humas, template_pesan",
     [nomor, nama, template],
   );
   return result.rows[0] ?? null;
