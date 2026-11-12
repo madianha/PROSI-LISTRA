@@ -9,6 +9,8 @@ export const pool = new Pool({
   database: process.env.PGDATABASE ?? "prosi_listra",
   user: process.env.PGUSER ?? "postgres",
   password: process.env.PGPASSWORD ?? "postgres",
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 30000,
 });
 
 pool.on("error", (err) => {

@@ -17,29 +17,29 @@ export async function getKontak(_req: Request, res: Response): Promise<void> {
 
 export async function updateKontak(req: Request, res: Response): Promise<void> {
   try {
-    const { nomor_wa, nama_humas, template_pesan } = req.body as Record<
-      string,
-      unknown
-    >;
+    const body = req.body as Record<string, unknown>;
+    const rawNomor = body.nomor_tujuan || body.nomor_wa || body.nomor_whatsapp || body.no_telepon;
+    const rawNama = body.nama_humas !== undefined ? body.nama_humas : body.nama;
+    const rawTemplate = body.template_pesan;
 
     if (
-      typeof nomor_wa !== "string" ||
-      nomor_wa.trim() === "" ||
-      typeof nama_humas !== "string" ||
-      nama_humas.trim() === "" ||
-      typeof template_pesan !== "string" ||
-      template_pesan.trim() === ""
+      typeof rawNomor !== "string" ||
+      rawNomor.trim() === "" ||
+      typeof rawTemplate !== "string" ||
+      rawTemplate.trim() === ""
     ) {
       res.status(400).json({
-        message: "Field nomor_wa, nama_humas, dan template_pesan wajib diisi.",
+        message: "Field nomor kontak dan template_pesan wajib diisi.",
       });
       return;
     }
 
+    const namaToSave = typeof rawNama === "string" ? rawNama.trim() : null;
+
     const updated = await kontakRepository.updateKontak(
-      nomor_wa.trim(),
-      nama_humas.trim(),
-      template_pesan,
+      rawNomor.trim(),
+      namaToSave,
+      rawTemplate,
     );
 
     if (!updated) {

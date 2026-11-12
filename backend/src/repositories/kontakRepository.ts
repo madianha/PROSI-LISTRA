@@ -1,27 +1,60 @@
 import { pool } from "../db";
 
 export interface KontakWhatsapp {
-  id: number;
-  nomor_wa: string;
-  nama_humas: string;
+  id_kontak?: number;
+  id?: number;
+  nomor_tujuan?: string;
+  nomor_wa?: string;
+  no_telepon?: string;
+  nomor_whatsapp?: string;
+  nama_humas?: string;
+  nama?: string;
   template_pesan: string;
 }
 
 export async function getKontak(): Promise<KontakWhatsapp | null> {
   const result = await pool.query<KontakWhatsapp>(
-    "SELECT id_kontak AS id, nomor_wa, nama_humas, template_pesan FROM kontak_whatsapp WHERE id_kontak = 1",
+    `SELECT 
+       id_kontak,
+       id_kontak AS id,
+       nomor_wa AS nomor_tujuan,
+       nomor_wa,
+       nomor_wa AS no_telepon,
+       nomor_wa AS nomor_whatsapp,
+       COALESCE(nama_humas, 'Humas LISTRA') AS nama_humas,
+       COALESCE(nama_humas, 'Humas LISTRA') AS nama,
+       template_pesan
+     FROM kontak_whatsapp
+     ORDER BY id_kontak ASC
+     LIMIT 1;`
   );
   return result.rows[0] ?? null;
 }
 
 export async function updateKontak(
-  nomor: string,
-  nama: string,
-  template: string,
+  nomor?: string | null,
+  nama?: string | null,
+  template?: string | null,
+  idKontak?: number,
 ): Promise<KontakWhatsapp | null> {
   const result = await pool.query<KontakWhatsapp>(
-    "UPDATE kontak_whatsapp SET nomor_wa = $1, nama_humas = $2, template_pesan = $3 WHERE id_kontak = 1 RETURNING id_kontak AS id, nomor_wa, nama_humas, template_pesan",
-    [nomor, nama, template],
+    `UPDATE kontak_whatsapp
+     SET 
+       nomor_wa = COALESCE($1, nomor_wa),
+       template_pesan = COALESCE($2, template_pesan),
+       nama_humas = COALESCE($3, nama_humas)
+     WHERE id_kontak = COALESCE($4, (SELECT id_kontak FROM kontak_whatsapp ORDER BY id_kontak ASC LIMIT 1))
+     RETURNING 
+       id_kontak,
+       id_kontak AS id,
+       nomor_wa AS nomor_tujuan,
+       nomor_wa,
+       nomor_wa AS no_telepon,
+       nomor_wa AS nomor_whatsapp,
+       COALESCE(nama_humas, 'Humas LISTRA') AS nama_humas,
+       COALESCE(nama_humas, 'Humas LISTRA') AS nama,
+       template_pesan;`,
+    [nomor ?? null, template ?? null, nama ?? null, idKontak ?? null],
   );
   return result.rows[0] ?? null;
 }
