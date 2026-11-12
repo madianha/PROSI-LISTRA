@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderRoute } from "../test/renderRoute";
 
 vi.mock("../api/berita", () => ({ listBerita: vi.fn() }));
+vi.mock("../api/testimoni", () => ({ listTestimoni: vi.fn() }));
 
 import Home from "./home";
 import { listBerita } from "../api/berita";
+import { listTestimoni } from "../api/testimoni";
 
 const buatBerita = (id, judul, tanggal) => ({
   id_berita: id,
@@ -27,6 +29,7 @@ const daftar = [
 
 beforeEach(() => {
   vi.resetAllMocks();
+  listTestimoni.mockResolvedValue([]);
 });
 
 describe("Halaman Home: Berita Terbaru", () => {
@@ -54,5 +57,19 @@ describe("Halaman Home: Berita Terbaru", () => {
 
     expect(await screen.findByText("Berita belum bisa dimuat.")).toBeTruthy();
     expect(screen.getByText("Jasa Pilihan")).toBeTruthy();
+  });
+});
+
+describe("Halaman Home: Testimoni", () => {
+  it("menampilkan 3 testimoni terbaru dari API", async () => {
+    listBerita.mockResolvedValue([]);
+    listTestimoni.mockResolvedValue(
+      [1, 2, 3, 4].map((id) => ({ id_testimoni: id, nama_klien: `Klien ${id}`, isi_testimoni: "isi", rating: 5 })),
+    );
+    renderRoute(Home);
+
+    expect(await screen.findByText("Klien 1")).toBeTruthy();
+    expect(screen.getByText("Klien 3")).toBeTruthy();
+    expect(screen.queryByText("Klien 4")).toBeNull();
   });
 });
