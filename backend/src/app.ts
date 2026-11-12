@@ -18,7 +18,6 @@ app.get("/", (_req, res) => {
 app.use("/api/anggota", anggotaRoutes);
 app.use("/api/berita", beritaRoutes);
 app.use("/api/kontak", kontakRoutes);
-app.use("/api/berita", beritaRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/uploads", express.static(UPLOAD_DIR));
 
