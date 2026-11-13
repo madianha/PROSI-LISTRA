@@ -15,7 +15,7 @@ export default function CatalogueCard(props) {
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[18px] border border-[#f1dddd] bg-white shadow-[0_6px_18px_rgba(65,20,29,0.07)]">
-      <div className="relative h-40 shrink-0 overflow-hidden bg-gradient-to-br from-[#4a151d] via-[#21070c] to-[#100205]">
+      <div className="relative h-40 shrink-0 overflow-hidden  from-[#4a151d] via-[#21070c] to-[#100205]">
         {props.link_image && (
           <img src={props.link_image} alt={title()} className="h-full w-full object-cover" />
         )}
@@ -59,7 +59,7 @@ export default function CatalogueCard(props) {
             {props.min_performer != null && <p className="mt-1 text-sm text-[#9b8885]">Minimal {props.min_performer} performer</p>}
           </div>
           <a
-            href={props.detailHref || `/katalog/${props.id_jasa ?? ""}`}
+            href={props.detailHref || `/jasa/${props.id_jasa ?? ""}`}
             className="mt-3 flex min-h-12 items-center justify-center rounded-xl border border-[#e6cfcf] px-4 text-base font-semibold text-[#54141d] transition hover:bg-[#fffafa]"
           >
             Lihat Detail →

@@ -27,69 +27,63 @@ INSERT INTO provinsi (nama_provinsi, pulau) VALUES
     ('Papua', 'Papua'), ('Papua Barat', 'Papua'), ('Papua Barat Daya', 'Papua'),
     ('Papua Tengah', 'Papua'), ('Papua Pegunungan', 'Papua'), ('Papua Selatan', 'Papua');
 
--- gw komenin dulu, nanti di benerin
+-- =========================================
+-- JASA DUMMY dari prosi-listra-frontend/src/data/jasa.js
+-- Aman dijalankan berulang kali; jasa dicocokkan berdasarkan nama.
+-- Membutuhkan tabel jasa_kecocokan dari junction.sql.
+-- =========================================
 
--- -- =========================================
--- -- JASA
--- -- =========================================
-
--- INSERT INTO jasa (tipe_jasa, nama, deskripsi, id_kecocokan, kultur, harga_minimum, harga_maximum, min_performer, link_image, is_aktif)
--- VALUES
---     -- Tari
---     ('tari',  'Tari Merak',
---      'Tarian Sunda yang menggambarkan keindahan burung merak jantan saat memikat pasangannya.',
---      1, 'Jawa', 2500000, 5000000, 3,
---      'https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85',
---      TRUE),
-
---     ('tari',  'Tari Jaipong',
---      'Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik.',
---      2, 'Jawa', 3000000, 6000000, 4,
---      'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=900&q=85',
---      TRUE),
-
---     ('tari',  'Tari Saman',
---      'Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak.',
---      1, 'Sumatera', 4000000, 7500000, 8,
---      'https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85',
---      TRUE),
-
---     ('tari',  'Tari Topeng Cirebon',
---      'Tarian klasik Cirebon yang menggunakan topeng sebagai media ekspresi dan penceritaan.',
---      2, 'Jawa', 3500000, 6500000, 2,
---      NULL,
---      TRUE),
-
---     ('tari',  'Tari Kecak',
---      'Tarian ritual Bali yang terkenal dengan nyanyian kolektif "cak" tanpa iringan gamelan.',
---      3, 'Bali', 5000000, 9000000, 10,
---      NULL,
---      TRUE),
-
---     ('tari',  'Tari Pendet',
---      'Tarian penyambutan dari Bali, ditampilkan oleh penari yang membawa bokor berisi bunga.',
---      1, 'Bali', 2000000, 4500000, 4,
---      NULL,
---      TRUE),
-
---     -- Musik
---     ('musik', 'Angklung Ensemble',
---      'Pertunjukan ansambel angklung khas Sunda yang merdu dan bisa melibatkan partisipasi tamu.',
---      1, 'Jawa', 2000000, 4000000, 5,
---      NULL,
---      TRUE),
-
---     ('musik', 'Gamelan Sunda',
---      'Pertunjukan gamelan degung khas Sunda, cocok untuk latar suasana formal dan perayaan adat.',
---      2, 'Jawa', 3000000, 5500000, 6,
---      NULL,
---      TRUE),
-
---     ('musik', 'Gamelan Bali',
---      'Pertunjukan gamelan Bali dengan ritme cepat dan dinamis, membawa nuansa upacara Pulau Dewata.',
---      2, 'Bali', 3500000, 6000000, 6,
---      NULL,
---      TRUE);
+WITH dummy (
+  tipe_jasa, nama, deskripsi, nama_provinsi, durasi,
+  harga_minimum, harga_maximum, min_performer, link_media, link_image, is_aktif,
+  nama_kecocokan
+) AS (
+  VALUES
+    ('tari', 'Tari Merak',
+     'Tarian Sunda yang menggambarkan keindahan burung merak saat memikat pasangannya.',
+     'Jawa Barat', 10, 2500000, 5000000, 4, NULL,
+     'https://images.unsplash.com/photo-1504609813442-a8924e83f76e?auto=format&fit=crop&w=900&q=85', TRUE, 'Opening'),
+    ('tari', 'Tari Jaipong',
+     'Tarian pergaulan khas Jawa Barat dengan gerakan dinamis dan energik.',
+     'Jawa Barat', 15, 3000000, 6000000, 4, NULL,
+     'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=900&q=85', TRUE, 'Middle'),
+    ('tari', 'Tari Saman',
+     'Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak.',
+     'Aceh', 12, 4000000, 7500000, 8, NULL,
+     'https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85', TRUE, 'Opening'),
+    ('musik', 'Gamelan Sunda',
+     'Iringan musik tradisional Sunda untuk menyambut tamu atau mengisi suasana acara.',
+     'Jawa Barat', 60, 3500000, 7000000, 5, NULL,
+     'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=85', TRUE, 'Welcoming')
+), upserted AS (
+  INSERT INTO jasa (
+    tipe_jasa, nama, deskripsi, id_provinsi, durasi,
+    harga_minimum, harga_maximum, min_performer, link_media, link_image, is_aktif
+  )
+  SELECT d.tipe_jasa, d.nama, d.deskripsi, p.id_provinsi, d.durasi,
+         d.harga_minimum, d.harga_maximum, d.min_performer,
+         d.link_media, d.link_image, d.is_aktif
+  FROM dummy d
+  JOIN provinsi p ON p.nama_provinsi = d.nama_provinsi
+  ON CONFLICT (nama) DO UPDATE SET
+    tipe_jasa = EXCLUDED.tipe_jasa,
+    deskripsi = EXCLUDED.deskripsi,
+    id_provinsi = EXCLUDED.id_provinsi,
+    durasi = EXCLUDED.durasi,
+    harga_minimum = EXCLUDED.harga_minimum,
+    harga_maximum = EXCLUDED.harga_maximum,
+    min_performer = EXCLUDED.min_performer,
+    link_media = EXCLUDED.link_media,
+    link_image = EXCLUDED.link_image,
+    is_aktif = EXCLUDED.is_aktif
+  RETURNING id_jasa, nama
+)
+INSERT INTO jasa_kecocokan (id_jasa, id_kecocokan)
+SELECT u.id_jasa, k.id_kecocokan
+FROM upserted u
+JOIN dummy d ON d.nama = u.nama
+JOIN kecocokan k ON k.nama_kecocokan = d.nama_kecocokan
+ON CONFLICT (id_jasa, id_kecocokan) DO NOTHING;
 
 -- -- =========================================
 -- -- ANGGOTA

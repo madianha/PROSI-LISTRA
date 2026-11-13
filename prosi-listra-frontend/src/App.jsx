@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/home";
 import TentangKami from "./pages/tetang-kami";
 import Jasa from "./pages/jasa";
+import JasaDetail from "./pages/jasa-detail";
 import Jadwal from "./pages/jadwal"
 import Testimoni from "./pages/testimoni";
 import Footer from "./components/Footer";
@@ -25,7 +26,7 @@ function PublicLayout(props) {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen w-full bg-[#f5efeb]">
+      <div className="w-full bg-[#fffafa]">
         {/* <CatalogueCard />
         <CatalogueCard />
         <CatalogueCard /> */}
@@ -44,6 +45,7 @@ export default function App() {
       <Route path="/" component={PublicLayout}>
         {/* <Route path="/tentang-kami" component={TentangKami} /> */}
         <Route path="/jasa" component={Jasa} />
+        <Route path="/jasa/:id" component={JasaDetail} />
         <Route path="/jadwal" component={Jadwal} />
         <Route path="/berita" component={Berita} />
         <Route path="/berita/:id" component={BeritaDetail} />

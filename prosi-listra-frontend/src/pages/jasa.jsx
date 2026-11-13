@@ -2,54 +2,18 @@ import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import CatalogueCard from "../components/CatalogueCard";
 import CustomHeader from "../components/CustomHeader";
 import FilterJasa from "../components/FilterJasa";
-import { jasa as sampleJasa } from "../data/jasa";
-
-const API_URL = "http://localhost:3000/api/jasa";
+import { listJasa } from "../api/jasa";
 
 const fetchServices = async () => {
-  let data;
-  try {
-    const response = await fetch(API_URL);
-    if (!response.ok) throw new Error(`Gagal memuat data jasa (status ${response.status})`);
-    data = await response.json();
-  } catch {
-    // Keep the catalogue visible for local UI review when the API is offline.
-    data = sampleJasa;
-  }
-
-  return data.filter((item) => item.is_aktif !== false).map((item) => {
-    // Normalisasi kapital (tari -> Tari, musik -> Musik)
-    // Normalisasi kultur agar selaras dengan filter options di FilterJasa
-    let culture = item.kultur || "";
-
-    // Nusa Tenggara
-    if (culture === "Bali") culture = "Bali & Nusa Tenggara";
-    if (culture === "Nusa Tenggara Timur") culture = "Bali & Nusa Tenggara";
-    if (culture === "Nusa Tenggara Barat") culture = "Bali & Nusa Tenggara";
-
-    // Jawa
-    if (culture === "Jawa Barat") culture = "Jawa";
-    if (culture === "Jawa Tengah") culture = "Jawa";
-    if (culture === "Banten") culture = "Jawa";
-    if (culture === "Jawa Timur") culture = "Jawa";
-    // Sumatera
-    if (culture === "Aceh") culture = "Sumatera";
-    if (culture === "Batak") culture = "Sumatera";
-
-    const position = item.nama_kecocokan || "";
-    const type = item.tipe_jasa
+  const data = await listJasa();
+  return data.map((item) => ({
+    ...item,
+    culture: item.culture || "Nusantara",
+    type: item.tipe_jasa
       ? item.tipe_jasa.charAt(0).toUpperCase() + item.tipe_jasa.slice(1).toLowerCase()
-      : "Tari";
-
-    return {
-      ...item,
-      kultur: item.kultur || "Nusantara",
-      culture,
-      nama_kecocokan: position,
-      type,
-      position,
-    };
-  });
+      : "Jasa",
+    position: item.nama_kecocokan || "",
+  }));
 };
 
 export default function Katalog() {
