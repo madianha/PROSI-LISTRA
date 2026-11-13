@@ -7,7 +7,7 @@ import TestimoniCard from "../components/TestimoniCard";
 import CustomButton from "../components/CustomButton";
 import Footer from "../components/Footer";
 import { listBerita } from "../api/berita";
-import { testimoni } from "../data/testimoni";
+import { listTestimoni } from "../api/testimoni";
 import { listJasa } from "../api/jasa";
 
 const services = () => listJasa();
@@ -20,6 +20,7 @@ export default function Home() {
   const [jasa] = createResource(services);
   // 3 berita publik terbaru dari backend (sudah urut tanggal terbaru)
   const [berita] = createResource(() => listBerita());
+  const [testimoni] = createResource(listTestimoni);
 
   return <main className="home-page bg-white text-[#342426]">
     <CustomHeader category="Lingkung Seni Tradisional UNPAR" pageName="Tari dan Musik Tradisional untuk Acara Anda" colorText="text-[#ffe088]">
@@ -31,7 +32,7 @@ export default function Home() {
 
     <section id="katalog" className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KATALOG" title="Jasa Pilihan" description="Satu rentang harga per jasa; rinciannya dibahas lewat WhatsApp." /><Show when={jasa.loading}><p className="mt-4 text-center text-sm text-[#685856]">Memuat katalog jasa...</p></Show><Show when={jasa.error}><p className="mt-4 text-center text-sm text-[#685856]">Katalog jasa belum bisa dimuat.</p></Show><div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3"><For each={jasa()?.slice(0, 3) || []}>{(service) => <CatalogueCard {...service} />}</For></div><div className="mt-4 text-center"><CustomButton href="/jasa" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Lihat Semua Jasa</CustomButton></div></section>
 
-    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3">{testimoni.filter((row) => row.is_aktif).slice(0, 3).map((row) => <TestimoniCard key={row.id_testimoni} {...row} />)}</div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
+    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><Show when={testimoni.loading}><p className="mt-4 text-center text-sm text-[#685856]">Memuat testimoni...</p></Show><Show when={testimoni.error}><p className="mt-4 text-center text-sm text-[#685856]">Testimoni belum bisa dimuat.</p></Show><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3"><For each={testimoni()?.slice(0, 3) || []}>{(row) => <TestimoniCard {...row} />}</For></div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
 
     <section className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KABAR" title="Berita Terbaru" />
       {/* Switch = hanya satu keadaan yang tampil; error dicek dulu karena membaca berita() yang gagal akan melempar error */}

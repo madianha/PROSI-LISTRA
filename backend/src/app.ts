@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes";
 import beritaRoutes from "./routes/beritaRoutes";
 import kontakRoutes from "./routes/kontakRoutes";
 import jasaRoutes from "./routes/jasaRoutes";
+import testimoniRoutes from "./routes/testimoniRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
 import { UPLOAD_DIR } from "./storage/uploadStorage";
 
@@ -22,6 +23,7 @@ app.use("/api/anggota", anggotaRoutes);
 app.use("/api/berita", beritaRoutes);
 app.use("/api/kontak", kontakRoutes);
 app.use("/api/jasa", jasaRoutes);
+app.use("/api/testimoni", testimoniRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/uploads", express.static(UPLOAD_DIR));
 

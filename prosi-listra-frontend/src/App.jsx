@@ -24,9 +24,9 @@ import InternalKontak from "./pages/internal/kontak";
 
 function PublicLayout(props) {
   return (
-    <div>
+    <div className="flex min-h-screen flex-col">
       <Navbar />
-      <div className="w-full bg-[#fffafa]">
+      <div className="w-full flex-1 bg-[#fffafa]">
         {/* <CatalogueCard />
         <CatalogueCard />
         <CatalogueCard /> */}

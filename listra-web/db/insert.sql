@@ -85,6 +85,34 @@ JOIN dummy d ON d.nama = u.nama
 JOIN kecocokan k ON k.nama_kecocokan = d.nama_kecocokan
 ON CONFLICT (id_jasa, id_kecocokan) DO NOTHING;
 
+-- =========================================
+-- TESTIMONI DUMMY dari prosi-listra-frontend/src/data/testimoni.js
+-- Hanya data disetujui dan aktif yang tampil pada halaman publik.
+-- Aman dijalankan berulang kali berdasarkan nama klien, acara, dan isi.
+-- =========================================
+
+INSERT INTO testimoni (
+  nama_klien, instansi, nama_acara, is_acara_privat, isi_testimoni,
+  rating, tanggal_input, status, sumber, is_aktif
+)
+SELECT d.nama_klien, d.instansi, d.nama_acara, d.is_acara_privat, d.isi_testimoni,
+       d.rating, d.tanggal_input::timestamp, 'disetujui', 'web', TRUE
+FROM (VALUES
+  ('Ibu Ratna Sari', 'PT Nusantara Jaya', 'Gala Dinner Perusahaan', FALSE,
+   'Tamu undangan sangat terkesan. Kostumnya rapi dan penarinya profesional.', 5, '2026-09-20 10:00:00'),
+  ('Dinda Permatasari', NULL, 'Resepsi Pernikahan', TRUE,
+   'Terima kasih LISTRA, Tari Topeng-nya jadi momen paling berkesan di resepsi kami.', 5, '2026-09-21 13:30:00'),
+  ('Arif Budiman', 'Ikatan Alumni TI', 'Gathering Alumni', FALSE,
+   'Seru dan menghibur. Mungkin durasinya bisa sedikit lebih panjang.', 4, '2026-09-29 09:15:00')
+) AS d(nama_klien, instansi, nama_acara, is_acara_privat, isi_testimoni, rating, tanggal_input)
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM testimoni t
+  WHERE t.nama_klien = d.nama_klien
+    AND t.nama_acara = d.nama_acara
+    AND t.isi_testimoni = d.isi_testimoni
+);
+
 -- -- =========================================
 -- -- ANGGOTA
 -- -- Admin accounts only; personal fields left NULL
