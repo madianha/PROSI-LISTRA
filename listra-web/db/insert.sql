@@ -218,3 +218,27 @@ INSERT INTO berita (judul, tanggal, url_gambar, konten, is_publik) VALUES
     '<p>Ini contoh artikel yang ditulis langsung di editor. Ganti atau hapus lewat halaman Kelola Berita.</p><p>LISTRA UNPAR sedang mempersiapkan <strong>Gelar Karya 2026</strong> dengan penampilan tari dan musik tradisional dari berbagai daerah.</p>',
     TRUE
 );
+
+
+-- =========================================
+-- ALAT MUSIK (Dummy data awal sesuai mockup)
+-- =========================================
+
+INSERT INTO alat_musik (nama_alat_musik, jumlah) VALUES
+    ('Kendang', 2),
+    ('Bonang', 2),
+    ('Saron', 4),
+    ('Suling', 5),
+    ('Rebab', 2),
+    ('Gong', 2),
+    ('Kecapi', 3),
+    ('Angklung', 15),
+    ('Calung', 4),
+    ('Gambang', 2),
+    ('Kenong', 3),
+    ('Kempul', 2),
+    ('Peking', 2),
+    ('Demung', 2),
+    ('Jengglong', 2),
+    ('Rapai', 4)
+ON CONFLICT (nama_alat_musik) DO NOTHING;
