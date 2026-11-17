@@ -6,7 +6,11 @@ import { For } from "solid-js";
 // highlighted on its own page and every page under it.
 const MENU = [
   { href: "/internal/kalender", label: "Kalender Event" },
-  { href: "/internal/katalog", label: "Katalog Jasa" },
+  {
+    href: "/internal/jasa",
+    label: "Katalog Jasa",
+    aktif: (path) => path.startsWith("/internal/jasa") || path.startsWith("/internal/katalog"),
+  },
   { href: "/internal/alat-musik", label: "Alat Musik" },
   { href: "/internal/anggota", label: "Anggota" },
   { href: "/internal/periode", label: "Periode & Peran" },

@@ -8,6 +8,8 @@ export default defineConfig({
   plugins: [!process.env.VITEST && devtools(), solidPlugin(), tailwindcss()],
   server: {
     port: 3000,
+    allowedHosts: true,
+
     // backend Express (folder backend/) berjalan di port 3001
     proxy: {
       '/api': 'http://localhost:3001',
