@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 
-import kontakRouter from './routes/kontak.js';
-import jasaRouter   from './routes/jasa.js';
+import kontakRouter    from './routes/kontak.js';
+import jasaRouter      from './routes/jasa.js';
+import alatMusikRouter from './routes/alat-musik.js';
 
 const app  = express();
 const PORT = process.env.PORT ?? 3000;
@@ -11,10 +12,10 @@ const PORT = process.env.PORT ?? 3000;
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 
-app.use('/api/kontak', kontakRouter);
-app.use('/api/jasa',   jasaRouter);
+app.use('/api/kontak',     kontakRouter);
+app.use('/api/jasa',       jasaRouter);
+app.use('/api/alat-musik', alatMusikRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
 });
-
