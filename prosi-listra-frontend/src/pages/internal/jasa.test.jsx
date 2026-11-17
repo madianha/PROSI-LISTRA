@@ -75,19 +75,19 @@ function renderHalaman() {
 }
 
 describe("Internal Katalog Jasa (/internal/jasa)", () => {
-  it("merender jasa aktif dan nonaktif beserta penghitung JASA TERDAFTAR · X", async () => {
+  it("merender jasa aktif dan nonaktif beserta penghitung X Jasa", async () => {
     renderHalaman();
 
     expect(await screen.findByText("Tari Merak")).toBeTruthy();
     expect(screen.getByText("Gamelan Degung")).toBeTruthy();
-    expect(screen.getByText("JASA TERDAFTAR · 2")).toBeTruthy();
+    expect(screen.getByText("2 Jasa")).toBeTruthy();
 
     // Badge Nonaktif pada Gamelan Degung
     expect(screen.getByText("Nonaktif")).toBeTruthy();
 
     // Eyebrow budaya & posisi pentas
-    expect(screen.getByText("TARI JAWA BARAT · OPENING")).toBeTruthy();
-    expect(screen.getByText("MIDDLE")).toBeTruthy();
+    expect(screen.getByText("TARI · JAWA BARAT · OPENING")).toBeTruthy();
+    expect(screen.getByText("MUSIK · MIDDLE")).toBeTruthy();
 
     // Format harga Rupiah
     expect(screen.getByText("Rp 2.500.000 – Rp 5.000.000")).toBeTruthy();
@@ -101,67 +101,67 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
 
     expect(screen.getByText("Tari Merak")).toBeTruthy();
     expect(screen.getByText("Gamelan Degung")).toBeTruthy();
-    expect(screen.getByText("JASA TERDAFTAR · 2")).toBeTruthy();
+    expect(screen.getByText("2 Jasa")).toBeTruthy();
 
     // Filter kategori Tari
     const filterGroup = screen.getByRole("group", { name: /Filter kategori jasa/i });
     fireEvent.click(within(filterGroup).getByText("Tari"));
     expect(screen.getByText("Tari Merak")).toBeTruthy();
     expect(screen.queryByText("Gamelan Degung")).toBeNull();
-    expect(screen.getByText("JASA TERDAFTAR · 1")).toBeTruthy();
+    expect(screen.getByText("1 Jasa")).toBeTruthy();
 
     // Filter kategori Musik
     fireEvent.click(within(filterGroup).getByText("Musik"));
     expect(screen.queryByText("Tari Merak")).toBeNull();
     expect(screen.getByText("Gamelan Degung")).toBeTruthy();
-    expect(screen.getByText("JASA TERDAFTAR · 1")).toBeTruthy();
+    expect(screen.getByText("1 Jasa")).toBeTruthy();
 
     // Kembali ke Semua
     fireEvent.click(within(filterGroup).getByText("Semua"));
-    expect(screen.getByText("JASA TERDAFTAR · 2")).toBeTruthy();
+    expect(screen.getByText("2 Jasa")).toBeTruthy();
 
     // Pencarian berdasarkan asal provinsi dengan debounce 300ms
     const searchInput = screen.getByPlaceholderText(
-      "Cari nama jasa atau asal provinsi.."
+      "Cari nama jasa atau asal provinsi..."
     );
     fireEvent.input(searchInput, { target: { value: "Jawa Barat" } });
 
     // Sebelum 300ms belum memfilter
     await vi.advanceTimersByTimeAsync(200);
-    expect(screen.getByText("JASA TERDAFTAR · 2")).toBeTruthy();
+    expect(screen.getByText("2 Jasa")).toBeTruthy();
 
     // Setelah 300ms memfilter ke Tari Merak saja
     await vi.advanceTimersByTimeAsync(100);
-    expect(screen.getByText("JASA TERDAFTAR · 1")).toBeTruthy();
+    expect(screen.getByText("1 Jasa")).toBeTruthy();
     expect(screen.getByText("Tari Merak")).toBeTruthy();
     expect(screen.queryByText("Gamelan Degung")).toBeNull();
 
     vi.useRealTimers();
   });
 
-  it("menampilkan Asal provinsi (kultur) hanya saat JENIS JASA adalah Tari pada modal", async () => {
+  it("menampilkan Asal Provinsi (Kultur) hanya saat JENIS JASA adalah Tari pada modal", async () => {
     renderHalaman();
     expect(await screen.findByText("Tari Merak")).toBeTruthy();
 
-    fireEvent.click(screen.getByText("+ Tambah Jasa Baru"));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Jasa Baru" }));
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Tambah jasa baru")).toBeTruthy();
+    expect(within(dialog).getByText("Tambah Jasa Baru")).toBeTruthy();
 
-    // Secara bawaan Tari terpilih -> Asal provinsi (kultur) tampil beserta optgroup pulau
-    expect(within(dialog).getByLabelText("Asal provinsi (kultur)")).toBeTruthy();
+    // Secara bawaan Tari terpilih -> Asal Provinsi (Kultur) tampil beserta optgroup pulau
+    expect(within(dialog).getByLabelText("Asal Provinsi (Kultur)")).toBeTruthy();
     expect(
-      within(dialog).getByText("Dari daftar Provinsi, dikelompokkan per pulau")
+      within(dialog).getByText("Dikelompokkan per pulau")
     ).toBeTruthy();
     expect(dialog.querySelector('optgroup[label="Jawa"]')).toBeTruthy();
 
-    // Pilih Musik -> Asal provinsi (kultur) disembunyikan
+    // Pilih Musik -> Asal Provinsi (Kultur) disembunyikan
     fireEvent.click(within(dialog).getByRole("button", { name: /Musik/i }));
-    expect(within(dialog).queryByLabelText("Asal provinsi (kultur)")).toBeNull();
+    expect(within(dialog).queryByLabelText("Asal Provinsi (Kultur)")).toBeNull();
 
-    // Pilih kembali Tari -> Asal provinsi (kultur) tampil kembali
+    // Pilih kembali Tari -> Asal Provinsi (Kultur) tampil kembali
     fireEvent.click(within(dialog).getByRole("button", { name: /Tari/i }));
-    expect(within(dialog).getByLabelText("Asal provinsi (kultur)")).toBeTruthy();
+    expect(within(dialog).getByLabelText("Asal Provinsi (Kultur)")).toBeTruthy();
   });
 
   it("memvalidasi harga_maximum >= harga_minimum dan menyimpan jasa baru", async () => {
@@ -187,28 +187,28 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
     renderHalaman();
     expect(await screen.findByText("Tari Merak")).toBeTruthy();
 
-    fireEvent.click(screen.getByText("+ Tambah Jasa Baru"));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Jasa Baru" }));
     const dialog = await screen.findByRole("dialog");
 
     fireEvent.click(within(dialog).getByRole("button", { name: /Musik/i }));
-    fireEvent.input(within(dialog).getByLabelText("Nama jasa"), {
+    fireEvent.input(within(dialog).getByLabelText("Nama Jasa"), {
       target: { value: "Gamelan Kreasi Nusantara" },
     });
     fireEvent.click(within(dialog).getByRole("button", { name: /Closing/i }));
-    fireEvent.input(within(dialog).getByLabelText("Harga minimum (Rp)"), {
+    fireEvent.input(within(dialog).getByLabelText("Harga Minimum (Rp)"), {
       target: { value: "6000000" },
     });
-    fireEvent.input(within(dialog).getByLabelText("Harga maksimum (Rp)"), {
+    fireEvent.input(within(dialog).getByLabelText("Harga Maksimum (Rp)"), {
       target: { value: "3500000" },
     });
-    fireEvent.input(within(dialog).getByLabelText("Minimal performer"), {
+    fireEvent.input(within(dialog).getByLabelText("Minimal Performer"), {
       target: { value: "5" },
     });
-    fireEvent.input(within(dialog).getByLabelText("Durasi (menit)"), {
+    fireEvent.input(within(dialog).getByLabelText("Durasi Pertunjukan"), {
       target: { value: "20" },
     });
 
-    fireEvent.click(within(dialog).getByText("Simpan jasa"));
+    fireEvent.click(within(dialog).getByText("Simpan Jasa"));
     expect(
       await within(dialog).findByText(
         /Harga maksimum tidak boleh lebih kecil dari harga minimum/i
@@ -217,14 +217,14 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
     expect(createJasa).not.toHaveBeenCalled();
 
     // Perbaiki harga lalu simpan
-    fireEvent.input(within(dialog).getByLabelText("Harga minimum (Rp)"), {
+    fireEvent.input(within(dialog).getByLabelText("Harga Minimum (Rp)"), {
       target: { value: "3500000" },
     });
-    fireEvent.input(within(dialog).getByLabelText("Harga maksimum (Rp)"), {
+    fireEvent.input(within(dialog).getByLabelText("Harga Maksimum (Rp)"), {
       target: { value: "6000000" },
     });
 
-    fireEvent.click(within(dialog).getByText("Simpan jasa"));
+    fireEvent.click(within(dialog).getByText("Simpan Jasa"));
     await waitFor(() =>
       expect(createJasa).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -242,10 +242,10 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
     );
 
     expect(await screen.findByText("Gamelan Kreasi Nusantara")).toBeTruthy();
-    expect(screen.getByText("JASA TERDAFTAR · 3")).toBeTruthy();
+    expect(screen.getByText("3 Jasa")).toBeTruthy();
   });
 
-  it("membuka modal Ubah info · {nama} dan memperbarui jasa", async () => {
+  it("membuka modal Ubah Info · {nama} dan memperbarui jasa", async () => {
     updateJasa.mockResolvedValue({
       ...mockJasaList[0],
       nama: "Tari Merak Sunda",
@@ -254,14 +254,14 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
     renderHalaman();
     expect(await screen.findByText("Tari Merak")).toBeTruthy();
 
-    fireEvent.click(screen.getAllByText("Ubah info")[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Ubah Info" })[0]);
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Ubah info · Tari Merak")).toBeTruthy();
+    expect(within(dialog).getByText("Ubah Info · Tari Merak")).toBeTruthy();
 
-    fireEvent.input(within(dialog).getByLabelText("Nama jasa"), {
+    fireEvent.input(within(dialog).getByLabelText("Nama Jasa"), {
       target: { value: "Tari Merak Sunda" },
     });
-    fireEvent.click(within(dialog).getByText("Simpan jasa"));
+    fireEvent.click(within(dialog).getByText("Simpan Jasa"));
 
     await waitFor(() =>
       expect(updateJasa).toHaveBeenCalledWith(

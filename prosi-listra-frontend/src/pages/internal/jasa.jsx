@@ -10,8 +10,15 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import Icon from "../../components/Icon";
+import {
+  IconAlert,
+  IconEye,
+  IconEyeOff,
+  IconPencil,
+  IconPlay,
+  IconPlus,
+  IconSearch,
+} from "../../components/internal/jasa/JasaIcons";
 import JasaModal from "../../components/internal/jasa/JasaModal";
 import NonaktifkanJasaModal from "../../components/internal/jasa/NonaktifkanJasaModal";
 import {
@@ -60,10 +67,12 @@ export function formatEyebrowBudaya(item) {
     .trim()
     .toUpperCase();
 
+  const parts = [tipe === "musik" ? "MUSIK" : "TARI"];
   if (tipe === "tari" && prov && prov.toLowerCase() !== "nusantara") {
-    return `TARI ${prov.toUpperCase()} · ${posisi}`;
+    parts.push(prov.toUpperCase());
   }
-  return posisi;
+  parts.push(posisi);
+  return parts.join(" · ");
 }
 
 function JasaThumbnail(props) {
@@ -80,59 +89,56 @@ function JasaThumbnail(props) {
     )
   );
 
-  const innerContent = () => (
-    <>
-      <Show
-        when={src() && !broken()}
-        fallback={
-          <div class="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-[#4a0e17] via-[#340910] to-[#1d0408] text-center select-none">
-            <span class="font-serif text-[9px] font-bold tracking-widest text-[#d4af37]">
-              LISTRA
-            </span>
-          </div>
-        }
-      >
-        <img
-          src={src()}
-          alt={props.item?.nama || "Foto sampul jasa"}
-          width="64"
-          height="64"
-          onError={() => setBroken(true)}
-          class="h-full w-full object-cover"
-        />
-      </Show>
-      <span
-        aria-hidden="true"
-        class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/30"
-      >
-        <span class="flex h-7 w-7 items-center justify-center rounded-full border border-white/60 bg-black/55 pl-0.5 text-[10px] text-white shadow-sm">
-          ▶
-        </span>
-      </span>
-    </>
+  const frameClass = () =>
+    `relative block h-16 w-16 shrink-0 overflow-hidden rounded-[10px] border border-[#EAE2DA] bg-[#F3ECE4] ${
+      props.muted ? "opacity-60 grayscale-[35%]" : ""
+    }`;
+
+  const image = () => (
+    <Show
+      when={src() && !broken()}
+      fallback={
+        <div class="flex h-full w-full items-center justify-center bg-[#4A0E17] select-none">
+          <span class="font-serif text-[10px] font-bold tracking-[0.12em] text-[#D9BE94]">
+            LISTRA
+          </span>
+        </div>
+      }
+    >
+      <img
+        src={src()}
+        alt={props.item?.nama || "Foto sampul jasa"}
+        width="64"
+        height="64"
+        loading="lazy"
+        onError={() => setBroken(true)}
+        class="h-full w-full object-cover"
+      />
+    </Show>
   );
 
   return (
     <Show
       when={mediaUrl()}
-      fallback={
-        <div
-          class="group relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#ede0e2] bg-[#2a070c]"
-          title="Belum ada tautan media"
-        >
-          {innerContent()}
-        </div>
-      }
+      fallback={<div class={frameClass()}>{image()}</div>}
     >
       <a
         href={mediaUrl()}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Putar media ${props.item?.nama || "jasa"}`}
-        title={`Buka media ${props.item?.nama || ""}`}
-        class="group relative block h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-[#ede0e2] bg-[#2a070c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a0e17]"
+        title="Buka tautan media di tab baru"
+        class={`group ${frameClass()} cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4A0E17]`}
       >
-        {innerContent()}
+        {image()}
+        <span
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 flex items-center justify-center"
+        >
+          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(42,8,13,0.72)] pl-px text-white ring-1 ring-white/25 backdrop-blur-[2px] transition-transform duration-150 group-hover:scale-110">
+            <IconPlay size={11} />
+          </span>
+        </span>
       </a>
     </Show>
   );
@@ -401,96 +407,126 @@ export default function InternalJasa() {
     }
   };
 
+  const resetFilter = () => {
+    if (searchTimeoutId) clearTimeout(searchTimeoutId);
+    setSearch("");
+    setDebouncedSearch("");
+    setActiveCategory("Semua");
+  };
+
+  const secondaryBtn =
+    "inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#D9CCBF] bg-white px-3.5 text-[13px] font-semibold text-[#4A0E17] transition-colors hover:border-[#C9B8A8] hover:bg-[#FAF7F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4A0E17] disabled:cursor-not-allowed disabled:opacity-50";
+
+  const editBtnClass =
+    "inline-flex h-10 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#C8BCB0] bg-white px-3.5 text-[13px] font-semibold text-[#2A080D] transition-colors hover:border-[#8C6239] hover:bg-[#F7F3EE] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4A0E17] disabled:cursor-not-allowed disabled:opacity-50";
+
+  const deactivateBtnClass =
+    "inline-flex h-10 w-[136px] cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#6E1B27] bg-[#6E1B27] px-3.5 text-[13px] font-semibold text-white transition-colors hover:border-[#58141E] hover:bg-[#58141E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4A0E17] disabled:cursor-not-allowed disabled:opacity-50";
+
+  const activateBtnClass =
+    "inline-flex h-10 w-[136px] cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#2D6A4F] bg-[#2D6A4F] px-3.5 text-[13px] font-semibold text-white transition-colors hover:border-[#23533E] hover:bg-[#23533E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4A0E17] disabled:cursor-not-allowed disabled:opacity-50";
+
   return (
-    <div class="mx-auto max-w-6xl rounded-2xl bg-[#fbf8f7] p-1 sm:p-2">
-      {/* Page Header */}
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <h1 class="font-serif text-2xl font-bold text-[#2b181a]">
-          Katalog Jasa
-        </h1>
+    <div class="mx-auto max-w-6xl rounded-2xl bg-[#FAF7F2] px-4 py-6 sm:px-8 sm:py-8">
+      {/* Header */}
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="min-w-0">
+          <h1 class="font-serif text-[28px] font-bold leading-tight text-[#4A0E17] sm:text-[32px]">
+            Katalog Jasa
+          </h1>
+          <p class="mt-1.5 max-w-xl text-sm font-medium leading-relaxed text-[#4A433E]">
+            Kelola daftar pertunjukan tari dan musik untuk katalog publik LISTRA
+          </p>
+        </div>
         <button
           type="button"
           onClick={openAddModal}
-          class="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-xl bg-[#4a0e17] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition-colors hover:bg-[#58111a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a0e17]"
+          class="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 self-start rounded-lg bg-[#4A0E17] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#5E1520] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4A0E17] sm:self-auto"
         >
-          + Tambah Jasa Baru
+          <IconPlus size={16} />
+          <span>Tambah Jasa Baru</span>
         </button>
-      </div>
+      </header>
 
       <Show when={globalError()}>
         <div
           role="alert"
-          class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-red-800"
+          class="mt-6 flex items-start gap-2.5 rounded-xl border border-[#EBC9C9] bg-[#FBF1F0] px-4 py-3 text-[13px] text-[#8A1F2B]"
         >
-          {globalError()}
+          <IconAlert size={16} class="mt-px shrink-0" />
+          <span>{globalError()}</span>
         </div>
       </Show>
 
-      {/* Search & Category Filter Bar */}
-      <div class="mt-5 space-y-3">
-        <div class="relative">
-          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9c898b]">
-            <Icon icon={faSearch} class="text-xs" />
+      {/* Toolbar */}
+      <div class="mt-7 flex flex-col gap-3 border-y border-[#E8E0D8] py-4 md:flex-row md:items-center md:justify-between">
+        <div class="relative w-full md:max-w-[420px] md:flex-1">
+          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#9A8E86]">
+            <IconSearch size={16} />
           </span>
           <input
-            type="text"
+            type="search"
             aria-label="Cari nama jasa atau asal provinsi"
-            placeholder="Cari nama jasa atau asal provinsi.."
+            placeholder="Cari nama jasa atau asal provinsi..."
             value={search()}
             onInput={(e) => handleSearchInput(e.currentTarget.value)}
-            class="w-full rounded-xl border border-[#ede0e2] bg-white py-2.5 pl-10 pr-4 text-xs text-[#2b181a] placeholder:text-[#9c898b] focus:border-[#4a0e17] focus:outline-none focus:ring-1 focus:ring-[#4a0e17]"
+            class="h-10 w-full rounded-lg border border-[#E8E0D8] bg-white pl-10 pr-4 text-[13px] text-[#2B1418] transition-colors placeholder:text-[#9A8E86] hover:border-[#C9B8A8] focus:border-[#4A0E17] focus:outline-none focus:ring-2 focus:ring-[#4A0E17]/15"
           />
         </div>
 
-        <div
-          role="group"
-          aria-label="Filter kategori jasa"
-          class="flex flex-wrap items-center gap-2"
-        >
-          <For each={FILTER_CATEGORIES}>
-            {(cat) => {
-              const isSelected = () => activeCategory() === cat;
-              return (
-                <button
-                  type="button"
-                  aria-pressed={isSelected()}
-                  onClick={() => setActiveCategory(cat)}
-                  class={`inline-flex min-h-9 cursor-pointer items-center justify-center rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a0e17] ${
-                    isSelected()
-                      ? "border-[#4a0e17] bg-[#4a0e17] text-white"
-                      : "border-[#ede0e2] bg-white text-[#5c4a4c] hover:border-[#d9c7ca] hover:bg-[#fbf2f3] hover:text-[#4a0e17]"
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            }}
-          </For>
+        <div class="flex items-center justify-between gap-3 md:justify-end">
+          <div
+            role="group"
+            aria-label="Filter kategori jasa"
+            class="inline-flex items-center gap-0.5 rounded-lg border border-[#E8E0D8] bg-white p-1"
+          >
+            <For each={FILTER_CATEGORIES}>
+              {(cat) => {
+                const isSelected = () => activeCategory() === cat;
+                return (
+                  <button
+                    type="button"
+                    aria-pressed={isSelected()}
+                    onClick={() => setActiveCategory(cat)}
+                    class={`inline-flex h-8 cursor-pointer items-center justify-center rounded-md px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#4A0E17] ${
+                      isSelected()
+                        ? "bg-[#4A0E17] text-white"
+                        : "text-[#6B5F58] hover:bg-[#FAF7F2] hover:text-[#4A0E17]"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              }}
+            </For>
+          </div>
+          <span
+            aria-live="polite"
+            class="inline-flex h-8 items-center whitespace-nowrap rounded-md border border-[#E8E0D8] bg-white px-3 text-xs font-semibold tabular-nums text-[#8C6239]"
+          >
+            {`${filteredJasa().length} Jasa`}
+          </span>
         </div>
       </div>
 
-      {/* Registered Services List Card */}
-      <div class="mt-5 overflow-hidden rounded-2xl border border-[#ede0e2] bg-white shadow-2xs">
-        <div class="border-b border-[#ede0e2] bg-[#fcf9f9] px-5 py-3">
-          <span class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a6668]">
-            JASA TERDAFTAR · {filteredJasa().length}
-          </span>
-        </div>
-
+      {/* Daftar jasa */}
+      <div class="mt-5">
         <Switch>
           <Match when={jasaResource.loading && !jasaResource()}>
-            <div class="p-10 text-center text-xs text-[#7a6668]">
+            <p class="rounded-xl border border-dashed border-[#E8E0D8] px-6 py-14 text-center text-[13px] text-[#6B5F58]">
               Memuat katalog jasa...
-            </div>
+            </p>
           </Match>
 
           <Match when={jasaResource.error && !jasaResource()}>
-            <div class="p-10 text-center text-xs text-[#7a6668]">
-              <p>Gagal memuat katalog jasa dari server.</p>
+            <div class="rounded-xl border border-dashed border-[#E8E0D8] px-6 py-14 text-center">
+              <p class="text-[13px] text-[#6B5F58]">
+                Gagal memuat katalog jasa dari server. Periksa koneksi lalu muat ulang.
+              </p>
               <button
                 type="button"
                 onClick={() => refetchJasa()}
-                class="mt-2 inline-flex cursor-pointer font-semibold text-[#4a0e17] underline hover:text-[#58111a]"
+                class={`${secondaryBtn} mt-4`}
               >
                 Coba lagi
               </button>
@@ -498,105 +534,99 @@ export default function InternalJasa() {
           </Match>
 
           <Match when={filteredJasa().length === 0}>
-            <div class="p-10 text-center text-xs text-[#7a6668]">
-              Tidak ada jasa yang cocok dengan pencarian atau filter.
+            <div class="rounded-xl border border-dashed border-[#E8E0D8] px-6 py-14 text-center">
+              <p class="text-[13px] text-[#6B5F58]">
+                Tidak ada jasa yang cocok dengan pencarian atau filter.
+              </p>
+              <button type="button" onClick={resetFilter} class={`${secondaryBtn} mt-4`}>
+                Tampilkan semua jasa
+              </button>
             </div>
           </Match>
 
           <Match when={filteredJasa().length > 0}>
-            <ul class="divide-y divide-[#ede0e2]">
+            <ul class="space-y-2.5">
               <For each={filteredJasa()}>
                 {(item) => {
-                  const kategoriLabel = () =>
-                    String(item.tipe_jasa || "tari").toLowerCase() === "musik"
-                      ? "Musik"
-                      : "Tari";
                   const isBusy = () => updatingStatusId() === item.id_jasa;
 
                   return (
-                    <li class="grid grid-cols-1 items-center gap-4 px-5 py-4 lg:grid-cols-[minmax(220px,1.15fr)_minmax(240px,1.5fr)_minmax(190px,1fr)_auto]">
-                      {/* Column 1: Thumbnail + Primary Info */}
-                      <div class="flex items-center gap-3.5 min-w-0">
-                        <JasaThumbnail item={item} />
+                    <li class="flex flex-col gap-4 rounded-xl border border-[#EAE2DA] bg-white px-5 py-4 transition-colors duration-150 hover:border-[#C9B8A8] md:flex-row md:items-center md:gap-6">
+                      {/* Kiri + tengah: thumbnail dan info */}
+                      <div class="flex min-w-0 flex-1 items-start gap-4">
+                        <JasaThumbnail item={item} muted={!item.is_aktif} />
 
                         <div class="min-w-0 flex-1">
-                          <div class="flex flex-wrap items-center gap-1.5">
-                            <span class="inline-flex items-center rounded-md border border-[#ede0e2] bg-[#fbf8f7] px-2 py-0.5 text-[11px] font-semibold text-[#4a0e17]">
-                              {kategoriLabel()}
-                            </span>
-                            <Show when={!item.is_aktif}>
-                              <span class="inline-flex items-center rounded-md border border-[#f5c2c7] bg-[#fde8e9] px-2 py-0.5 text-[11px] font-semibold text-[#9e2a35]">
+                          <div class="flex min-h-[24px] items-center gap-2">
+                            <p class="truncate text-[11px] font-bold uppercase tracking-[0.06em] text-[#7C532E]">
+                              {formatEyebrowBudaya(item)}
+                            </p>
+                            <Show when={item.is_aktif === false}>
+                              <span class="inline-flex items-center rounded border border-[#E2D9D0] bg-[#F4EFEA] px-1.5 py-0.5 text-[11px] font-medium leading-none text-[#7A6E66]">
                                 Nonaktif
                               </span>
                             </Show>
                           </div>
 
-                          <h2 class="mt-1 truncate font-serif text-base font-bold text-[#2b181a]">
+                          <h2 class="mt-1 truncate font-serif text-[17px] font-bold leading-snug text-[#2A080D]">
                             {item.nama}
                           </h2>
-                          <p class="mt-0.5 text-xs text-[#7a6668]">
-                            min. {item.min_performer ?? 1} performer ·{" "}
-                            {item.durasi ?? 0} menit
+                          <p class="mt-1 line-clamp-2 text-sm font-medium leading-[1.5] text-[#3D3734]">
+                            {item.deskripsi || "Belum ada deskripsi."}
+                          </p>
+                          <p class="mt-1.5 text-xs font-medium tabular-nums text-[#574F4A]">
+                            Min. {item.min_performer ?? 1} performer · {item.durasi ?? 0} menit
                           </p>
                         </div>
                       </div>
 
-                      {/* Column 2: Culture & Stage Position + Description */}
-                      <div class="min-w-0">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-[#7c6238]">
-                          {formatEyebrowBudaya(item)}
-                        </p>
-                        <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5c4a4c]">
-                          {item.deskripsi || "Belum ada deskripsi."}
-                        </p>
-                      </div>
+                      {/* Kanan: harga dan aksi */}
+                      <div class="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t border-[#F1EBE5] pt-3 md:shrink-0 md:flex-nowrap md:justify-end md:border-t-0 md:pt-0">
+                        <div class="rounded-[10px] border border-[#DDD3C9] bg-[#FAF7F2] px-3.5 py-2 text-left md:text-right">
+                          <span class="block text-[11px] font-semibold text-[#6B625C]">
+                            Estimasi Harga
+                          </span>
+                          <span class="mt-0.5 block whitespace-nowrap text-sm font-bold tabular-nums text-[#2A080D]">
+                            {formatRupiahRange(item.harga_minimum, item.harga_maximum)}
+                          </span>
+                        </div>
 
-                      {/* Column 3: Price Range Box */}
-                      <div class="rounded-xl border border-[#f2dfe1] bg-[#fbf2f3] px-3.5 py-2.5">
-                        <span class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6f73]">
-                          RANGE HARGA
-                        </span>
-                        <span class="mt-0.5 block font-serif text-xs font-bold text-[#4a0e17] sm:text-sm">
-                          {formatRupiahRange(
-                            item.harga_minimum,
-                            item.harga_maximum
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Column 4: Action Buttons */}
-                      <div class="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(item)}
-                          disabled={isBusy()}
-                          class="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg bg-[#4a0e17] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#58111a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a0e17] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Ubah info
-                        </button>
-
-                        <Show
-                          when={item.is_aktif}
-                          fallback={
-                            <button
-                              type="button"
-                              onClick={() => handleAktifkanLangsung(item)}
-                              disabled={isBusy()}
-                              class="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg border border-[#d9c7ca] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#4a0e17] transition-colors hover:bg-[#fbf2f3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a0e17] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              Aktifkan
-                            </button>
-                          }
-                        >
+                        <div class="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setNonaktifkanTarget(item)}
+                            onClick={() => openEditModal(item)}
                             disabled={isBusy()}
-                            class="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg border border-[#d9c7ca] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#4a0e17] transition-colors hover:bg-[#fbf2f3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a0e17] disabled:cursor-not-allowed disabled:opacity-50"
+                            class={editBtnClass}
                           >
-                            Nonaktifkan
+                            <IconPencil size={14} />
+                            <span>Ubah Info</span>
                           </button>
-                        </Show>
+
+                          <Show
+                            when={item.is_aktif}
+                            fallback={
+                              <button
+                                type="button"
+                                onClick={() => handleAktifkanLangsung(item)}
+                                disabled={isBusy()}
+                                class={activateBtnClass}
+                              >
+                                <IconEye size={14} />
+                                <span>{isBusy() ? "Memproses..." : "Aktifkan"}</span>
+                              </button>
+                            }
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setNonaktifkanTarget(item)}
+                              disabled={isBusy()}
+                              class={deactivateBtnClass}
+                            >
+                              <IconEyeOff size={14} />
+                              <span>Nonaktifkan</span>
+                            </button>
+                          </Show>
+                        </div>
                       </div>
                     </li>
                   );
