@@ -32,7 +32,7 @@ const mockJasaList = [
     tipe_jasa: "tari",
     nama: "Tari Merak",
     deskripsi: "Tarian Sunda yang menggambarkan keindahan burung merak.",
-    posisi_pentas: "Opening",
+    posisi_pentas: ["Opening"],
     id_provinsi: 13,
     nama_provinsi: "Jawa Barat",
     pulau: "Jawa",
@@ -49,7 +49,7 @@ const mockJasaList = [
     tipe_jasa: "musik",
     nama: "Gamelan Degung",
     deskripsi: "Ansambel gamelan Sunda untuk penyambutan tamu.",
-    posisi_pentas: "Middle",
+    posisi_pentas: ["Middle"],
     id_provinsi: null,
     nama_provinsi: null,
     pulau: null,
@@ -150,9 +150,6 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
 
     // Secara bawaan Tari terpilih -> Asal Provinsi (Kultur) tampil beserta optgroup pulau
     expect(within(dialog).getByLabelText("Asal Provinsi (Kultur)")).toBeTruthy();
-    expect(
-      within(dialog).getByText("Dikelompokkan per pulau")
-    ).toBeTruthy();
     expect(dialog.querySelector('optgroup[label="Jawa"]')).toBeTruthy();
 
     // Pilih Musik -> Asal Provinsi (Kultur) disembunyikan
@@ -170,7 +167,7 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
       tipe_jasa: "musik",
       nama: "Gamelan Kreasi Nusantara",
       deskripsi: "Musik kolaborasi kontemporer.",
-      posisi_pentas: "Closing",
+      posisi_pentas: ["Opening", "Closing"],
       id_provinsi: null,
       nama_provinsi: null,
       pulau: null,
@@ -230,7 +227,7 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
         expect.objectContaining({
           tipe_jasa: "musik",
           nama: "Gamelan Kreasi Nusantara",
-          posisi_pentas: "Closing",
+          posisi_pentas: ["Opening", "Closing"],
           id_provinsi: null,
           harga_minimum: 3500000,
           harga_maximum: 6000000,
@@ -243,6 +240,89 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
 
     expect(await screen.findByText("Gamelan Kreasi Nusantara")).toBeTruthy();
     expect(screen.getByText("3 Jasa")).toBeTruthy();
+  });
+
+  it("menampilkan pesan validasi baru untuk nominal harga minimum, harga maksimum, dan durasi", async () => {
+    renderHalaman();
+    expect(await screen.findByText("Tari Merak")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Jasa Baru" }));
+    const dialog = await screen.findByRole("dialog");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /Musik/i }));
+    fireEvent.input(within(dialog).getByLabelText("Nama Jasa"), {
+      target: { value: "Ansambel Angklung" },
+    });
+
+    // 1. Validasi Harga Minimum kosong / tidak valid
+    fireEvent.click(within(dialog).getByText("Simpan Jasa"));
+    expect(
+      within(dialog).getByText("Tolong masukkan nominal harga minimum.")
+    ).toBeTruthy();
+
+    // Isi harga minimum valid
+    fireEvent.input(within(dialog).getByLabelText("Harga Minimum (Rp)"), {
+      target: { value: "1000000" },
+    });
+
+    // 2. Validasi Harga Maksimum kosong / tidak valid
+    fireEvent.click(within(dialog).getByText("Simpan Jasa"));
+    expect(
+      within(dialog).getByText("Tolong masukkan nominal harga maksimum.")
+    ).toBeTruthy();
+
+    // Isi harga maksimum valid
+    fireEvent.input(within(dialog).getByLabelText("Harga Maksimum (Rp)"), {
+      target: { value: "2000000" },
+    });
+
+    // 3. Validasi Durasi kosong / tidak valid
+    fireEvent.click(within(dialog).getByText("Simpan Jasa"));
+    expect(
+      within(dialog).getByText(
+        "Tolong isi durasi pertunjukan (menit) terlebih dahulu."
+      )
+    ).toBeTruthy();
+  });
+
+  it("mendukung pemilihan multi posisi pentas dan mencegah uncheck posisi terakhir", async () => {
+    renderHalaman();
+    expect(await screen.findByText("Tari Merak")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Jasa Baru" }));
+    const dialog = await screen.findByRole("dialog");
+
+    const btnOpening = within(dialog).getByRole("button", { name: "Opening" });
+    const btnMiddle = within(dialog).getByRole("button", { name: "Middle" });
+    const btnClosing = within(dialog).getByRole("button", { name: "Closing" });
+
+    // Bawaan: Opening aktif (aria-pressed=true), Middle & Closing nonaktif
+    expect(btnOpening.getAttribute("aria-pressed")).toBe("true");
+    expect(btnMiddle.getAttribute("aria-pressed")).toBe("false");
+    expect(btnClosing.getAttribute("aria-pressed")).toBe("false");
+
+    // Klik Middle -> Opening & Middle aktif
+    fireEvent.click(btnMiddle);
+    expect(btnOpening.getAttribute("aria-pressed")).toBe("true");
+    expect(btnMiddle.getAttribute("aria-pressed")).toBe("true");
+    expect(btnClosing.getAttribute("aria-pressed")).toBe("false");
+
+    // Klik Closing -> Opening, Middle, Closing aktif
+    fireEvent.click(btnClosing);
+    expect(btnOpening.getAttribute("aria-pressed")).toBe("true");
+    expect(btnMiddle.getAttribute("aria-pressed")).toBe("true");
+    expect(btnClosing.getAttribute("aria-pressed")).toBe("true");
+
+    // Uncheck Opening & Middle -> hanya Closing aktif
+    fireEvent.click(btnOpening);
+    fireEvent.click(btnMiddle);
+    expect(btnOpening.getAttribute("aria-pressed")).toBe("false");
+    expect(btnMiddle.getAttribute("aria-pressed")).toBe("false");
+    expect(btnClosing.getAttribute("aria-pressed")).toBe("true");
+
+    // Coba uncheck Closing (posisi terakhir yang aktif) -> harus tetap aktif
+    fireEvent.click(btnClosing);
+    expect(btnClosing.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("membuka modal Ubah Info · {nama} dan memperbarui jasa", async () => {

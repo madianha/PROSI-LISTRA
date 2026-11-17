@@ -37,7 +37,7 @@ const INITIAL_FORM = {
   tipe_jasa: "tari",
   nama: "",
   deskripsi: "",
-  posisi_pentas: "Opening",
+  posisi_pentas: ["Opening"],
   id_provinsi: "",
   harga_minimum: "",
   harga_maximum: "",
@@ -59,13 +59,15 @@ export function formatRupiahRange(min, max) {
 export function formatEyebrowBudaya(item) {
   const tipe = String(item?.tipe_jasa || "tari").toLowerCase();
   const prov = (item?.nama_provinsi || item?.kultur || "").trim();
-  const posisi = (
-    item?.posisi_pentas ||
-    item?.nama_kecocokan ||
-    "Opening"
-  )
-    .trim()
-    .toUpperCase();
+  let posisiStr = "Opening";
+  if (Array.isArray(item?.posisi_pentas) && item.posisi_pentas.length > 0) {
+    posisiStr = item.posisi_pentas.join(", ");
+  } else if (typeof item?.posisi_pentas === "string" && item.posisi_pentas.trim()) {
+    posisiStr = item.posisi_pentas.trim();
+  } else if (typeof item?.nama_kecocokan === "string" && item.nama_kecocokan.trim()) {
+    posisiStr = item.nama_kecocokan.trim();
+  }
+  const posisi = posisiStr.toUpperCase();
 
   const parts = [tipe === "musik" ? "MUSIK" : "TARI"];
   if (tipe === "tari" && prov && prov.toLowerCase() !== "nusantara") {
@@ -207,19 +209,29 @@ export default function InternalJasa() {
 
   const openAddModal = () => {
     setEditingItem(null);
-    setFormData({ ...INITIAL_FORM });
+    setFormData({ ...INITIAL_FORM, posisi_pentas: ["Opening"] });
     setFormError("");
     setIsFormModalOpen(true);
   };
 
   const openEditModal = (item) => {
     const tipe = String(item.tipe_jasa || "tari").toLowerCase();
+    let posisiList = ["Opening"];
+    if (Array.isArray(item.posisi_pentas) && item.posisi_pentas.length > 0) {
+      posisiList = [...item.posisi_pentas];
+    } else if (typeof item.posisi_pentas === "string" && item.posisi_pentas.trim()) {
+      posisiList = item.posisi_pentas.split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (typeof item.nama_kecocokan === "string" && item.nama_kecocokan.trim()) {
+      posisiList = item.nama_kecocokan.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    if (posisiList.length === 0) posisiList = ["Opening"];
+
     setEditingItem(item);
     setFormData({
       tipe_jasa: tipe === "musik" ? "musik" : "tari",
       nama: item.nama || "",
       deskripsi: item.deskripsi || "",
-      posisi_pentas: item.posisi_pentas || item.nama_kecocokan || "Opening",
+      posisi_pentas: posisiList,
       id_provinsi:
         tipe === "tari" && item.id_provinsi != null
           ? String(item.id_provinsi)
@@ -295,7 +307,7 @@ export default function InternalJasa() {
       !Number.isFinite(hargaMin) ||
       hargaMin < 0
     ) {
-      setFormError("Harga minimum harus berupa angka non-negatif.");
+      setFormError("Tolong masukkan nominal harga minimum.");
       return;
     }
     if (
@@ -303,7 +315,7 @@ export default function InternalJasa() {
       !Number.isFinite(hargaMax) ||
       hargaMax < 0
     ) {
-      setFormError("Harga maksimum harus berupa angka non-negatif.");
+      setFormError("Tolong masukkan nominal harga maksimum.");
       return;
     }
     if (hargaMax < hargaMin) {
@@ -319,7 +331,7 @@ export default function InternalJasa() {
 
     const durasi = Number(data.durasi);
     if (data.durasi === "" || !Number.isInteger(durasi) || durasi <= 0) {
-      setFormError("Durasi harus berupa angka bulat positif (menit).");
+      setFormError("Tolong isi durasi pertunjukan (menit) terlebih dahulu.");
       return;
     }
 
@@ -329,11 +341,23 @@ export default function InternalJasa() {
       return;
     }
 
+    const rawPosisi = data.posisi_pentas;
+    const posisiPentas = Array.isArray(rawPosisi)
+      ? rawPosisi
+      : typeof rawPosisi === "string" && rawPosisi.trim()
+      ? rawPosisi.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    if (posisiPentas.length === 0) {
+      setFormError("Pilih minimal satu posisi pentas.");
+      return;
+    }
+
     const payload = {
       tipe_jasa,
       nama,
       deskripsi: String(data.deskripsi || "").trim(),
-      posisi_pentas: data.posisi_pentas || "Opening",
+      posisi_pentas: posisiPentas,
       id_provinsi: tipe_jasa === "tari" ? Number(data.id_provinsi) : null,
       harga_minimum: hargaMin,
       harga_maximum: hargaMax,

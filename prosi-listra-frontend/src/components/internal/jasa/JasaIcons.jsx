@@ -108,7 +108,7 @@ export const IconAlert = (p) => (
   </BaseIcon>
 );
 
-/* Segitiga putar padat untuk badge media */
+
 export const IconPlay = (p) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

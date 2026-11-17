@@ -16,9 +16,25 @@ const POSISI_PENTAS_MAP: Record<string, "Opening" | "Middle" | "Closing"> = {
   closing: "Closing",
 };
 
-function normalizePosisiPentas(raw: unknown): "Opening" | "Middle" | "Closing" | null {
-  if (typeof raw !== "string" || !raw.trim()) return null;
-  return POSISI_PENTAS_MAP[raw.trim().toLowerCase()] ?? null;
+const POSISI_ORDER: ("Opening" | "Middle" | "Closing")[] = ["Opening", "Middle", "Closing"];
+
+export function normalizePosisiPentasArray(raw: unknown): ("Opening" | "Middle" | "Closing")[] {
+  let list: string[] = [];
+  if (Array.isArray(raw)) {
+    list = raw.map((item) => (typeof item === "string" ? item.trim() : "")).filter(Boolean);
+  } else if (typeof raw === "string" && raw.trim()) {
+    list = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
+  const matched = new Set<"Opening" | "Middle" | "Closing">();
+  for (const s of list) {
+    const norm = POSISI_PENTAS_MAP[s.toLowerCase()];
+    if (norm) {
+      matched.add(norm);
+    }
+  }
+
+  return POSISI_ORDER.filter((pos) => matched.has(pos));
 }
 
 function normalizeTipeJasa(raw: unknown): "tari" | "musik" | null {
@@ -60,10 +76,10 @@ export function validateJasaPayload(
   const deskripsi =
     typeof body.deskripsi === "string" ? body.deskripsi.trim() : "";
 
-  const posisi_pentas = normalizePosisiPentas(
+  const posisi_pentas = normalizePosisiPentasArray(
     body.posisi_pentas ?? body.nama_kecocokan
   );
-  if (!posisi_pentas) {
+  if (posisi_pentas.length === 0) {
     return {
       ok: false,
       message: "Posisi pentas wajib dipilih (Opening, Middle, atau Closing).",
@@ -96,7 +112,7 @@ export function validateJasaPayload(
   if (!Number.isSafeInteger(parsedDurasi) || parsedDurasi <= 0) {
     return {
       ok: false,
-      message: "Durasi harus berupa angka bulat positif (menit).",
+      message: "Tolong isi durasi pertunjukan (menit) terlebih dahulu.",
     };
   }
 
@@ -114,13 +130,13 @@ export function validateJasaPayload(
   if (!Number.isFinite(hargaMin) || hargaMin < 0) {
     return {
       ok: false,
-      message: "Harga minimum harus berupa angka non-negatif.",
+      message: "Tolong masukkan nominal harga minimum.",
     };
   }
   if (!Number.isFinite(hargaMax) || hargaMax < 0) {
     return {
       ok: false,
-      message: "Harga maksimum harus berupa angka non-negatif.",
+      message: "Tolong masukkan nominal harga maksimum.",
     };
   }
   if (hargaMax < hargaMin) {

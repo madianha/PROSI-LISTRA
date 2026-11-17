@@ -65,7 +65,7 @@ describe("Jasa & Provinsi Routes", () => {
         id_jasa: 1,
         tipe_jasa: "tari",
         nama: "Tari Merak",
-        posisi_pentas: "Opening",
+        posisi_pentas: ["Opening"],
         nama_kecocokan: "Opening",
         id_provinsi: 13,
         nama_provinsi: "Jawa Barat",
@@ -178,7 +178,7 @@ describe("Jasa & Provinsi Routes", () => {
         nama: "Tari Piring",
         id_provinsi: 3,
         nama_provinsi: "Sumatera Barat",
-        posisi_pentas: "Opening",
+        posisi_pentas: ["Opening"],
       });
     });
 
@@ -237,6 +237,44 @@ describe("Jasa & Provinsi Routes", () => {
       expect(pool.query).not.toHaveBeenCalled();
     });
 
+    it("menolak dengan pesan yang sesuai jika harga_minimum, harga_maximum, atau durasi tidak valid", async () => {
+      const resMin = await request(app).post("/api/jasa").send({
+        tipe_jasa: "musik",
+        nama: "Musik Uji Min",
+        posisi_pentas: "Opening",
+        durasi: 15,
+        harga_minimum: -1,
+        harga_maximum: 2500000,
+        min_performer: 2,
+      });
+      expect(resMin.status).toBe(400);
+      expect(resMin.body.message).toBe("Tolong masukkan nominal harga minimum.");
+
+      const resMax = await request(app).post("/api/jasa").send({
+        tipe_jasa: "musik",
+        nama: "Musik Uji Max",
+        posisi_pentas: "Opening",
+        durasi: 15,
+        harga_minimum: 1000000,
+        harga_maximum: -1,
+        min_performer: 2,
+      });
+      expect(resMax.status).toBe(400);
+      expect(resMax.body.message).toBe("Tolong masukkan nominal harga maksimum.");
+
+      const resDurasi = await request(app).post("/api/jasa").send({
+        tipe_jasa: "musik",
+        nama: "Musik Uji Durasi",
+        posisi_pentas: "Opening",
+        durasi: 0,
+        harga_minimum: 1000000,
+        harga_maximum: 2000000,
+        min_performer: 2,
+      });
+      expect(resDurasi.status).toBe(400);
+      expect(resDurasi.body.message).toBe("Tolong isi durasi pertunjukan (menit) terlebih dahulu.");
+    });
+
     it("menolak jasa Tari tanpa id_provinsi", async () => {
       const res = await request(app).post("/api/jasa").send({
         tipe_jasa: "tari",
@@ -267,6 +305,59 @@ describe("Jasa & Provinsi Routes", () => {
 
       expect(res.status).toBe(409);
       expect(res.body.message).toMatch(/sudah terdaftar/i);
+    });
+
+    it("berhasil membuat jasa dengan array multiple posisi_pentas", async () => {
+      const createdRow = {
+        id_jasa: 12,
+        tipe_jasa: "musik",
+        nama: "Kolaborasi Nusantara",
+        deskripsi: "Musik pembuka dan penutup.",
+        posisi_pentas: "Opening, Closing",
+        posisi_pentas_list: ["Opening", "Closing"],
+        id_provinsi: null,
+        nama_provinsi: null,
+        pulau: null,
+        durasi: 20,
+        harga_minimum: 4000000,
+        harga_maximum: 8000000,
+        min_performer: 5,
+        tautan_media: null,
+        foto_sampul: null,
+        is_aktif: true,
+      };
+      vi.mocked(pool.query).mockResolvedValueOnce({ rows: [createdRow], rowCount: 1 } as any);
+
+      const res = await request(app).post("/api/jasa").send({
+        tipe_jasa: "Musik",
+        nama: "Kolaborasi Nusantara",
+        deskripsi: "Musik pembuka dan penutup.",
+        posisi_pentas: ["Opening", "Closing"],
+        durasi: 20,
+        harga_minimum: 4000000,
+        harga_maximum: 8000000,
+        min_performer: 5,
+        is_aktif: true,
+      });
+
+      expect(res.status).toBe(201);
+      expect(res.body.posisi_pentas).toEqual(["Opening", "Closing"]);
+      expect(res.body.nama_kecocokan).toBe("Opening, Closing");
+    });
+
+    it("menolak jika posisi_pentas kosong atau tidak ada yang valid", async () => {
+      const res = await request(app).post("/api/jasa").send({
+        tipe_jasa: "musik",
+        nama: "Musik Tanpa Posisi",
+        posisi_pentas: [],
+        durasi: 15,
+        harga_minimum: 1000000,
+        harga_maximum: 2000000,
+        min_performer: 2,
+      });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/posisi pentas/i);
     });
   });
 
@@ -306,7 +397,7 @@ describe("Jasa & Provinsi Routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.nama).toBe("Tari Merak Klasik");
-      expect(res.body.posisi_pentas).toBe("Closing");
+      expect(res.body.posisi_pentas).toEqual(["Closing"]);
     });
 
     it("mengubah status aktif jasa melalui PATCH /api/jasa/:id/status", async () => {
