@@ -3,6 +3,9 @@ import CatalogueCard from "../components/CatalogueCard";
 import CustomHeader from "../components/CustomHeader";
 import FilterJasa from "../components/FilterJasa";
 import { listJasa } from "../api/jasa";
+import { jasa as sampleJasa } from "../data/jasa";
+
+const API_URL = "/api/jasa";
 
 const fetchServices = async () => {
   const data = await listJasa();

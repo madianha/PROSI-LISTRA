@@ -8,7 +8,7 @@ import {
 
 const JASA_CONTOH = "Tari Merak";
 
-const API_URL = "http://localhost:3000/api/kontak";
+const API_URL = "/api/kontak";
 
 // Normalisasi nomor telepon: buang semua non-digit, lalu "0" di awal -> "62".
 // Contoh: "0813-8573-1538" / "+62 813-8573-1538" / "6281385731538" -> "6281385731538".
