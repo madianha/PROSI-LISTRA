@@ -1,0 +1,324 @@
+import { pool } from "../db";
+
+export interface Provinsi {
+  id_provinsi: number;
+  nama_provinsi: string;
+  pulau: string;
+}
+
+export interface Jasa {
+  id_jasa: number;
+  tipe_jasa: "tari" | "musik";
+  nama: string;
+  deskripsi: string;
+  posisi_pentas: string | null;
+  nama_kecocokan: string | null;
+  id_provinsi: number | null;
+  nama_provinsi: string | null;
+  pulau: string | null;
+  kultur: string | null;
+  durasi: number | null;
+  harga_minimum: number;
+  harga_maximum: number;
+  min_performer: number;
+  tautan_media: string | null;
+  link_media: string | null;
+  foto_sampul: string | null;
+  link_image: string | null;
+  is_aktif: boolean;
+}
+
+export interface JasaInput {
+  tipe_jasa: "tari" | "musik";
+  nama: string;
+  deskripsi: string | null;
+  posisi_pentas: "Opening" | "Middle" | "Closing";
+  id_provinsi: number | null;
+  durasi: number;
+  harga_minimum: number;
+  harga_maximum: number;
+  min_performer: number;
+  tautan_media: string | null;
+  foto_sampul: string | null;
+  is_aktif: boolean;
+}
+
+export interface FilterJasa {
+  includeInactive?: boolean;
+  tipe?: string;
+  search?: string;
+}
+
+export async function ensureJasaSchema(): Promise<void> {
+  await pool.query(`
+    ALTER TABLE jasa
+      ADD COLUMN IF NOT EXISTS posisi_pentas VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS tautan_media TEXT,
+      ADD COLUMN IF NOT EXISTS foto_sampul TEXT;
+  `);
+}
+
+function mapJasaRow(row: any): Jasa {
+  const posisiPentas = row.posisi_pentas ?? row.nama_kecocokan ?? "Opening";
+  const tautanMedia = row.tautan_media ?? row.link_media ?? null;
+  const fotoSampul = row.foto_sampul ?? row.link_image ?? null;
+  const namaProvinsi = row.nama_provinsi ?? null;
+  const pulau = row.pulau ?? null;
+
+  return {
+    id_jasa: Number(row.id_jasa),
+    tipe_jasa: String(row.tipe_jasa || "tari").toLowerCase() === "musik" ? "musik" : "tari",
+    nama: String(row.nama ?? ""),
+    deskripsi: row.deskripsi ?? "",
+    posisi_pentas: posisiPentas,
+    nama_kecocokan: posisiPentas,
+    id_provinsi: row.id_provinsi != null ? Number(row.id_provinsi) : null,
+    nama_provinsi: namaProvinsi,
+    pulau,
+    kultur: namaProvinsi ?? row.kultur ?? null,
+    durasi: row.durasi != null ? Number(row.durasi) : null,
+    harga_minimum: Number(row.harga_minimum ?? 0),
+    harga_maximum: Number(row.harga_maximum ?? 0),
+    min_performer: Number(row.min_performer ?? 1),
+    tautan_media: tautanMedia,
+    link_media: tautanMedia,
+    foto_sampul: fotoSampul,
+    link_image: fotoSampul,
+    is_aktif: Boolean(row.is_aktif ?? true),
+  };
+}
+
+const SELECT_JASA_BASE = `
+  SELECT
+    j.id_jasa,
+    LOWER(j.tipe_jasa) AS tipe_jasa,
+    j.nama,
+    j.deskripsi,
+    j.id_provinsi,
+    p.nama_provinsi,
+    p.pulau,
+    COALESCE(
+      j.posisi_pentas,
+      (
+        SELECT k.nama_kecocokan
+        FROM jasa_kecocokan jk
+        JOIN kecocokan k ON jk.id_kecocokan = k.id_kecocokan
+        WHERE jk.id_jasa = j.id_jasa
+        ORDER BY jk.id_kecocokan ASC
+        LIMIT 1
+      ),
+      'Opening'
+    ) AS posisi_pentas,
+    j.durasi,
+    j.harga_minimum,
+    j.harga_maximum,
+    j.min_performer,
+    COALESCE(j.tautan_media, j.link_media) AS tautan_media,
+    COALESCE(j.foto_sampul, j.link_image) AS foto_sampul,
+    j.is_aktif
+  FROM jasa j
+  LEFT JOIN provinsi p ON j.id_provinsi = p.id_provinsi
+`;
+
+async function queryWithSchemaRetry(sql: string, params: any[] = []): Promise<{ rows: any[]; rowCount: number | null }> {
+  try {
+    return await pool.query(sql, params);
+  } catch (err: any) {
+    if (err?.code === "42703") {
+      await ensureJasaSchema();
+      return await pool.query(sql, params);
+    }
+    throw err;
+  }
+}
+
+export async function getProvinsiList(): Promise<Provinsi[]> {
+  const result = await pool.query<Provinsi>(
+    `SELECT id_provinsi, nama_provinsi, pulau
+     FROM provinsi
+     ORDER BY
+       CASE pulau
+         WHEN 'Sumatera' THEN 1
+         WHEN 'Jawa' THEN 2
+         WHEN 'Bali & Nusa Tenggara' THEN 3
+         WHEN 'Kalimantan' THEN 4
+         WHEN 'Sulawesi' THEN 5
+         WHEN 'Maluku' THEN 6
+         WHEN 'Papua' THEN 7
+         ELSE 8
+       END ASC,
+       id_provinsi ASC,
+       nama_provinsi ASC`
+  );
+  return result.rows.map((r) => ({
+    id_provinsi: Number(r.id_provinsi),
+    nama_provinsi: r.nama_provinsi,
+    pulau: r.pulau,
+  }));
+}
+
+export async function getJasaList(filters: FilterJasa = {}): Promise<Jasa[]> {
+  const conditions: string[] = [];
+  const values: any[] = [];
+  let paramIdx = 1;
+
+  if (!filters.includeInactive) {
+    conditions.push("j.is_aktif = TRUE");
+  }
+
+  if (filters.tipe && filters.tipe.trim() && filters.tipe.toLowerCase() !== "semua") {
+    conditions.push(`LOWER(j.tipe_jasa) = $${paramIdx}`);
+    values.push(filters.tipe.trim().toLowerCase());
+    paramIdx++;
+  }
+
+  if (filters.search && filters.search.trim()) {
+    conditions.push(`(j.nama ILIKE $${paramIdx} OR COALESCE(p.nama_provinsi, '') ILIKE $${paramIdx})`);
+    values.push(`%${filters.search.trim()}%`);
+    paramIdx++;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const sql = `
+    ${SELECT_JASA_BASE}
+    ${whereClause}
+    ORDER BY j.id_jasa ASC
+  `;
+
+  const result = await queryWithSchemaRetry(sql, values);
+  return result.rows.map(mapJasaRow);
+}
+
+export async function getJasaById(id: number): Promise<Jasa | null> {
+  const sql = `
+    ${SELECT_JASA_BASE}
+    WHERE j.id_jasa = $1
+  `;
+  const result = await queryWithSchemaRetry(sql, [id]);
+  return result.rows[0] ? mapJasaRow(result.rows[0]) : null;
+}
+
+export async function createJasa(data: JasaInput): Promise<Jasa> {
+  const sql = `
+    WITH inserted AS (
+      INSERT INTO jasa (
+        tipe_jasa,
+        nama,
+        deskripsi,
+        posisi_pentas,
+        id_provinsi,
+        durasi,
+        harga_minimum,
+        harga_maximum,
+        min_performer,
+        tautan_media,
+        link_media,
+        foto_sampul,
+        link_image,
+        is_aktif
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11, $11, $12)
+      RETURNING *
+    )
+    SELECT
+      inserted.*,
+      p.nama_provinsi,
+      p.pulau
+    FROM inserted
+    LEFT JOIN provinsi p ON inserted.id_provinsi = p.id_provinsi
+  `;
+
+  const values = [
+    data.tipe_jasa,
+    data.nama,
+    data.deskripsi,
+    data.posisi_pentas,
+    data.id_provinsi,
+    data.durasi,
+    data.harga_minimum,
+    data.harga_maximum,
+    data.min_performer,
+    data.tautan_media,
+    data.foto_sampul,
+    data.is_aktif,
+  ];
+
+  const result = await queryWithSchemaRetry(sql, values);
+  return mapJasaRow(result.rows[0]);
+}
+
+export async function updateJasa(id: number, data: JasaInput): Promise<Jasa | null> {
+  const sql = `
+    WITH updated AS (
+      UPDATE jasa
+      SET
+        tipe_jasa = $1,
+        nama = $2,
+        deskripsi = $3,
+        posisi_pentas = $4,
+        id_provinsi = $5,
+        durasi = $6,
+        harga_minimum = $7,
+        harga_maximum = $8,
+        min_performer = $9,
+        tautan_media = $10,
+        link_media = $10,
+        foto_sampul = $11,
+        link_image = $11,
+        is_aktif = $12
+      WHERE id_jasa = $13
+      RETURNING *
+    )
+    SELECT
+      updated.*,
+      p.nama_provinsi,
+      p.pulau
+    FROM updated
+    LEFT JOIN provinsi p ON updated.id_provinsi = p.id_provinsi
+  `;
+
+  const values = [
+    data.tipe_jasa,
+    data.nama,
+    data.deskripsi,
+    data.posisi_pentas,
+    data.id_provinsi,
+    data.durasi,
+    data.harga_minimum,
+    data.harga_maximum,
+    data.min_performer,
+    data.tautan_media,
+    data.foto_sampul,
+    data.is_aktif,
+    id,
+  ];
+
+  const result = await queryWithSchemaRetry(sql, values);
+  if (!result.rows[0]) {
+    return null;
+  }
+  return mapJasaRow(result.rows[0]);
+}
+
+export async function toggleStatusJasa(id: number, is_aktif: boolean): Promise<Jasa | null> {
+  const sql = `
+    WITH updated AS (
+      UPDATE jasa
+      SET is_aktif = $1
+      WHERE id_jasa = $2
+      RETURNING *
+    )
+    SELECT
+      updated.*,
+      p.nama_provinsi,
+      p.pulau
+    FROM updated
+    LEFT JOIN provinsi p ON updated.id_provinsi = p.id_provinsi
+  `;
+
+  const result = await queryWithSchemaRetry(sql, [is_aktif, id]);
+  if (!result.rows[0]) {
+    return null;
+  }
+  return mapJasaRow(result.rows[0]);
+}
