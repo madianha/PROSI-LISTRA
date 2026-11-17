@@ -4,7 +4,7 @@ import CustomHeader from "../components/CustomHeader";
 import FilterJasa from "../components/FilterJasa";
 import { jasa as sampleJasa } from "../data/jasa";
 
-const API_URL = "http://localhost:3000/api/jasa";
+const API_URL = "/api/jasa";
 
 const fetchServices = async () => {
   let data;
