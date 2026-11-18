@@ -8,7 +8,11 @@ import {
   updateAnggota,
 } from "../controllers/anggotaController";
 
+import { wajibLogin } from "../middleware/wajibLogin";
+
+// data anggota (termasuk email) hanya untuk panel internal: semua route wajib login
 const router = Router();
+router.use(wajibLogin);
 
 router.get("/spesialisasi", getSpesialisasiList);
 router.get("/", listAnggota);

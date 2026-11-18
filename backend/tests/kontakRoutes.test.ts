@@ -2,7 +2,11 @@ import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import kontakRoutes from "../src/routes/kontakRoutes";
+import { signJwt } from "../src/controllers/authController";
 import * as kontakRepository from "../src/repositories/kontakRepository";
+
+// semua route di file ini butuh login, kecuali yang menguji 401
+const LOGIN = `Bearer ${signJwt({ id_anggota: 2, peran: "listra" }, "listra_dev_secret")}`;
 
 vi.mock("../src/repositories/kontakRepository", () => ({
   getKontak: vi.fn(),
@@ -31,7 +35,7 @@ describe("Kontak Routes with nama_humas", () => {
       template_pesan: "Halo Admin LISTRA",
     });
 
-    const res = await request(app).get("/api/kontak");
+    const res = await request(app).get("/api/kontak").set("Authorization", LOGIN);
     expect(res.status).toBe(200);
     expect(res.body.nomor_tujuan).toBe("6281234567890");
     expect(res.body.nama_humas).toBe("Bagas Nugroho");
@@ -52,7 +56,7 @@ describe("Kontak Routes with nama_humas", () => {
     });
 
     const res = await request(app)
-      .put("/api/kontak")
+      .put("/api/kontak").set("Authorization", LOGIN)
       .send({
         nomor_wa: "6289999999999",
         nama_humas: "Siti Rahma",

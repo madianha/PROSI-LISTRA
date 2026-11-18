@@ -1,10 +1,13 @@
 // Semua panggilan ke backend untuk fitur berita.
 // URL relatif: saat development, vite.config.js meneruskan /api ke backend (port 3001).
 
-async function request(url, options) {
+import { headerLogin } from "../utils/sesiLogin";
+
+// token login ikut dikirim: menulis berita, upload, dan melihat draf (?semua=1) wajib login
+async function request(url, options = {}) {
   let res;
   try {
-    res = await fetch(url, options);
+    res = await fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...headerLogin() } });
   } catch {
     // fetch gagal total (server mati / offline); pesan bawaan browser "Failed to fetch" tidak ditampilkan
     throw new Error("Tidak bisa terhubung ke server. Coba lagi nanti.");

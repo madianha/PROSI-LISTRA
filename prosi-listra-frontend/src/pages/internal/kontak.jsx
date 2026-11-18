@@ -5,6 +5,7 @@ import {
   createSignal,
   Show,
 } from "solid-js";
+import { headerLogin } from "../../utils/sesiLogin";
 
 const JASA_CONTOH = "Tari Merak";
 
@@ -239,7 +240,8 @@ export default function InternalKontak() {
     try {
       const response = await fetch(API_URL, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        // mengubah kontak wajib login
+        headers: { "Content-Type": "application/json", ...headerLogin() },
         body: JSON.stringify({
           nomor_wa: normalizePhoneNumber(draftNomor()),
           nama_humas: draftNamaHumas(),

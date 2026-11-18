@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import multer from "multer";
 import { EKSTENSI_GAMBAR, saveImage } from "../storage/uploadStorage";
+import { wajibLogin } from "../middleware/wajibLogin";
 
 export const MAKS_UKURAN_GAMBAR = 5 * 1024 * 1024; // 5 MB
 
@@ -21,6 +22,7 @@ const router = Router();
  */
 router.post(
   "/",
+  wajibLogin,
   (req: Request, res: Response, next: NextFunction) => {
     upload.single("file")(req, res, (err: unknown) => {
       if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {

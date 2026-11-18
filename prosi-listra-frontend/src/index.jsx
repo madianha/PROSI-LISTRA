@@ -4,6 +4,10 @@ import { render } from 'solid-js/web';
 import 'solid-devtools';
 
 import App from './App';
+import { pantauSesi } from './utils/sesiLogin';
+
+// balasan 401 di halaman /internal = sesi habis, kembali ke halaman login
+pantauSesi();
 
 const root = document.getElementById('root');
 
