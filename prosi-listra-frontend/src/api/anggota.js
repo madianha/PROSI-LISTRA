@@ -65,3 +65,27 @@ export function updateAnggota(id, data) {
 export function toggleStatusAktif(id, is_aktif) {
   return request(`/api/anggota/${id}/status`, kirimJson("PATCH", { is_aktif }));
 }
+
+/**
+ * Tambah Massal: { anggota: [...] } dalam satu kali simpan (semua atau tidak sama sekali).
+ * Gagal validasi: Error dengan .kesalahan = [{ baris, kolom, pesan }] (baris mulai 1, urutan array yang dikirim).
+ */
+export async function createAnggotaBulk(anggota) {
+  let res;
+  try {
+    res = await fetch("/api/anggota/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headerLogin() },
+      body: JSON.stringify({ anggota }),
+    });
+  } catch {
+    throw new Error("Tidak bisa terhubung ke server. Coba lagi nanti.");
+  }
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    const error = new Error(body?.message ?? "Gagal menyimpan anggota.");
+    error.kesalahan = body?.kesalahan ?? [];
+    throw error;
+  }
+  return body;
+}
