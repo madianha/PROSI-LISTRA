@@ -41,7 +41,8 @@ describe("Jadwal Acara publik", () => {
   it("menampilkan event bulan ini dengan tanggal & jam per hari; acara privat tanpa nama dan lokasi", async () => {
     renderRoute(Jadwal);
     expect(await screen.findByRole("heading", { name: "Acara privat" })).toBeTruthy();
-    expect(listJadwal).toHaveBeenCalledWith({ dari: "2026-12-01", sampai: "2026-12-31" });
+    // kotak kalender Desember 2026: Senin 30 Nov sampai Minggu 3 Jan
+    expect(listJadwal).toHaveBeenCalledWith({ dari: "2026-11-30", sampai: "2027-01-03" });
     expect(screen.getByText("12–13 Des 2026")).toBeTruthy();
     expect(screen.getByText("16.00–18.00")).toBeTruthy();
     expect(screen.getByText(/Kampus UNPAR Ciumbuleuit/)).toBeTruthy();
@@ -58,7 +59,21 @@ describe("Jadwal Acara publik", () => {
     await screen.findByRole("heading", { name: "Acara privat" });
     listJadwal.mockResolvedValue([]);
     fireEvent.click(screen.getByRole("button", { name: "Bulan berikutnya" }));
-    await waitFor(() => expect(listJadwal).toHaveBeenLastCalledWith({ dari: "2027-01-01", sampai: "2027-01-31" }));
+    await waitFor(() => expect(listJadwal).toHaveBeenLastCalledWith({ dari: "2026-12-28", sampai: "2027-01-31" }));
     expect(await screen.findByText(/Belum ada acara terjadwal di Januari 2027/)).toBeTruthy();
+  });
+
+  it("kalender bulanan: event tampil di setiap harinya; menekan nama event menandai kartunya", async () => {
+    renderRoute(Jadwal);
+    await screen.findByRole("heading", { name: "Acara privat" });
+    // acara privat dua hari = dua tombol di kalender (12 dan 13 Des)
+    const diKalender = screen.getAllByRole("button", { name: "Acara privat" });
+    expect(diKalender).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Gelar Karya LISTRA" })).toHaveLength(1);
+    expect(screen.getByText("Acara Job External")).toBeTruthy();
+
+    Element.prototype.scrollIntoView = () => {};
+    fireEvent.click(diKalender[0]);
+    expect(screen.getByRole("heading", { name: "Acara privat" }).closest("li").className).toMatch(/ring-1/);
   });
 });
