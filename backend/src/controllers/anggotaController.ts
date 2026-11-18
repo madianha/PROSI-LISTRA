@@ -305,3 +305,145 @@ export async function toggleStatus(req: Request, res: Response): Promise<void> {
 export async function toggleStatusAktif(req: Request, res: Response): Promise<void> {
   return toggleStatus(req, res);
 }
+
+// ================= Tambah Massal (Bulk Add) =================
+
+export const MAKS_BARIS_BULK = 500;
+
+export interface KesalahanBulk {
+  baris: number; // nomor baris di tabel, mulai 1
+  kolom: string; // nama kolom tabel anggota
+  pesan: string;
+}
+
+/** "ya", "y", "true", "1", "x" = true; "tidak", "t", "false", "0", kosong = false. */
+function bacaBoolean(raw: unknown, bawaan: boolean): boolean | null {
+  if (typeof raw === "boolean") return raw;
+  const teks = String(raw ?? "").trim().toLowerCase();
+  if (teks === "") return bawaan;
+  if (["ya", "y", "true", "1", "x", "aktif"].includes(teks)) return true;
+  if (["tidak", "t", "n", "false", "0", "nonaktif"].includes(teks)) return false;
+  return null;
+}
+
+const teksBulk = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v).trim() : "");
+
+/** Validasi satu baris; kolom & batas sesuai tabel anggota (master.sql). */
+export function validasiBarisBulk(row: any, baris: number): { data: anggotaRepo.AnggotaBulkInput | null; salah: KesalahanBulk[] } {
+  const salah: KesalahanBulk[] = [];
+  const catat = (kolom: string, pesan: string) => salah.push({ baris, kolom, pesan });
+
+  const nama = teksBulk(row?.nama);
+  if (!nama) catat("nama", "Nama wajib diisi.");
+  else if (nama.length > 100) catat("nama", "Nama maksimal 100 karakter.");
+
+  const email = teksBulk(row?.email);
+  if (!email) catat("email", "Email wajib diisi.");
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) catat("email", "Format email tidak valid.");
+
+  const npm = teksBulk(row?.npm);
+  if (npm && !/^[0-9]{6,12}$/.test(npm)) catat("npm", "NPM harus 6-12 angka.");
+
+  const angkatanTeks = teksBulk(row?.angkatan_unpar);
+  if (angkatanTeks && !/^[0-9]{4}$/.test(angkatanTeks)) catat("angkatan_unpar", "Angkatan harus tahun 4 angka, mis. 2023.");
+
+  const jabatan = teksBulk(row?.jabatan);
+  if (jabatan.length > 50) catat("jabatan", "Jabatan maksimal 50 karakter.");
+
+  const peranTeks = teksBulk(row?.peran);
+  const peran = peranTeks ? PERAN_TO_DB[peranTeks.toLowerCase()] ?? null : null;
+  if (!peranTeks) catat("peran", "Peran wajib diisi.");
+  else if (!peran) catat("peran", "Peran tidak dikenal (Kepengurusan, Humas, Pelatih, Anggota, Alumni).");
+  else if (peran === "admin") catat("peran", "Peran Admin hanya dapat ditambahkan langsung melalui database.");
+
+  const is_penari = bacaBoolean(row?.is_penari, false);
+  const is_pemusik = bacaBoolean(row?.is_pemusik, false);
+  const is_aktif = bacaBoolean(row?.is_aktif, true);
+  if (is_penari === null) catat("is_penari", "Isi Ya atau Tidak.");
+  if (is_pemusik === null) catat("is_pemusik", "Isi Ya atau Tidak.");
+  if (is_aktif === null) catat("is_aktif", "Isi Ya atau Tidak.");
+
+  if (salah.length > 0) return { data: null, salah };
+  return {
+    data: {
+      nama,
+      email,
+      npm: npm || null,
+      angkatan_unpar: angkatanTeks ? Number(angkatanTeks) : null,
+      jabatan: jabatan || null,
+      peran: peran as string,
+      is_penari: is_penari as boolean,
+      is_pemusik: is_pemusik as boolean,
+      is_aktif: is_aktif as boolean,
+    },
+    salah,
+  };
+}
+
+/**
+ * POST /api/anggota/bulk  body: { anggota: [ {nama, email, npm, angkatan_unpar, jabatan, peran, is_penari, is_pemusik, is_aktif}, ... ] }
+ * Semua atau tidak sama sekali: ada satu baris salah = tidak ada yang disimpan, balasan 400 berisi daftar kesalahan per baris.
+ * Kata sandi semua anggota baru = kata sandi bawaan (password123), sama seperti Tambah Anggota tanpa kata sandi.
+ */
+export async function createAnggotaBulk(req: Request, res: Response): Promise<void> {
+  const rows = req.body?.anggota;
+  if (!Array.isArray(rows) || rows.length === 0) {
+    res.status(400).json({ message: "Tidak ada baris anggota untuk disimpan.", kesalahan: [] });
+    return;
+  }
+  if (rows.length > MAKS_BARIS_BULK) {
+    res.status(400).json({ message: `Maksimal ${MAKS_BARIS_BULK} baris sekali simpan.`, kesalahan: [] });
+    return;
+  }
+
+  const kesalahan: KesalahanBulk[] = [];
+  const data: anggotaRepo.AnggotaBulkInput[] = [];
+  rows.forEach((row, i) => {
+    const hasil = validasiBarisBulk(row, i + 1);
+    kesalahan.push(...hasil.salah);
+    if (hasil.data) data.push({ ...hasil.data, baris: i + 1 } as any);
+  });
+
+  // email / NPM ganda di dalam tabel itu sendiri
+  const pertamaEmail = new Map<string, number>();
+  const pertamaNpm = new Map<string, number>();
+  for (const d of data as any[]) {
+    const e = String(d.email).toLowerCase();
+    if (pertamaEmail.has(e)) kesalahan.push({ baris: d.baris, kolom: "email", pesan: `Email sama dengan baris ${pertamaEmail.get(e)}.` });
+    else pertamaEmail.set(e, d.baris);
+    if (d.npm) {
+      if (pertamaNpm.has(d.npm)) kesalahan.push({ baris: d.baris, kolom: "npm", pesan: `NPM sama dengan baris ${pertamaNpm.get(d.npm)}.` });
+      else pertamaNpm.set(d.npm, d.baris);
+    }
+  }
+
+  try {
+    if (data.length > 0) {
+      const terdaftar = await anggotaRepo.cariTerdaftar(
+        data.map((d) => String(d.email)),
+        data.map((d) => d.npm).filter((n): n is string => Boolean(n))
+      );
+      for (const d of data as any[]) {
+        if (terdaftar.emails.includes(String(d.email).toLowerCase()))
+          kesalahan.push({ baris: d.baris, kolom: "email", pesan: "Email sudah terdaftar." });
+        if (d.npm && terdaftar.npms.includes(d.npm)) kesalahan.push({ baris: d.baris, kolom: "npm", pesan: "NPM sudah terdaftar." });
+      }
+    }
+
+    if (kesalahan.length > 0) {
+      kesalahan.sort((a, b) => a.baris - b.baris);
+      res.status(400).json({ message: `Ada ${kesalahan.length} kesalahan. Tidak ada anggota yang disimpan.`, kesalahan });
+      return;
+    }
+
+    const jumlah = await anggotaRepo.createAnggotaBulk(data.map(({ baris, ...d }: any) => d));
+    res.status(201).json({ message: `${jumlah} anggota ditambahkan.`, jumlah });
+  } catch (error: any) {
+    console.error("Gagal menambah anggota massal:", error);
+    if (error?.code === "23505") {
+      res.status(409).json({ message: "Ada email atau NPM yang baru saja terdaftar. Muat ulang lalu coba lagi.", kesalahan: [] });
+      return;
+    }
+    res.status(500).json(ERROR_SERVER);
+  }
+}

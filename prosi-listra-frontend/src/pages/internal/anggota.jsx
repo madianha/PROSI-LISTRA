@@ -8,11 +8,12 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { faCircleNotch, faPlus, faRotateLeft, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faCircleNotch, faPlus, faRotateLeft, faSearch, faTableCells } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../components/Icon";
 import KonfirmasiModal from "../../components/internal/KonfirmasiModal";
 import AnggotaTable from "../../components/internal/anggota/AnggotaTable";
 import AnggotaModal from "../../components/internal/anggota/AnggotaModal";
+import BulkAnggotaModal from "../../components/internal/anggota/BulkAnggotaModal";
 import {
   createAnggota,
   getSpesialisasiList,
@@ -108,6 +109,9 @@ export default function InternalAnggota() {
   const [updatingStatusId, setUpdatingStatusId] = createSignal(null);
 
   const [isModalOpen, setIsModalOpen] = createSignal(false);
+  // Tambah Massal (tempel dari spreadsheet / .csv)
+  const [bulkTerbuka, setBulkTerbuka] = createSignal(false);
+  const [pesanBerhasil, setPesanBerhasil] = createSignal("");
   const [editingId, setEditingId] = createSignal(null);
   const [formData, setFormData] = createSignal({ ...INITIAL_FORM });
   const [formError, setFormError] = createSignal("");
@@ -276,14 +280,32 @@ export default function InternalAnggota() {
             Kelola profil anggota LISTRA, peran, angkatan, keaktifan, dan spesialisasi seni.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openAddModal}
-          class="inline-flex items-center gap-2 rounded-lg bg-[#39000a] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5a0c1a]"
-        >
-          <Icon icon={faPlus} class="text-xs" /> Tambah Anggota
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPesanBerhasil("");
+              setBulkTerbuka(true);
+            }}
+            class="inline-flex items-center gap-2 rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-sm font-semibold text-[#54141d] transition hover:bg-[#fdf7f7]"
+          >
+            <Icon icon={faTableCells} class="text-xs" /> Tambah Massal
+          </button>
+          <button
+            type="button"
+            onClick={openAddModal}
+            class="inline-flex items-center gap-2 rounded-lg bg-[#39000a] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5a0c1a]"
+          >
+            <Icon icon={faPlus} class="text-xs" /> Tambah Anggota
+          </button>
+        </div>
       </div>
+
+      <Show when={pesanBerhasil()}>
+        <p role="status" class="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
+          {pesanBerhasil()}
+        </p>
+      </Show>
 
       <Show when={globalError()}>
         <div role="alert" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -430,6 +452,17 @@ export default function InternalAnggota() {
       </Show>
 
       {/* Edit Anggota Modal */}
+      <Show when={bulkTerbuka()}>
+        <BulkAnggotaModal
+          onTutup={() => setBulkTerbuka(false)}
+          onSelesai={(jumlah) => {
+            setBulkTerbuka(false);
+            setPesanBerhasil(`${jumlah} anggota ditambahkan. Kata sandi awal mereka: password123.`);
+            refetchAnggota();
+          }}
+        />
+      </Show>
+
       <AnggotaModal
         isOpen={isModalOpen()}
         editingId={editingId()}
