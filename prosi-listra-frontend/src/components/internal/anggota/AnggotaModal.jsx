@@ -186,8 +186,8 @@ export default function AnggotaModal(props) {
                 </div>
               </div>
 
-              {/* Kata sandi: hanya tampil bila yang login Admin atau LISTRA (backend juga mengecek) */}
-              <Show when={props.bolehAturPassword}>
+              {/* Kata sandi: hanya tampil pada mode Tambah Anggota (bukan Ubah Data) bila yang login Admin atau LISTRA */}
+              <Show when={props.bolehAturPassword && !props.editingId}>
                 <div>
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
                     Kata Sandi
@@ -197,7 +197,7 @@ export default function AnggotaModal(props) {
                     type="password"
                     minLength={8}
                     autocomplete="new-password"
-                    placeholder={props.editingId ? "Kosongkan bila tidak diubah" : "Kosongkan untuk memakai password123"}
+                    placeholder="Kosongkan untuk memakai password123"
                     value={props.formData?.password || ""}
                     onInput={(e) => props.setFormData("password", e.currentTarget.value)}
                     class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-[#302929] shadow-2xs focus:border-[#4a0e17] focus:ring-1 focus:ring-[#4a0e17] focus:outline-none"

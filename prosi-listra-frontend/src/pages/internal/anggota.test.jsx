@@ -205,7 +205,7 @@ describe("Internal Anggota Management", () => {
     expect(options).toEqual(["Kepengurusan", "Pelatih", "Anggota", "Alumni"]);
   });
 
-  it("kolom kata sandi tampil untuk Admin/LISTRA", async () => {
+  it("kolom kata sandi tampil untuk Admin/LISTRA pada mode Tambah Anggota", async () => {
     bolehAturPassword.mockReturnValue(true);
     listAnggota.mockResolvedValue(mockAnggotaList);
     renderHalaman();
@@ -214,10 +214,26 @@ describe("Internal Anggota Management", () => {
     fireEvent.click(screen.getByText("Tambah Anggota"));
 
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Tambah Anggota Baru")).toBeTruthy();
+    expect(within(dialog).getByText("Kata Sandi")).toBeTruthy();
     expect(dialog.querySelector('input[type="password"]')).toBeTruthy();
   });
 
-  it("kolom kata sandi tidak tampil untuk peran lain", async () => {
+  it("kolom kata sandi TIDAK tampil pada mode Ubah Data Anggota meskipun Admin/LISTRA", async () => {
+    bolehAturPassword.mockReturnValue(true);
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+    fireEvent.click(screen.getAllByText("Ubah")[0]);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Ubah Data Anggota")).toBeTruthy();
+    expect(within(dialog).queryByText("Kata Sandi")).toBeNull();
+    expect(dialog.querySelector('input[type="password"]')).toBeNull();
+  });
+
+  it("kolom kata sandi tidak tampil untuk peran lain pada mode Tambah Anggota", async () => {
     bolehAturPassword.mockReturnValue(false);
     listAnggota.mockResolvedValue(mockAnggotaList);
     renderHalaman();
@@ -229,7 +245,8 @@ describe("Internal Anggota Management", () => {
     expect(dialog.querySelector('input[type="password"]')).toBeNull();
   });
 
-  it("menyimpan perubahan anggota lalu menutup modal tanpa error", async () => {
+  it("menyimpan perubahan anggota tanpa menyertakan password lalu menutup modal", async () => {
+    bolehAturPassword.mockReturnValue(true);
     listAnggota.mockResolvedValue(mockAnggotaList);
     updateAnggota.mockResolvedValue({ ...mockAnggotaList[0], nama: "Budi Baru" });
     renderHalaman();
@@ -238,9 +255,17 @@ describe("Internal Anggota Management", () => {
     fireEvent.click(screen.getAllByText("Ubah")[0]);
 
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Ubah Data Anggota")).toBeTruthy();
+    expect(dialog.querySelector('input[type="password"]')).toBeNull();
+
     fireEvent.click(within(dialog).getByText("Simpan Perubahan"));
 
-    await waitFor(() => expect(updateAnggota).toHaveBeenCalledWith(1, expect.any(Object)));
+    await waitFor(() => {
+      expect(updateAnggota).toHaveBeenCalledWith(
+        1,
+        expect.not.objectContaining({ password: expect.anything() })
+      );
+    });
     expect(await screen.findByText("Budi Baru")).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
