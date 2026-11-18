@@ -11,7 +11,7 @@ vi.mock("../../api/jasa", () => ({
   uploadSampulJasa: vi.fn(),
 }));
 
-import InternalJasa from "./jasa";
+import InternalJasa, { formatEyebrowBudaya } from "./jasa";
 import {
   createJasa,
   getProvinsiList,
@@ -388,5 +388,17 @@ describe("Internal Katalog Jasa (/internal/jasa)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aktifkan" }));
 
     await waitFor(() => expect(toggleStatusJasa).toHaveBeenCalledWith(2, true));
+  });
+});
+
+describe("formatEyebrowBudaya", () => {
+  it("menampilkan semua posisi pentas dari jasa_kecocokan", () => {
+    expect(formatEyebrowBudaya({ tipe_jasa: "tari", nama_provinsi: "Aceh", kecocokan: ["Opening", "Closing"] })).toBe(
+      "TARI · ACEH · OPENING, CLOSING",
+    );
+  });
+
+  it("jasa tanpa posisi pentas tidak diberi label posisi palsu", () => {
+    expect(formatEyebrowBudaya({ tipe_jasa: "musik", nama_provinsi: null, kecocokan: [] })).toBe("MUSIK");
   });
 });
