@@ -10,7 +10,8 @@ import { formatTanggal, jenisBerita } from "../../utils/berita";
 
 // Kolom daftar di layar sm ke atas: sampul | judul | jenis | tanggal | publik | aksi.
 // Header dan setiap baris memakai template yang sama agar kolomnya lurus.
-const KOLOM = "sm:grid-cols-[64px_minmax(0,1fr)_80px_104px_56px_auto]";
+// lebar tetap untuk tiap kolom (bukan auto), supaya header dan baris selalu sejajar
+const KOLOM = "sm:grid-cols-[64px_minmax(0,1fr)_72px_104px_264px]";
 
 /** Halaman Kelola Berita: daftar semua berita (termasuk draf) dengan Publik, Ubah, Hapus. */
 export default function InternalBerita() {
@@ -113,8 +114,7 @@ export default function InternalBerita() {
               <span>Judul</span>
               <span>Jenis</span>
               <span>Tanggal</span>
-              <span>Publik</span>
-              <span />
+              <span className="text-right">Aksi</span>
             </div>
 
             <ul>
@@ -138,9 +138,10 @@ export default function InternalBerita() {
                       <span className="whitespace-nowrap">{formatTanggal(item.tanggal)}</span>
                     </div>
 
-                    <div className="col-span-2 mt-1 flex items-center justify-between border-t border-[#f0dedf] pt-1 sm:contents">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-[#685856] sm:hidden" aria-hidden="true">
+                    {/* Kolom Aksi: Publik, Ubah, Hapus berdampingan di kanan. HP: baris sendiri di bawah judul */}
+                    <div className="col-span-2 mt-1 flex items-center justify-end gap-1 border-t border-[#f0dedf] pt-1 sm:col-span-1 sm:mt-0 sm:border-0 sm:pt-0">
+                      <div className="mr-1 flex items-center gap-1">
+                        <span className="text-xs text-[#685856]" aria-hidden="true">
                           Publik
                         </span>
                         <Toggle
@@ -154,8 +155,7 @@ export default function InternalBerita() {
                         />
                       </div>
 
-                      <div className="flex justify-end gap-1">
-                        <A
+                      <A
                           href={`/internal/berita/${item.id_berita}/ubah`}
                           className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 text-sm text-[#54141d] hover:bg-[#fff7f6] hover:underline active:bg-[#f5efeb]"
                         >
@@ -169,7 +169,6 @@ export default function InternalBerita() {
                         >
                           <Icon icon={faTrash} class="text-xs" /> Hapus
                         </button>
-                      </div>
                     </div>
                   </li>
                 )}
