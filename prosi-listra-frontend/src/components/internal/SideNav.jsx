@@ -13,7 +13,6 @@ const MENU = [
   },
   { href: "/internal/alat-musik", label: "Alat Musik" },
   { href: "/internal/anggota", label: "Anggota" },
-  { href: "/internal/periode", label: "Periode & Peran" },
   {
     href: "/internal/berita",
     label: "Kelola Berita",
