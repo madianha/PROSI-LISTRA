@@ -1,7 +1,11 @@
-async function request(url, options) {
+// token login ikut dikirim bila ada: route tulis butuh ini, dan pengguna login boleh melihat jasa nonaktif
+async function request(url, options = {}) {
+  const token = localStorage.getItem("listra_token");
+  const headers = { ...(options.headers ?? {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
   let res;
   try {
-    res = await fetch(url, options);
+    res = await fetch(url, { ...options, headers });
   } catch (err) {
     if (err?.name === "AbortError") throw err;
     throw new Error("Tidak bisa terhubung ke server. Coba lagi nanti.");
@@ -16,20 +20,17 @@ async function request(url, options) {
 }
 
 function kirimJson(method, data) {
-  const token = localStorage.getItem("listra_token");
-  return {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(data),
-  };
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) };
 }
 
-export function listJasa({ includeInactive = true, signal } = {}) {
+/** Publik: hanya jasa aktif. includeInactive: true untuk halaman internal (butuh login). */
+export function listJasa({ includeInactive = false, signal } = {}) {
   const qs = includeInactive ? "?include_inactive=true" : "";
   return request(`/api/jasa${qs}`, { signal });
+}
+
+export function getJasa(id) {
+  return request(`/api/jasa/${id}`);
 }
 
 export async function getProvinsiList() {

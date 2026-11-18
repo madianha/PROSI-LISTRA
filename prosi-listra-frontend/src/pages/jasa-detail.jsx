@@ -1,14 +1,8 @@
 import { A, useParams } from "@solidjs/router";
 import { createResource, Show } from "solid-js";
+import { getJasa } from "../api/jasa";
 
 const formatRupiah = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
-
-async function fetchJasa(id) {
-  const response = await fetch(`/api/jasa/${id}`);
-  const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(body?.message || "Detail jasa tidak dapat dimuat.");
-  return body;
-}
 
 async function fetchKontak() {
   const response = await fetch("/api/kontak");
@@ -18,7 +12,7 @@ async function fetchKontak() {
 
 export default function JasaDetail() {
   const params = useParams();
-  const [jasa] = createResource(() => params.id, fetchJasa);
+  const [jasa] = createResource(() => params.id, getJasa);
   const [kontak] = createResource(fetchKontak);
 
   const whatsappHref = () => {
@@ -61,13 +55,13 @@ export default function JasaDetail() {
             <article className="flex flex-col rounded-[18px] border border-[#f1dddd] bg-white p-4 shadow-[0_6px_18px_rgba(65,20,29,0.07)] sm:p-5">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="rounded-full border border-[#f5d5d6] bg-[#fff0f1] px-3 py-1 font-medium text-[#54141d]">Kategori: {item().tipe_jasa?.charAt(0).toUpperCase() + item().tipe_jasa?.slice(1).toLowerCase()}</span>
-                <span className="text-[#9b8885]">{item().kultur || "Nusantara"}</span>
+                <span className="text-[#9b8885]">{item().nama_provinsi || "Nusantara"}</span>
               </div>
 
-              <Show when={item().nama_kecocokan}>
+              <Show when={item().kecocokan?.length > 0}>
                 <p className="mt-4 flex flex-wrap items-center gap-2 text-sm">
                   <span className="text-[#9b8885]">Cocok untuk</span>
-                  <span className="rounded-full border border-[#e6cfcf] bg-[#fffafa] px-3 py-1 text-[#6d5554]">{item().nama_kecocokan}</span>
+                  <span className="rounded-full border border-[#e6cfcf] bg-[#fffafa] px-3 py-1 text-[#6d5554]">{item().kecocokan.join(", ")}</span>
                 </p>
               </Show>
 
