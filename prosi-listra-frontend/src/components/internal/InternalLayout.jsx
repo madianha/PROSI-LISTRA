@@ -1,8 +1,14 @@
+import { Navigate } from "@solidjs/router";
+import { Show } from "solid-js";
 import TopBar from "./TopBar";
+import { LOGIN_BELUM_LOGIN, sudahLogin } from "../../utils/sesiLogin";
 import SideNav from "./SideNav";
 
 export default function InternalLayout(props) {
+  // belum login / sesi kedaluwarsa: ke halaman login. Tanpa token, backend menganggap
+  // pengguna sebagai pengunjung (mis. form testimoni minta verifikasi "bukan robot").
   return (
+    <Show when={sudahLogin()} fallback={<Navigate href={LOGIN_BELUM_LOGIN} />}>
     <div className="flex min-h-screen flex-col bg-[#f5efeb]">
       <TopBar />
       {/* Phone: sidebar on top of the page. md: 232px sidebar on the left, page on the right. */}
@@ -16,5 +22,6 @@ export default function InternalLayout(props) {
         <main className="min-w-0 p-6">{props.children}</main>
       </div>
     </div>
+    </Show>
   );
 }

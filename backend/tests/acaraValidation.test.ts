@@ -91,7 +91,7 @@ describe("validateAcaraPayload", () => {
     [{ acara_jasa: [hari("2026-12-12", { jam_mulai: "" })] }, /wajib diisi/],
     [{ acara_jasa: [hari("2026-12-12", { jam_mulai: "18:00", jam_selesai: "18:00" })] }, /setelah jam mulai/],
     [{ acara_jasa: [hari("2026-12-12", { jam_selesai: "25:00" })] }, /wajib diisi/],
-    [{ acara_jasa: [hari("2026-12-01"), hari("2026-12-15")] }, /14 hari/],
+    [{ acara_jasa: [hari("2026-12-01"), hari("2026-12-08")] }, /7 hari/],
     [{ acara_jasa: [hari("2026-12-12", { id_jasa: "abc" })] }, /jasa pada/i],
     [{ acara_jasa: [hari("2026-12-12", { acara_performer: [{ id_anggota: 7 }, { id_anggota: 7 }] })] }, /dua kali/],
     [{ acara_jasa: [hari("2026-12-12", { acara_performer: [{ nama_performer: "" }] })] }, /non-anggota .* wajib/],
@@ -102,8 +102,8 @@ describe("validateAcaraPayload", () => {
     expect(gagal(job(ubah))).toMatch(pesan);
   });
 
-  it("rentang tepat 14 hari masih diterima", () => {
-    expect(validateAcaraPayload(job({ acara_jasa: [hari("2026-12-01"), hari("2026-12-14")] })).ok).toBe(true);
+  it("rentang tepat 7 hari masih diterima", () => {
+    expect(validateAcaraPayload(job({ acara_jasa: [hari("2026-12-01"), hari("2026-12-07")] })).ok).toBe(true);
   });
 });
 

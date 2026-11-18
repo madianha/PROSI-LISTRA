@@ -14,10 +14,13 @@ import {
 
 const FILTER = [
   { nilai: "semua", label: "Semua" },
-  { nilai: "menunggu", label: "Menunggu" },
-  { nilai: "disetujui", label: "Disetujui" },
+  { nilai: "menunggu", label: "Ditunggu" },
+  { nilai: "disetujui", label: "Diterima" },
   { nilai: "ditolak", label: "Ditolak" },
 ];
+
+// nilai di database tetap menunggu/disetujui/ditolak; yang tampil di layar:
+const LABEL_STATUS = { menunggu: "Ditunggu", disetujui: "Diterima", ditolak: "Ditolak" };
 
 // warna lencana status
 const WARNA_STATUS = {
@@ -80,7 +83,7 @@ export default function InternalTestimoni() {
         <div>
           <h1 className="font-serif text-2xl font-bold text-[#39000a]">Kelola Testimoni</h1>
           <p className="mt-1 text-sm text-[#685856]">
-            Testimoni tampil di website bila sudah Disetujui dan saklar Tampil menyala.
+            Testimoni tampil di website bila sudah Diterima dan saklar Tampil menyala.
           </p>
         </div>
         <button
@@ -153,8 +156,8 @@ export default function InternalTestimoni() {
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className={`rounded-full border px-2 py-0.5 font-semibold capitalize ${WARNA_STATUS[t.status]}`}>
-                          {t.status}
+                        <span className={`rounded-full border px-2 py-0.5 font-semibold ${WARNA_STATUS[t.status]}`}>
+                          {LABEL_STATUS[t.status]}
                         </span>
                         <span className="rounded-full border border-[#f0dedf] px-2 py-0.5 text-[#685856]">
                           {t.sumber === "whatsapp" ? "WhatsApp" : "Web"}
@@ -171,31 +174,33 @@ export default function InternalTestimoni() {
                     {/* whitespace-pre-line = baris baru dari pengirim tetap terlihat */}
                     <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-[#302929]">{t.isi_testimoni}</p>
 
-                    {/* Aksi: Setujui/Tolak sesuai status, saklar Tampil, Hapus */}
+                    {/* Aksi per status:
+                        Ditunggu = Terima / Tolak (belum pernah diputuskan)
+                        Diterima = saklar Tampil + Hapus
+                        Ditolak  = hanya Hapus */}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#f0dedf] pt-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-[#685856]">Tampil</span>
-                        <Toggle
-                          label={`Tampil: ${t.nama_klien}`}
-                          checked={t.is_aktif}
-                          // hanya yang sudah disetujui yang boleh ditampilkan
-                          disabled={t.status !== "disetujui" || menyimpan() === t.id_testimoni}
-                          onChange={(nilai) => ubah(t.id_testimoni, () => setAktifTestimoni(t.id_testimoni, nilai))}
-                        />
+                        <Show when={t.status === "disetujui"}>
+                          <span className="text-sm text-[#685856]">Tampil</span>
+                          <Toggle
+                            label={`Tampil: ${t.nama_klien}`}
+                            checked={t.is_aktif}
+                            disabled={menyimpan() === t.id_testimoni}
+                            onChange={(nilai) => ubah(t.id_testimoni, () => setAktifTestimoni(t.id_testimoni, nilai))}
+                          />
+                        </Show>
                       </div>
 
                       <div className="flex flex-wrap justify-end gap-1">
-                        <Show when={t.status !== "disetujui"}>
+                        <Show when={t.status === "menunggu"}>
                           <button
                             type="button"
                             disabled={menyimpan() === t.id_testimoni}
                             onClick={() => ubah(t.id_testimoni, () => setStatusTestimoni(t.id_testimoni, "disetujui"))}
                             className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-green-800 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <Icon icon={faCheck} class="text-xs" /> Setujui
+                            <Icon icon={faCheck} class="text-xs" /> Terima
                           </button>
-                        </Show>
-                        <Show when={t.status !== "ditolak"}>
                           <button
                             type="button"
                             disabled={menyimpan() === t.id_testimoni}
@@ -205,14 +210,16 @@ export default function InternalTestimoni() {
                             <Icon icon={faXmark} class="text-xs" /> Tolak
                           </button>
                         </Show>
-                        <button
-                          type="button"
-                          disabled={menyimpan() === t.id_testimoni}
-                          onClick={() => setKonfirmasiHapus({ id: t.id_testimoni, nama: t.nama_klien })}
-                          className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Icon icon={faTrash} class="text-xs" /> Hapus
-                        </button>
+                        <Show when={t.status !== "menunggu"}>
+                          <button
+                            type="button"
+                            disabled={menyimpan() === t.id_testimoni}
+                            onClick={() => setKonfirmasiHapus({ id: t.id_testimoni, nama: t.nama_klien })}
+                            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Icon icon={faTrash} class="text-xs" /> Hapus
+                          </button>
+                        </Show>
                       </div>
                     </div>
                   </li>

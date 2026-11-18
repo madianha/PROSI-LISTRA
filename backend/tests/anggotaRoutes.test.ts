@@ -5,6 +5,9 @@ import app from "../src/app";
 import { pool } from "../src/db";
 import { signJwt } from "../src/controllers/authController";
 
+// semua route di file ini butuh login, kecuali yang menguji 401
+const LOGIN = `Bearer ${signJwt({ id_anggota: 2, peran: "listra" }, "listra_dev_secret")}`;
+
 vi.mock("../src/db", () => ({
   pool: {
     query: vi.fn(),
@@ -25,7 +28,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
       ];
       vi.mocked(pool.query).mockResolvedValueOnce({ rows: mockJasa } as any);
 
-      const res = await request(app).get("/api/anggota/spesialisasi");
+      const res = await request(app).get("/api/anggota/spesialisasi").set("Authorization", LOGIN);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockJasa);
@@ -60,7 +63,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
       ];
       vi.mocked(pool.query).mockResolvedValueOnce({ rows: mockAnggota } as any);
 
-      const res = await request(app).get("/api/anggota");
+      const res = await request(app).get("/api/anggota").set("Authorization", LOGIN);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockAnggota);
@@ -110,7 +113,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
       vi.mocked(pool.query).mockResolvedValueOnce({ rows: [createdAnggota] } as any);
 
       const res = await request(app)
-        .post("/api/anggota")
+        .post("/api/anggota").set("Authorization", LOGIN)
         .send({
           nama: "Dewi",
           email: "dewi@student.unpar.ac.id",
@@ -150,9 +153,9 @@ describe("Anggota Routes with ERD v5 Schema", () => {
     const body = { nama: "Sari", email: "sari@student.unpar.ac.id", peran: "Anggota", password: "rahasia123" };
     const token = (peran: string) => `Bearer ${signJwt({ id_anggota: 1, peran }, "listra_dev_secret")}`;
 
-    it("menolak kata sandi tanpa login", async () => {
+    it("menolak tanpa login (401)", async () => {
       const res = await request(app).post("/api/anggota").send(body);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(401);
       expect(pool.connect).not.toHaveBeenCalled();
     });
 
@@ -164,7 +167,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
     it("menolak token palsu", async () => {
       const palsu = signJwt({ id_anggota: 1, peran: "admin" }, "bukan-rahasia-server");
       const res = await request(app).post("/api/anggota").set("Authorization", `Bearer ${palsu}`).send(body);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(401);
     });
 
     it("menolak kata sandi kurang dari 8 karakter", async () => {
