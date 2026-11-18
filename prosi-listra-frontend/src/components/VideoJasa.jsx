@@ -53,7 +53,7 @@ function namaSitus(url) {
  * Letakkan di dalam wadah yang punya kelas `relative` (foto jasa).
  * props.url    = link_media jasa
  * props.judul  = nama jasa (untuk label tombol & judul pemutar)
- * props.kecil  = (opsional) tombol lebih kecil, untuk kartu katalog
+ * Dipakai di halaman Detail Jasa saja; kartu katalog cukup membuka halaman detail.
  */
 export default function VideoJasa(props) {
   const [diputar, setDiputar] = createSignal(false);
@@ -88,11 +88,7 @@ export default function VideoJasa(props) {
           className={`${PENUH} group flex cursor-pointer items-center justify-center bg-black/10 transition hover:bg-black/25`}
         >
           {/* lingkaran tombol; pl-1 = segitiga play tampak di tengah secara visual */}
-          <span
-            className={`flex items-center justify-center rounded-full bg-black/55 pl-1 text-white transition group-hover:bg-black/70 ${
-              props.kecil ? "size-14 text-xl" : "size-[72px] text-2xl"
-            }`}
-          >
+          <span className="flex size-[72px] items-center justify-center rounded-full bg-black/55 pl-1 text-2xl text-white transition group-hover:bg-black/70">
             <Icon icon={faPlay} />
           </span>
         </button>
