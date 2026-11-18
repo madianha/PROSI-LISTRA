@@ -1,5 +1,8 @@
-async function request(url, options) {
-  const res = await fetch(url, options);
+import { headerLogin } from "../utils/sesiLogin";
+
+// data anggota hanya untuk panel internal: semua permintaan membawa token login
+async function request(url, options = {}) {
+  const res = await fetch(url, { ...options, headers: { ...(options.headers ?? {}), ...headerLogin() } });
   if (res.status === 204) return null;
 
   const body = await res.json().catch(() => null);

@@ -1,15 +1,18 @@
 import { createSignal, Show } from "solid-js";
-import { useNavigate } from "@solidjs/router";
+import { useNavigate, useSearchParams } from "@solidjs/router";
+import { PESAN_BELUM_LOGIN } from "../../utils/sesiLogin";
 import CustomButton from "../../components/CustomButton";
 import logoListra from "../../img/logo-listra.png";
 import logoUnpar from "../../img/Logo-UNPAR.png";
 
 export default function LoginInternal() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
   const [showPassword, setShowPassword] = createSignal(false);
-  const [error, setError] = createSignal("");
+  // dibawa ke sini karena belum login (lihat InternalLayout & pantauSesi)
+  const [error, setError] = createSignal(params.alasan === "belum-login" ? PESAN_BELUM_LOGIN : "");
   const [loading, setLoading] = createSignal(false);
 
   const masuk = async (e) => {
