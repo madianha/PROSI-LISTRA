@@ -1,3 +1,5 @@
+import VideoJasa from "./VideoJasa";
+
 export default function CatalogueCard(props) {
   const title = () => props.nama || "";
   const type = () => props.tipe_jasa
@@ -19,17 +21,8 @@ export default function CatalogueCard(props) {
         {props.link_image && (
           <img src={props.link_image} alt={title()} className="h-full w-full object-cover" />
         )}
-        {props.link_media && (
-          <a
-            href={props.link_media}
-            aria-label={`Putar video ${title()}`}
-            className="absolute inset-0 flex items-center justify-center bg-black/10 transition hover:bg-black/20"
-          >
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-black/45 pl-1 text-3xl text-white/90">
-              ▶
-            </span>
-          </a>
-        )}
+        {/* video diputar di dalam kartu, tidak pindah halaman */}
+        {props.link_media && <VideoJasa url={props.link_media} judul={title()} kecil />}
       </div>
 
       <div className="flex flex-1 flex-col px-4 pb-4 pt-4">

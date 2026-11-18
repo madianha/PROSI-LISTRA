@@ -1,6 +1,7 @@
 import { A, useParams } from "@solidjs/router";
 import { createResource, Show } from "solid-js";
 import { getJasa } from "../api/jasa";
+import VideoJasa from "../components/VideoJasa";
 
 const formatRupiah = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
 
@@ -45,10 +46,9 @@ export default function JasaDetail() {
               <Show when={item().link_image} fallback={<div className="flex h-full min-h-[300px] items-center justify-center font-serif text-2xl text-white/70">LISTRA</div>}>
                 <img src={item().link_image} alt={item().nama} className="absolute inset-0 h-full w-full object-cover" />
               </Show>
+              {/* video diputar di tempat foto, tidak membuka tab baru */}
               <Show when={item().link_media}>
-                <a href={item().link_media} target="_blank" rel="noreferrer" aria-label={`Putar video ${item().nama}`} className="absolute inset-0 flex items-center justify-center bg-black/10 transition hover:bg-black/25">
-                  <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 pl-1 text-4xl text-white">▶</span>
-                </a>
+                <VideoJasa url={item().link_media} judul={item().nama} />
               </Show>
             </div>
 
