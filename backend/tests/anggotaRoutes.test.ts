@@ -223,6 +223,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
 
       const res = await request(app)
         .put("/api/anggota/1")
+        .set("Authorization", LOGIN)
         .send({
           nama: "Budi Santoso",
           email: "budi@student.unpar.ac.id",
