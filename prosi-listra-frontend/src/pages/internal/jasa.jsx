@@ -59,14 +59,14 @@ export function formatRupiahRange(min, max) {
 export function formatEyebrowBudaya(item) {
   const tipe = String(item?.tipe_jasa || "tari").toLowerCase();
   const prov = (item?.nama_provinsi || "").trim();
-  const kecocokan = Array.isArray(item?.kecocokan) && item.kecocokan.length > 0 ? item.kecocokan : ["Opening"];
-  const posisi = kecocokan.join(", ").toUpperCase();
+  // jasa tanpa baris jasa_kecocokan tidak diberi posisi (dulu jatuh ke "Opening" yang tidak ada di database)
+  const kecocokan = Array.isArray(item?.kecocokan) ? item.kecocokan : [];
 
   const parts = [tipe === "musik" ? "MUSIK" : "TARI"];
   if (tipe === "tari" && prov && prov.toLowerCase() !== "nusantara") {
     parts.push(prov.toUpperCase());
   }
-  parts.push(posisi);
+  if (kecocokan.length > 0) parts.push(kecocokan.join(", ").toUpperCase());
   return parts.join(" · ");
 }
 
