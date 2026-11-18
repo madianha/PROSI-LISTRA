@@ -13,6 +13,7 @@ import LoginInternal from "./pages/internal/login";
 
 import InternalLayout from "./components/internal/InternalLayout";
 import InternalKalender from "./pages/internal/kalender";
+import InternalAcaraDetail from "./pages/internal/acara-detail";
 import InternalJasa from "./pages/internal/jasa";
 import InternalKatalog from "./pages/internal/katalog";
 import InternalAlatMusik from "./pages/internal/alat-musik";
@@ -61,6 +62,7 @@ export default function App() {
       {/* Internal pages: TopBar + SideNav */}
       <Route path="/internal" component={InternalLayout}>
         <Route path="/kalender" component={InternalKalender} />
+        <Route path="/kalender/:id" component={InternalAcaraDetail} />
         <Route path="/jasa" component={InternalJasa} />
         <Route path="/katalog" component={InternalKatalog} />
         <Route path="/alat-musik" component={InternalAlatMusik} />
