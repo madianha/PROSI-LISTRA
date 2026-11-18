@@ -1,10 +1,11 @@
 import { A } from "@solidjs/router";
-import { createResource, createSignal, For, Match, Show, Switch } from "solid-js";
+import { createMemo, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
 import { faChevronLeft, faChevronRight, faLocationDot } from "@fortawesome/free-solid-svg-icons";
 import CustomHeader from "../components/CustomHeader";
 import Icon from "../components/Icon";
+import KalenderBulan, { KeteranganTipe } from "../components/KalenderBulan";
 import { listJadwal } from "../api/acara";
-import { bulanDari, formatBulan, formatJam, formatRentang, formatTanggal, geserBulan, hariIni, rentangBulan } from "../utils/kalender";
+import { bulanDari, formatBulan, formatJam, formatRentang, formatTanggal, geserBulan, gridBulan, hariIni, rentangBulan } from "../utils/kalender";
 
 /**
  * Jadwal Acara publik (UC-04): event per bulan dengan tanggal dan jam per hari.
@@ -12,7 +13,23 @@ import { bulanDari, formatBulan, formatJam, formatRentang, formatTanggal, geserB
  */
 export default function Jadwal() {
   const [bulan, setBulan] = createSignal(bulanDari(hariIni()));
-  const [jadwal, { refetch }] = createResource(() => rentangBulan(bulan()), (r) => listJadwal(r));
+  const [dipilih, setDipilih] = createSignal(null);
+  // ambil semua event yang tampil di kotak kalender (termasuk hari bulan sebelah)
+  const rentangGrid = createMemo(() => {
+    const grid = gridBulan(bulan());
+    return { dari: grid[0].tanggal, sampai: grid[grid.length - 1].tanggal };
+  });
+  const [jadwal, { refetch }] = createResource(rentangGrid, (r) => listJadwal(r));
+  const semua = () => (jadwal.error ? [] : jadwal() ?? []);
+  // daftar di bawah kalender: event yang punya minimal satu hari di bulan ini
+  const bulanIni = createMemo(() => {
+    const { dari, sampai } = rentangBulan(bulan());
+    return semua().filter((a) => a.acara_jasa.some((r) => r.tanggal >= dari && r.tanggal <= sampai));
+  });
+  const pilih = (id) => {
+    setDipilih(id);
+    document.getElementById(`jadwal-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   return (
     <>
@@ -45,7 +62,7 @@ export default function Jadwal() {
 
         <div className="mt-6">
           <Switch>
-            <Match when={jadwal.loading}>
+            <Match when={jadwal.loading && !jadwal.latest}>
               <p className="text-center text-sm text-[#7d6966]">Memuat jadwal...</p>
             </Match>
             <Match when={jadwal.error}>
@@ -56,18 +73,29 @@ export default function Jadwal() {
                 </button>
               </p>
             </Match>
-            <Match when={jadwal()?.length === 0}>
-              <p className="rounded-xl border border-[#f0d9d8] bg-white p-8 text-center text-sm text-[#7d6966]">
-                Belum ada acara terjadwal di {formatBulan(bulan())}. Coba lihat bulan lain.
-              </p>
-            </Match>
             <Match when={jadwal()}>
-              <ul className="space-y-3">
-                <For each={jadwal()}>
+              <div className="mb-2 flex justify-end">
+                <KeteranganTipe />
+              </div>
+              <KalenderBulan bulan={bulan()} acara={semua()} onPilih={pilih} />
+
+              <Show
+                when={bulanIni().length > 0}
+                fallback={
+                  <p className="mt-4 rounded-xl border border-[#f0d9d8] bg-white p-8 text-center text-sm text-[#7d6966]">
+                    Belum ada acara terjadwal di {formatBulan(bulan())}. Coba lihat bulan lain.
+                  </p>
+                }
+              >
+              <ul className="mt-4 space-y-3">
+                <For each={bulanIni()}>
                   {(a) => {
                     const hari = a.acara_jasa.map((r) => r.tanggal).sort();
                     return (
-                      <li className="rounded-xl border border-[#f0d9d8] bg-white p-4 sm:p-5">
+                      <li
+                        id={`jadwal-${a.id_acara}`}
+                        className={`rounded-xl border bg-white p-4 sm:p-5 ${dipilih() === a.id_acara ? "border-[#54141d] ring-1 ring-[#54141d]" : "border-[#f0d9d8]"}`}
+                      >
                         <h3 className="font-serif text-lg font-bold text-[#54141d]">{a.nama_acara}</h3>
                         <p className="mt-1 text-sm text-[#7d6966]">
                           {formatRentang(hari[0], hari[hari.length - 1])}
@@ -101,6 +129,7 @@ export default function Jadwal() {
                   }}
                 </For>
               </ul>
+              </Show>
             </Match>
           </Switch>
         </div>

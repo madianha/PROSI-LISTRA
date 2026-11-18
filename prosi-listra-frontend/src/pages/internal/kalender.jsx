@@ -2,6 +2,7 @@ import { A, useNavigate } from "@solidjs/router";
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
 import { faChevronLeft, faChevronRight, faEyeSlash, faLocationDot, faPlus } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../components/Icon";
+import KalenderBulan, { KeteranganTipe, WARNA_TIPE } from "../../components/KalenderBulan";
 import EventWizard from "../../components/internal/kalender/EventWizard";
 import { createAcara, listAcara } from "../../api/acara";
 import {
@@ -12,7 +13,6 @@ import {
   gridBulan,
   hariIni,
   idPenggunaLogin,
-  NAMA_HARI,
   NAMA_TIPE,
   rentangBulan,
   teksKecukupan,
@@ -25,11 +25,7 @@ const FILTER = [
   { nilai: "tugas", label: "Tugas saya" },
 ];
 
-// warna per jenis acara: dipakai di kotak kalender, kartu, dan keterangan
-export const WARNA_TIPE = {
-  job_external: "bg-[#39000a] text-white",
-  listra: "bg-[#f3e2a9] text-[#4c3a06]",
-};
+export { WARNA_TIPE };
 
 export function WarnaKecukupan(props) {
   const teks = () => teksKecukupan(props.kecukupan);
@@ -74,11 +70,6 @@ export default function InternalKalender() {
     const { dari, sampai } = rentangBulan(bulan());
     return daftar().filter((a) => cocok(a, f) && a.acara_jasa.some((r) => r.tanggal >= dari && r.tanggal <= sampai)).length;
   };
-  const perTanggal = createMemo(() => {
-    const peta = {};
-    for (const a of terfilter()) for (const t of new Set(a.acara_jasa.map((r) => r.tanggal))) (peta[t] ??= []).push(a);
-    return peta;
-  });
 
   const pilih = (id) => {
     setDipilih(id);
@@ -140,9 +131,8 @@ export default function InternalKalender() {
           Bulan ini
         </button>
         {/* keterangan warna jenis acara */}
-        <div className="ml-auto flex flex-wrap gap-2 text-xs">
-          <span className={`rounded px-2 py-0.5 ${WARNA_TIPE.job_external}`}>{NAMA_TIPE.job_external}</span>
-          <span className={`rounded px-2 py-0.5 ${WARNA_TIPE.listra}`}>{NAMA_TIPE.listra}</span>
+        <div className="ml-auto">
+          <KeteranganTipe />
         </div>
       </div>
 
@@ -179,51 +169,8 @@ export default function InternalKalender() {
         </Match>
         <Match when={true}>
           {/* Kalender bulanan: hanya di layar sm ke atas; di HP daftar kartu di bawah sudah cukup */}
-          <div className="mt-4 hidden overflow-hidden rounded-xl border border-[#f0dedf] bg-white sm:block">
-            <div className="grid grid-cols-7 border-b border-[#f0dedf] text-center text-xs font-semibold text-[#685856]">
-              <For each={NAMA_HARI}>{(h) => <div className="py-2">{h}</div>}</For>
-            </div>
-            <div className="grid grid-cols-7">
-              <For each={grid()}>
-                {(sel) => (
-                  <div
-                    className={`min-h-24 border-b border-r border-[#f5ecea] p-1.5 [&:nth-child(7n)]:border-r-0 ${
-                      sel.diBulanIni ? "" : "bg-[#fbf8f6]"
-                    }`}
-                  >
-                    <p
-                      className={`text-xs ${
-                        sel.tanggal === hariIni()
-                          ? "inline-grid size-6 place-items-center rounded-full bg-[#39000a] font-bold text-white"
-                          : sel.diBulanIni
-                            ? "text-[#302929]"
-                            : "text-[#b8a7a5]"
-                      }`}
-                    >
-                      {Number(sel.tanggal.slice(8))}
-                    </p>
-                    <div className="mt-1 space-y-1">
-                      <For each={(perTanggal()[sel.tanggal] ?? []).slice(0, 2)}>
-                        {(a) => (
-                          <button
-                            type="button"
-                            onClick={() => pilih(a.id_acara)}
-                            title={a.nama_acara}
-                            // truncate = nama panjang dipotong dengan "..."
-                            className={`block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${WARNA_TIPE[a.tipe_acara]}`}
-                          >
-                            {a.nama_acara}
-                          </button>
-                        )}
-                      </For>
-                      <Show when={(perTanggal()[sel.tanggal] ?? []).length > 2}>
-                        <p className="px-1 text-[11px] text-[#685856]">+{perTanggal()[sel.tanggal].length - 2} lagi</p>
-                      </Show>
-                    </div>
-                  </div>
-                )}
-              </For>
-            </div>
+          <div className="mt-4">
+            <KalenderBulan bulan={bulan()} acara={terfilter()} onPilih={pilih} />
           </div>
 
           {/* Kartu event bulan ini */}

@@ -158,4 +158,21 @@ describe("EventWizard", () => {
     expect(await screen.findByText("PJ harus anggota Kepengurusan yang aktif.")).toBeTruthy();
     expect(onSimpan.mock.calls[0][0].acara_jasa[0]).toMatchObject({ id_jasa: 3, jam_mulai: "16:00" });
   });
+
+  it("event paling lama 7 hari: 8 hari ditolak, 7 hari boleh lanjut", async () => {
+    render(() => <EventWizard onSimpan={vi.fn()} onTutup={() => {}} />);
+    fireEvent.click(screen.getByLabelText(/Acara LISTRA/));
+    klik(/Lanjut/);
+    isi(/Nama event/, "Pekan Budaya");
+    isi(/Tanggal mulai/, "2026-12-01");
+    isi(/Tanggal selesai/, "2026-12-08");
+    fireEvent.click(screen.getByLabelText(/PJ Tidak Spesifik/));
+    expect(screen.getByText("8 hari (maks. 7)")).toBeTruthy();
+    klik(/Lanjut/);
+    expect(screen.getByRole("alert").textContent).toMatch(/paling lama 7 hari/);
+
+    isi(/Tanggal selesai/, "2026-12-07");
+    klik(/Lanjut/);
+    expect(screen.getByRole("region", { name: "Hari 7" })).toBeTruthy();
+  });
 });
