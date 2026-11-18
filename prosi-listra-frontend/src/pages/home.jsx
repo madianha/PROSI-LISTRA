@@ -1,6 +1,7 @@
-import { A } from "@solidjs/router";
 import { createResource, For, Match, Show, Switch } from "solid-js";
+import { faCommentDots } from "@fortawesome/free-solid-svg-icons";
 import CustomHeader from "../components/CustomHeader";
+import Icon from "../components/Icon";
 import CatalogueCard from "../components/CatalogueCard";
 import BeritaCard from "../components/BeritaCard";
 import TestimoniCard from "../components/TestimoniCard";
@@ -9,6 +10,7 @@ import Footer from "../components/Footer";
 import { listBerita } from "../api/berita";
 import { listTestimoni } from "../api/testimoni";
 import { listJasa } from "../api/jasa";
+import { getKontak, linkWhatsApp } from "../api/kontak";
 
 const services = () => listJasa();
 
@@ -23,6 +25,9 @@ export default function Home() {
   // 3 berita publik terbaru dari backend (sudah urut tanggal terbaru)
   const [berita] = createResource(() => listBerita());
   const [testimoni] = createResource(listTestimoni);
+  // tombol Hubungi Kami = WhatsApp Humas; error dicek dulu karena membaca kontak() yang gagal melempar error
+  const [kontak] = createResource(getKontak);
+  const linkHubungi = () => (kontak.error ? null : linkWhatsApp(kontak()));
 
   return <main className="home-page bg-white text-[#342426]">
     <CustomHeader category="Lingkung Seni Tradisional UNPAR" pageName="Tari dan Musik Tradisional untuk Acara Anda" colorText="text-[#ffe088]">
@@ -58,7 +63,10 @@ export default function Home() {
       </Switch>
       <div className="mt-4 text-center"><CustomButton href="/berita" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Berita</CustomButton></div></section>
 
-    <A href="/jadwal" aria-label="Hubungi LISTRA" className="fixed bottom-5 right-5 z-20 rounded-full bg-[#dfb83b] px-4 py-3 text-xs font-bold text-[#3d1017] shadow-lg hover:bg-[#edca5d]">☏ &nbsp; Hubungi Kami</A>
+    {/* fixed bottom-5 right-5 = tombol melayang di pojok kanan bawah; hanya tampil bila nomor WhatsApp sudah diisi */}
+    <Show when={linkHubungi()}>
+      <a href={linkHubungi()} target="_blank" rel="noreferrer" aria-label="Hubungi Humas LISTRA lewat WhatsApp (tab baru)" className="fixed bottom-5 right-5 z-20 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#dfb83b] px-4 text-xs font-bold text-[#3d1017] shadow-lg hover:bg-[#edca5d]"><Icon icon={faCommentDots} class="text-sm" /> Hubungi Kami</a>
+    </Show>
     <Footer />
   </main>;
 }

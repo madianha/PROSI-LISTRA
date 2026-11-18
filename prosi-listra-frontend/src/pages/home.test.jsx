@@ -6,11 +6,14 @@ import { renderRoute } from "../test/renderRoute";
 vi.mock("../api/jasa", () => ({ listJasa: vi.fn(async () => []) }));
 vi.mock("../api/berita", () => ({ listBerita: vi.fn() }));
 vi.mock("../api/testimoni", () => ({ listTestimoni: vi.fn() }));
+// getKontak di-mock; linkWhatsApp tetap fungsi aslinya
+vi.mock("../api/kontak", async (importOriginal) => ({ ...(await importOriginal()), getKontak: vi.fn() }));
 
 import Home from "./home";
 import { listBerita } from "../api/berita";
 import { listTestimoni } from "../api/testimoni";
 import { listJasa } from "../api/jasa";
+import { getKontak } from "../api/kontak";
 
 const buatBerita = (id, judul, tanggal) => ({
   id_berita: id,
@@ -33,6 +36,7 @@ const daftar = [
 beforeEach(() => {
   vi.resetAllMocks();
   listTestimoni.mockResolvedValue([]);
+  getKontak.mockResolvedValue({ nomor_wa: "628123456789", template_pesan: "Halo Humas LISTRA, saya tertarik dengan {jasa}." });
 });
 
 describe("Halaman Home: Berita Terbaru", () => {
@@ -88,5 +92,30 @@ describe("Halaman Home: gambar profil", () => {
 
     const gambar = await screen.findByAltText("Penampilan seni tradisional LISTRA");
     expect(gambar.getAttribute("src")).toBe("/uploads/gamelan.jpg");
+  });
+});
+
+describe("Halaman Home: Hubungi Kami", () => {
+  const LINK_WA = "https://wa.me/628123456789?text=Halo%20Humas%20LISTRA%2C%20saya%20tertarik%20dengan%20jasa%20LISTRA.";
+
+  it("tombol Hubungi Kami dan link WhatsApp Humas di footer membuka WhatsApp, bukan /jadwal", async () => {
+    listBerita.mockResolvedValue([]);
+    renderRoute(Home);
+
+    const tombol = await screen.findByRole("link", { name: "Hubungi Humas LISTRA lewat WhatsApp (tab baru)" });
+    expect(tombol.getAttribute("href")).toBe(LINK_WA);
+    expect(tombol.getAttribute("target")).toBe("_blank");
+    expect(tombol.textContent).not.toMatch(/☏/);
+    expect(screen.getByRole("link", { name: "WhatsApp Humas" }).getAttribute("href")).toBe(LINK_WA);
+  });
+
+  it("kontak belum tersedia: tombol dan link WhatsApp tidak ditampilkan", async () => {
+    listBerita.mockResolvedValue([]);
+    getKontak.mockRejectedValue(new Error("Kontak WhatsApp belum tersedia."));
+    renderRoute(Home);
+
+    expect(await screen.findByText("Belum ada berita.")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /lewat WhatsApp/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: "WhatsApp Humas" })).toBeNull();
   });
 });
