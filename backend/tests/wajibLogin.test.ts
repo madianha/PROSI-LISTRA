@@ -26,6 +26,7 @@ const INTERNAL: [string, string][] = [
   ["patch", "/api/berita/1/publik"],
   ["delete", "/api/berita/1"],
   ["put", "/api/kontak"],
+  ["post", "/api/kontak"],
   ["post", "/api/upload"],
   ["get", "/api/acara"],
   ["post", "/api/acara"],
