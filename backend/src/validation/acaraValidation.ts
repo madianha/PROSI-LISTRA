@@ -34,7 +34,7 @@ export interface AcaraInput {
 
 export type HasilValidasiAcara = { ok: true; data: AcaraInput } | { ok: false; message: string };
 
-export const MAKS_HARI = 14;
+export const MAKS_HARI = 7;
 
 function teks(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";

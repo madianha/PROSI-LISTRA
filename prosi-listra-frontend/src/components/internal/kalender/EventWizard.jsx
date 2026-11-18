@@ -26,7 +26,7 @@ import { daftarTanggal, formatJam, formatTanggal, NAMA_TIPE, selisihHari, teksKe
  */
 
 const LANGKAH = ["Jenis Acara", "Info", "Hari & Jasa", "Performer"];
-const MAKS_HARI = 14;
+const MAKS_HARI = 7; // event paling lama 7 hari (backend memeriksa ulang)
 
 const INPUT =
   "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-[#302929] focus:border-[#4a0e17] focus:outline-none focus:ring-1 focus:ring-[#4a0e17]";
