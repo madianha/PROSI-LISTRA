@@ -1,6 +1,5 @@
 import { createResource, createSignal, For, Show } from "solid-js";
-
-const API_URL = "http://localhost:3000/api/alat-musik";
+import { createAlatMusik, deleteAlatMusik, listAlatMusik } from "../../api/alatMusik";
 
 export default function InternalAlatMusik() {
   const [modalOpen, setModalOpen] = createSignal(false);
@@ -14,15 +13,7 @@ export default function InternalAlatMusik() {
   const [page, setPage] = createSignal(1);
   const pageSize = 15;
 
-  const fetchAlatMusik = async () => {
-    const res = await fetch(API_URL);
-    if (!res.ok) {
-      throw new Error(`Gagal memuat alat musik (status ${res.status})`);
-    }
-    return await res.json();
-  };
-
-  const [alatMusikList, { refetch }] = createResource(fetchAlatMusik);
+  const [alatMusikList, { refetch }] = createResource(listAlatMusik);
 
   const totalPages = () => Math.max(1, Math.ceil((alatMusikList()?.length || 0) / pageSize));
 
@@ -47,19 +38,10 @@ export default function InternalAlatMusik() {
     setLoadingAction(true);
     setErrorMsg("");
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nama_alat_musik: namaBaru().trim(),
-          jumlah: Number(jumlahBaru()) || 1,
-        }),
+      await createAlatMusik({
+        nama_alat_musik: namaBaru().trim(),
+        jumlah: Number(jumlahBaru()) || 1,
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Gagal menambahkan alat musik.");
-      }
 
       setNamaBaru("");
       setJumlahBaru(1);
@@ -76,21 +58,13 @@ export default function InternalAlatMusik() {
     if (!confirm(`Hapus alat musik "${nama}"?`)) return;
 
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        alert(data.error || "Gagal menghapus alat musik.");
-        return;
-      }
+      await deleteAlatMusik(id);
       await refetch();
       if (page() > totalPages()) {
         setPage(totalPages());
       }
     } catch (err) {
-      console.error(err);
-      alert("Terjadi kesalahan saat menghapus alat musik.");
+      alert(err.message || "Gagal menghapus alat musik.");
     }
   };
 

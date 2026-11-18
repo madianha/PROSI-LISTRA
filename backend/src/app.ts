@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import acaraRoutes from "./routes/acaraRoutes";
+import alatMusikRoutes from "./routes/alatMusikRoutes";
 import anggotaRoutes from "./routes/anggotaRoutes";
 import authRoutes from "./routes/authRoutes";
 import beritaRoutes from "./routes/beritaRoutes";
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/anggota", anggotaRoutes);
 app.use("/api/acara", acaraRoutes);
 app.use("/api/jadwal", jadwalRoutes);
+app.use("/api/alat-musik", alatMusikRoutes);
 app.use("/api/berita", beritaRoutes);
 app.use("/api/jasa", jasaRoutes);
 app.use("/api/provinsi", provinsiRoutes);
