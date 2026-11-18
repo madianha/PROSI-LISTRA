@@ -1,28 +1,20 @@
 import { A, useParams } from "@solidjs/router";
 import { createResource, Show } from "solid-js";
 import { getJasa } from "../api/jasa";
+import { getKontak, linkWhatsApp } from "../api/kontak";
 import VideoJasa from "../components/VideoJasa";
 
 const formatRupiah = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
 
-async function fetchKontak() {
-  const response = await fetch("/api/kontak");
-  if (!response.ok) throw new Error("Kontak tidak tersedia.");
-  return response.json();
-}
-
 export default function JasaDetail() {
   const params = useParams();
   const [jasa] = createResource(() => params.id, getJasa);
-  const [kontak] = createResource(fetchKontak);
+  const [kontak] = createResource(getKontak);
 
+  // pesan WhatsApp berisi nama jasa ini; error dicek dulu karena membaca resource yang gagal melempar error
   const whatsappHref = () => {
-    const item = jasa();
-    const contact = kontak();
-    if (!item || !contact?.nomor_wa) return "https://wa.me/";
-    const nomor = String(contact.nomor_wa).replace(/\D/g, "");
-    const template = contact.template_pesan || "Halo Humas LISTRA, saya tertarik dengan {jasa}. Boleh minta informasi lebih lanjut?";
-    return `https://wa.me/${nomor}?text=${encodeURIComponent(template.replace("{jasa}", item.nama))}`;
+    if (jasa.error || kontak.error || !jasa()) return "https://wa.me/";
+    return linkWhatsApp(kontak(), jasa().nama) ?? "https://wa.me/";
   };
 
   return (

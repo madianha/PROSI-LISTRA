@@ -1,8 +1,14 @@
 import { A } from "@solidjs/router";
+import { createResource, Show } from "solid-js";
 import logoListra from "../img/logo-listra.png";
 import logoUnpar from "../img/Logo-UNPAR.png";
+import { getKontak, linkWhatsApp } from "../api/kontak";
 
 export default function Footer() {
+  // error dicek dulu karena membaca kontak() yang gagal melempar error
+  const [kontak] = createResource(getKontak);
+  const linkWa = () => (kontak.error ? null : linkWhatsApp(kontak()));
+
   return (
     <footer className="bg-[#39030c] px-6 py-5 text-[#bca9aa] sm:px-[8%]">
       <div className="mx-auto grid max-w-[1110px] gap-5 sm:grid-cols-[1.2fr_1fr_1fr]">
@@ -22,7 +28,13 @@ export default function Footer() {
         </div>
         <div>
           <h3 className="font-serif text-xs font-bold tracking-widest text-[#c7a431]">KONTAK</h3>
-          <div className="mt-1 flex flex-col text-xs leading-5"><a href="/jadwal">WhatsApp Humas</a><a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a></div>
+          <div className="mt-1 flex flex-col text-xs leading-5">
+            {/* hanya tampil bila nomor WhatsApp Humas sudah diisi */}
+            <Show when={linkWa()}>
+              <a href={linkWa()} target="_blank" rel="noreferrer">WhatsApp Humas</a>
+            </Show>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
+          </div>
         </div>
       </div>
       <div className="mx-auto mt-3 max-w-[1110px] border-t border-white/10 pt-2 text-center text-xs">© 2026 LISTRA – Lingkung Seni Tradisional UNPAR</div>
