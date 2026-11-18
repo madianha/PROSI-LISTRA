@@ -28,7 +28,7 @@ INSERT INTO provinsi (nama_provinsi, pulau) VALUES
     ('Papua Tengah', 'Papua'), ('Papua Pegunungan', 'Papua'), ('Papua Selatan', 'Papua');
 
 -- =========================================
--- JASA DUMMY dari prosi-listra-frontend/src/data/jasa.js
+-- JASA DUMMY
 -- Aman dijalankan berulang kali; jasa dicocokkan berdasarkan nama.
 -- Membutuhkan tabel jasa_kecocokan dari junction.sql.
 -- =========================================
@@ -50,11 +50,11 @@ WITH dummy (
     ('tari', 'Tari Saman',
      'Tarian Aceh dengan formasi duduk berbaris dan tepukan tangan yang serempak.',
      'Aceh', 12, 4000000, 7500000, 8, NULL,
-     'https://images.unsplash.com/photo-1524368730574-8b5c7e9e8f43?auto=format&fit=crop&w=900&q=85', TRUE, 'Opening'),
+     NULL, TRUE, 'Opening'),
     ('musik', 'Gamelan Sunda',
      'Iringan musik tradisional Sunda untuk menyambut tamu atau mengisi suasana acara.',
      'Jawa Barat', 60, 3500000, 7000000, 5, NULL,
-     'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=85', TRUE, 'Welcoming')
+     'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=85', TRUE, 'Opening')
 ), upserted AS (
   INSERT INTO jasa (
     tipe_jasa, nama, deskripsi, id_provinsi, durasi,
@@ -86,7 +86,7 @@ JOIN kecocokan k ON k.nama_kecocokan = d.nama_kecocokan
 ON CONFLICT (id_jasa, id_kecocokan) DO NOTHING;
 
 -- =========================================
--- TESTIMONI DUMMY dari prosi-listra-frontend/src/data/testimoni.js
+-- TESTIMONI DUMMY
 -- Hanya data disetujui dan aktif yang tampil pada halaman publik.
 -- Aman dijalankan berulang kali berdasarkan nama klien, acara, dan isi.
 -- =========================================
@@ -245,23 +245,17 @@ ON CONFLICT (nama_alat_musik) DO NOTHING;
 
 
 -- =========================================
--- TESTIMONI PLACEHOLDER
--- Tampil di website hanya bila status = 'disetujui' DAN is_aktif = TRUE.
+-- TESTIMONI MENUNGGU
 -- Satu contoh 'menunggu' untuk mencoba tombol Setujui / Tolak di halaman internal.
+-- (Testimoni yang disetujui sudah diisi di bagian TESTIMONI DUMMY di atas.)
+-- Aman dijalankan berulang kali.
 -- =========================================
 
 INSERT INTO testimoni
     (nama_klien, instansi, nama_acara, is_acara_privat, isi_testimoni, rating, tanggal_input, status, sumber, is_aktif)
-VALUES
-    ('Ibu Ratna Sari', 'PT Nusantara Jaya', 'Gala Dinner Perusahaan', FALSE,
-     'Tamu undangan sangat terkesan. Kostumnya rapi dan penarinya profesional.',
-     5, '2026-09-20 10:00:00', 'disetujui', 'web', TRUE),
-    ('Dinda Permatasari', NULL, 'Resepsi Pernikahan', TRUE,
-     'Terima kasih LISTRA, Tari Topeng-nya jadi momen paling berkesan di resepsi kami.',
-     5, '2026-09-21 13:30:00', 'disetujui', 'whatsapp', TRUE),
-    ('Arif Budiman', 'Ikatan Alumni TI', 'Gathering Alumni', FALSE,
-     'Seru dan menghibur. Mungkin durasinya bisa sedikit lebih panjang.',
-     4, '2026-09-29 09:15:00', 'disetujui', 'web', TRUE),
-    ('(Contoh) Panitia Dies Natalis', 'Rektorat UNPAR', 'Dies Natalis', FALSE,
-     'Contoh testimoni yang masih menunggu persetujuan.',
-     NULL, '2026-11-10 08:00:00', 'menunggu', 'web', FALSE);
+SELECT '(Contoh) Panitia Dies Natalis', 'Rektorat UNPAR', 'Dies Natalis', FALSE,
+       'Contoh testimoni yang masih menunggu persetujuan.',
+       NULL, '2026-11-10 08:00:00', 'menunggu', 'web', FALSE
+WHERE NOT EXISTS (
+  SELECT 1 FROM testimoni WHERE nama_klien = '(Contoh) Panitia Dies Natalis'
+);
