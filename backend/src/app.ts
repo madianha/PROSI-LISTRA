@@ -1,8 +1,10 @@
 import cors from "cors";
 import express from "express";
+import acaraRoutes from "./routes/acaraRoutes";
 import anggotaRoutes from "./routes/anggotaRoutes";
 import authRoutes from "./routes/authRoutes";
 import beritaRoutes from "./routes/beritaRoutes";
+import jadwalRoutes from "./routes/jadwalRoutes";
 import kontakRoutes from "./routes/kontakRoutes";
 import jasaRoutes from "./routes/jasaRoutes";
 import testimoniRoutes from "./routes/testimoniRoutes";
@@ -21,6 +23,8 @@ app.get("/", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/anggota", anggotaRoutes);
+app.use("/api/acara", acaraRoutes);
+app.use("/api/jadwal", jadwalRoutes);
 app.use("/api/berita", beritaRoutes);
 app.use("/api/jasa", jasaRoutes);
 app.use("/api/provinsi", provinsiRoutes);
