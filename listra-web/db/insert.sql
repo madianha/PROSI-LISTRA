@@ -242,3 +242,26 @@ INSERT INTO alat_musik (nama_alat_musik, jumlah) VALUES
     ('Jengglong', 2),
     ('Rapai', 4)
 ON CONFLICT (nama_alat_musik) DO NOTHING;
+
+
+-- =========================================
+-- TESTIMONI PLACEHOLDER
+-- Tampil di website hanya bila status = 'disetujui' DAN is_aktif = TRUE.
+-- Satu contoh 'menunggu' untuk mencoba tombol Setujui / Tolak di halaman internal.
+-- =========================================
+
+INSERT INTO testimoni
+    (nama_klien, instansi, nama_acara, is_acara_privat, isi_testimoni, rating, tanggal_input, status, sumber, is_aktif)
+VALUES
+    ('Ibu Ratna Sari', 'PT Nusantara Jaya', 'Gala Dinner Perusahaan', FALSE,
+     'Tamu undangan sangat terkesan. Kostumnya rapi dan penarinya profesional.',
+     5, '2026-09-20 10:00:00', 'disetujui', 'web', TRUE),
+    ('Dinda Permatasari', NULL, 'Resepsi Pernikahan', TRUE,
+     'Terima kasih LISTRA, Tari Topeng-nya jadi momen paling berkesan di resepsi kami.',
+     5, '2026-09-21 13:30:00', 'disetujui', 'whatsapp', TRUE),
+    ('Arif Budiman', 'Ikatan Alumni TI', 'Gathering Alumni', FALSE,
+     'Seru dan menghibur. Mungkin durasinya bisa sedikit lebih panjang.',
+     4, '2026-09-29 09:15:00', 'disetujui', 'web', TRUE),
+    ('(Contoh) Panitia Dies Natalis', 'Rektorat UNPAR', 'Dies Natalis', FALSE,
+     'Contoh testimoni yang masih menunggu persetujuan.',
+     NULL, '2026-11-10 08:00:00', 'menunggu', 'web', FALSE);

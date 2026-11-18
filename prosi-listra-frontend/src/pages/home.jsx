@@ -32,7 +32,17 @@ export default function Home() {
 
     <section id="katalog" className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KATALOG" title="Jasa Pilihan" description="Satu rentang harga per jasa; rinciannya dibahas lewat WhatsApp." /><Show when={jasa.loading}><p className="mt-4 text-center text-sm text-[#685856]">Memuat katalog jasa...</p></Show><Show when={jasa.error}><p className="mt-4 text-center text-sm text-[#685856]">Katalog jasa belum bisa dimuat.</p></Show><div className="mx-auto mt-4 grid max-w-[1110px] gap-4 md:grid-cols-3"><For each={jasa()?.slice(0, 3) || []}>{(service) => <CatalogueCard {...service} />}</For></div><div className="mt-4 text-center"><CustomButton href="/jasa" class="rounded-lg border border-[#e6cfcf] px-4 py-2 text-xs font-semibold text-[#54141d]">Lihat Semua Jasa</CustomButton></div></section>
 
-    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" /><Show when={testimoni.loading}><p className="mt-4 text-center text-sm text-[#685856]">Memuat testimoni...</p></Show><Show when={testimoni.error}><p className="mt-4 text-center text-sm text-[#685856]">Testimoni belum bisa dimuat.</p></Show><div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3"><For each={testimoni()?.slice(0, 3) || []}>{(row) => <TestimoniCard {...row} />}</For></div><div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
+    <section className="bg-[#fff8f7] px-5 py-6 sm:px-8"><SectionHeading eyebrow="APA KATA MEREKA" title="Testimoni" />
+      {/* 3 testimoni terbaru yang disetujui; error dicek dulu karena membaca testimoni() yang gagal melempar error */}
+      <Switch>
+        <Match when={testimoni.loading}><p className="mt-4 text-center text-sm text-[#685856]">Memuat testimoni...</p></Match>
+        <Match when={testimoni.error}><p className="mt-4 text-center text-sm text-[#685856]">Testimoni belum bisa dimuat.</p></Match>
+        <Match when={testimoni()?.length === 0}><p className="mt-4 text-center text-sm text-[#685856]">Belum ada testimoni.</p></Match>
+        <Match when={testimoni()}>
+          <div className="mx-auto mt-4 grid max-w-[1110px] gap-3 md:grid-cols-3"><For each={testimoni().slice(0, 3)}>{(row) => <TestimoniCard {...row} />}</For></div>
+        </Match>
+      </Switch>
+      <div className="mt-4 text-center"><CustomButton href="/testimoni" class="rounded-lg border border-[#e6cfcf] bg-white px-4 py-2 text-xs font-semibold text-[#54141d]">Semua Testimoni</CustomButton></div></section>
 
     <section className="px-5 py-6 sm:px-8 sm:py-7"><SectionHeading eyebrow="KABAR" title="Berita Terbaru" />
       {/* Switch = hanya satu keadaan yang tampil; error dicek dulu karena membaca berita() yang gagal akan melempar error */}

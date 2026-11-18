@@ -1,31 +1,54 @@
-export async function listTestimoni() {
-  let response;
+// Semua panggilan ke backend untuk fitur testimoni.
+// URL relatif: saat development, vite.config.js meneruskan /api ke backend (port 3001).
+
+async function request(url, options = {}) {
+  // token login ikut dikirim bila ada; route internal butuh ini, route publik mengabaikannya
+  const token = localStorage.getItem("listra_token");
+  const headers = { ...(options.headers ?? {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
+  let res;
   try {
-    response = await fetch("/api/testimoni");
+    res = await fetch(url, { ...options, headers });
   } catch {
     throw new Error("Tidak bisa terhubung ke server. Coba lagi nanti.");
   }
+  if (res.status === 204) return null;
 
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(body?.message ?? "Gagal memuat data testimoni.");
-  }
+  const body = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(body?.message ?? "Terjadi kesalahan. Coba lagi.");
   return body;
 }
 
-export async function submitTestimoni(data) {
-  let response;
-  try {
-    response = await fetch("/api/testimoni", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  } catch {
-    throw new Error("Tidak bisa terhubung ke server. Coba lagi nanti.");
-  }
+function kirimJson(method, data) {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) };
+}
 
-  const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(body?.message ?? "Testimoni gagal dikirim.");
-  return body;
+/** Testimoni yang tampil di website (disetujui + aktif), terbaru dulu. */
+export function listTestimoni() {
+  return request("/api/testimoni");
+}
+
+/** Semua testimoni untuk halaman internal (wajib login). */
+export function listSemuaTestimoni() {
+  return request("/api/testimoni/semua");
+}
+
+/**
+ * Kirim testimoni baru.
+ * Pengunjung: masuk sebagai "menunggu". Pengurus yang login: langsung disetujui.
+ */
+export function kirimTestimoni(data) {
+  return request("/api/testimoni", kirimJson("POST", data));
+}
+
+export function setStatusTestimoni(id, status) {
+  return request(`/api/testimoni/${id}/status`, kirimJson("PATCH", { status }));
+}
+
+export function setAktifTestimoni(id, is_aktif) {
+  return request(`/api/testimoni/${id}/aktif`, kirimJson("PATCH", { is_aktif }));
+}
+
+export function hapusTestimoni(id) {
+  return request(`/api/testimoni/${id}`, { method: "DELETE" });
 }
