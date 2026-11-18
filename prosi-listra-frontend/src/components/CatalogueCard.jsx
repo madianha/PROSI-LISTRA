@@ -15,7 +15,7 @@ export default function CatalogueCard(props) {
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[18px] border border-[#f1dddd] bg-white shadow-[0_6px_18px_rgba(65,20,29,0.07)]">
-      <div className="relative h-40 shrink-0 overflow-hidden  from-[#4a151d] via-[#21070c] to-[#100205]">
+      <div className="relative h-40 shrink-0 overflow-hidden bg-gradient-to-br from-[#4a151d] via-[#21070c] to-[#100205]">
         {props.link_image && (
           <img src={props.link_image} alt={title()} className="h-full w-full object-cover" />
         )}

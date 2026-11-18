@@ -10,6 +10,7 @@ vi.mock("../api/testimoni", () => ({ listTestimoni: vi.fn() }));
 import Home from "./home";
 import { listBerita } from "../api/berita";
 import { listTestimoni } from "../api/testimoni";
+import { listJasa } from "../api/jasa";
 
 const buatBerita = (id, judul, tanggal) => ({
   id_berita: id,
@@ -73,5 +74,19 @@ describe("Halaman Home: Testimoni", () => {
     expect(await screen.findByText("Klien 1")).toBeTruthy();
     expect(screen.getByText("Klien 3")).toBeTruthy();
     expect(screen.queryByText("Klien 4")).toBeNull();
+  });
+});
+
+describe("Halaman Home: gambar profil", () => {
+  it("memakai jasa pertama yang punya gambar (jasa tanpa link_image dilewati)", async () => {
+    listBerita.mockResolvedValue([]);
+    listJasa.mockResolvedValue([
+      { id_jasa: 1, nama: "Tari Saman", tipe_jasa: "tari", link_image: null, kecocokan: [] },
+      { id_jasa: 2, nama: "Gamelan Sunda", tipe_jasa: "musik", link_image: "/uploads/gamelan.jpg", kecocokan: [] },
+    ]);
+    renderRoute(Home);
+
+    const gambar = await screen.findByAltText("Penampilan seni tradisional LISTRA");
+    expect(gambar.getAttribute("src")).toBe("/uploads/gamelan.jpg");
   });
 });
