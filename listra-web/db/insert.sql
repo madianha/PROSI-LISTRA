@@ -141,6 +141,83 @@ ON CONFLICT (email) DO NOTHING;
 
 
 -- =========================================
+-- KALENDER EVENT (contoh)
+-- Tabel: acara, acara_pj, acara_jasa (satu baris per jasa per hari), acara_performer.
+-- Membutuhkan jasa & anggota di atas (dicocokkan lewat nama jasa dan email anggota).
+-- Aman dijalankan berulang kali: event dilewati bila nama_acara sudah ada.
+-- =========================================
+
+-- Acara Job External, performer masih kurang (2 dari minimal 4)
+WITH a AS (
+  INSERT INTO acara (tipe_acara, nama_acara, nama_klien, lokasi, is_privat)
+  SELECT 'job_external', '(Contoh) Pembukaan Seminar Nasional', '(Contoh) Panitia Seminar', 'Aula Pusat UNPAR', FALSE
+  WHERE NOT EXISTS (SELECT 1 FROM acara WHERE nama_acara = '(Contoh) Pembukaan Seminar Nasional')
+  RETURNING id_acara
+), pj AS (
+  INSERT INTO acara_pj (id_acara, id_anggota)
+  SELECT a.id_acara, an.id_anggota FROM a JOIN anggota an ON an.email = 'humas@gmail.com'
+), hari1 AS (
+  INSERT INTO acara_jasa (id_acara, id_jasa, tanggal, jam_mulai, jam_selesai, is_tidak_spesifik)
+  SELECT a.id_acara, j.id_jasa, '2026-11-24', '08:00', '09:00', FALSE FROM a JOIN jasa j ON j.nama = 'Tari Merak'
+  RETURNING id_acara_jasa
+)
+INSERT INTO acara_performer (id_acara_jasa, id_anggota)
+SELECT h.id_acara_jasa, an.id_anggota FROM hari1 h JOIN anggota an ON an.email IN ('anggota@gmail.com', 'alumni@gmail.com');
+
+-- Acara LISTRA tanpa PJ (PJ Tidak Spesifik); jasa bertanda Tidak Spesifik, performer tidak dicatat
+WITH a AS (
+  INSERT INTO acara (tipe_acara, nama_acara, nama_klien, lokasi, is_privat)
+  SELECT 'listra', '(Contoh) Latihan Gabungan', NULL, 'Kampus UNPAR Ciumbuleuit', FALSE
+  WHERE NOT EXISTS (SELECT 1 FROM acara WHERE nama_acara = '(Contoh) Latihan Gabungan')
+  RETURNING id_acara
+)
+INSERT INTO acara_jasa (id_acara, id_jasa, tanggal, jam_mulai, jam_selesai, is_tidak_spesifik)
+SELECT a.id_acara, j.id_jasa, '2026-11-28', '10:00', '12:00', TRUE FROM a JOIN jasa j ON j.nama = 'Tari Saman';
+
+-- Acara Job External privat, dua hari: hari 1 dua jasa, hari 2 tanpa jasa (id_jasa NULL)
+WITH a AS (
+  INSERT INTO acara (tipe_acara, nama_acara, nama_klien, lokasi, is_privat)
+  SELECT 'job_external', '(Contoh) Resepsi Pernikahan', '(Contoh) Keluarga Pengantin', '(Contoh) Gedung Resepsi, Bandung', TRUE
+  WHERE NOT EXISTS (SELECT 1 FROM acara WHERE nama_acara = '(Contoh) Resepsi Pernikahan')
+  RETURNING id_acara
+), pj AS (
+  INSERT INTO acara_pj (id_acara, id_anggota)
+  SELECT a.id_acara, an.id_anggota FROM a JOIN anggota an ON an.email IN ('humas@gmail.com', 'pelatih@gmail.com')
+), tari AS (
+  INSERT INTO acara_jasa (id_acara, id_jasa, tanggal, jam_mulai, jam_selesai, is_tidak_spesifik)
+  SELECT a.id_acara, j.id_jasa, '2026-12-12', '16:00', '18:00', FALSE FROM a JOIN jasa j ON j.nama = 'Tari Jaipong'
+  RETURNING id_acara_jasa
+), musik AS (
+  INSERT INTO acara_jasa (id_acara, id_jasa, tanggal, jam_mulai, jam_selesai, is_tidak_spesifik)
+  SELECT a.id_acara, j.id_jasa, '2026-12-12', '19:00', '21:00', TRUE FROM a JOIN jasa j ON j.nama = 'Gamelan Sunda'
+), gladi AS (
+  INSERT INTO acara_jasa (id_acara, id_jasa, tanggal, jam_mulai, jam_selesai, is_tidak_spesifik)
+  SELECT a.id_acara, NULL, '2026-12-13', '09:00', '10:00', FALSE FROM a
+)
+INSERT INTO acara_performer (id_acara_jasa, id_anggota, nama_performer)
+SELECT t.id_acara_jasa, an.id_anggota, NULL FROM tari t JOIN anggota an ON an.email IN ('anggota@gmail.com', 'alumni@gmail.com')
+UNION ALL
+SELECT t.id_acara_jasa, NULL, '(Contoh) Penari tamu' FROM tari t;
+
+-- Acara LISTRA dengan PJ
+WITH a AS (
+  INSERT INTO acara (tipe_acara, nama_acara, nama_klien, lokasi, is_privat)
+  SELECT 'listra', '(Contoh) Gelar Karya LISTRA 2026', NULL, 'Kampus UNPAR Ciumbuleuit', FALSE
+  WHERE NOT EXISTS (SELECT 1 FROM acara WHERE nama_acara = '(Contoh) Gelar Karya LISTRA 2026')
+  RETURNING id_acara
+), pj AS (
+  INSERT INTO acara_pj (id_acara, id_anggota)
+  SELECT a.id_acara, an.id_anggota FROM a JOIN anggota an ON an.email = 'listra@gmail.com'
+), hari1 AS (
+  INSERT INTO acara_jasa (id_acara, id_jasa, tanggal, jam_mulai, jam_selesai, is_tidak_spesifik)
+  SELECT a.id_acara, j.id_jasa, '2026-12-19', '18:00', '21:00', FALSE FROM a JOIN jasa j ON j.nama = 'Tari Merak'
+  RETURNING id_acara_jasa
+)
+INSERT INTO acara_performer (id_acara_jasa, id_anggota)
+SELECT h.id_acara_jasa, an.id_anggota FROM hari1 h JOIN anggota an ON an.email IN ('anggota@gmail.com', 'pelatih@gmail.com');
+
+
+-- =========================================
 -- KONTAK WHATSAPP (satu baris, id_kontak selalu 1)
 -- =========================================
 
