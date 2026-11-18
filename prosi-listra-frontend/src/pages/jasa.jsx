@@ -3,21 +3,21 @@ import CatalogueCard from "../components/CatalogueCard";
 import CustomHeader from "../components/CustomHeader";
 import FilterJasa from "../components/FilterJasa";
 import { listJasa } from "../api/jasa";
-import { jasa as sampleJasa } from "../data/jasa";
 
-const API_URL = "/api/jasa";
-
+// nilai filter per jasa: type & culture satu nilai, position bisa lebih dari satu (jasa_kecocokan)
 const fetchServices = async () => {
   const data = await listJasa();
   return data.map((item) => ({
     ...item,
-    culture: item.culture || "Nusantara",
-    type: item.tipe_jasa
-      ? item.tipe_jasa.charAt(0).toUpperCase() + item.tipe_jasa.slice(1).toLowerCase()
-      : "Jasa",
-    position: item.nama_kecocokan || "",
+    filter: {
+      type: item.tipe_jasa === "musik" ? "Musik" : "Tari",
+      culture: item.pulau || "Nusantara",
+      position: item.kecocokan || [],
+    },
   }));
 };
+
+const cocok = (service, key, value) => [service.filter[key]].flat().includes(value);
 
 export default function Katalog() {
   const [services] = createResource(fetchServices);
@@ -38,13 +38,13 @@ export default function Katalog() {
   const filteredServices = createMemo(() =>
     servicesList().filter((service) =>
       Object.entries(selected()).every(([key, values]) =>
-        values.length === 0 || values.includes(service[key]),
+        values.length === 0 || values.some((value) => cocok(service, key, value)),
       ),
     ),
   );
 
   const optionCount = (key, value) =>
-    servicesList().filter((service) => service[key] === value).length;
+    servicesList().filter((service) => cocok(service, key, value)).length;
 
   return (
     <>

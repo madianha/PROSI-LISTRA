@@ -86,7 +86,7 @@ export default function JasaModal(props) {
 
   createEffect(
     on(
-      () => props.formData?.foto_sampul,
+      () => props.formData?.link_image,
       () => setImgError(false),
       { defer: true }
     )
@@ -147,7 +147,7 @@ export default function JasaModal(props) {
   };
 
   const isPosisiActive = (pos) => {
-    const raw = props.formData?.posisi_pentas;
+    const raw = props.formData?.kecocokan;
     const current = Array.isArray(raw)
       ? raw
       : typeof raw === "string" && raw.trim()
@@ -157,7 +157,7 @@ export default function JasaModal(props) {
   };
 
   const handleTogglePosisi = (pos) => {
-    const raw = props.formData?.posisi_pentas;
+    const raw = props.formData?.kecocokan;
     const current = Array.isArray(raw)
       ? [...raw]
       : typeof raw === "string" && raw.trim()
@@ -183,7 +183,7 @@ export default function JasaModal(props) {
     const ordered = POSISI_OPTIONS.filter((p) =>
       updated.some((u) => u.toLowerCase() === p.toLowerCase())
     );
-    props.onChangeField("posisi_pentas", ordered);
+    props.onChangeField("kecocokan", ordered);
   };
 
   const busy = () => props.isUploading || props.isSubmitting;
@@ -490,9 +490,9 @@ export default function JasaModal(props) {
                     id="jasa-tautan-media"
                     type="url"
                     placeholder="https://youtube.com/watch?v="
-                    value={props.formData?.tautan_media || ""}
+                    value={props.formData?.link_media || ""}
                     onInput={(e) =>
-                      props.onChangeField("tautan_media", e.currentTarget.value)
+                      props.onChangeField("link_media", e.currentTarget.value)
                     }
                     class={`${GROUP_INPUT} pl-2.5`}
                   />
@@ -512,11 +512,11 @@ export default function JasaModal(props) {
                   {/* 56x56 thumbnail preview */}
                   <div class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#E0D6CC] bg-white text-[#B5A99F]">
                     <Show
-                      when={props.formData?.foto_sampul && !imgError()}
+                      when={props.formData?.link_image && !imgError()}
                       fallback={<IconImage size={22} />}
                     >
                       <img
-                        src={props.formData.foto_sampul}
+                        src={props.formData.link_image}
                         alt="Pratinjau foto sampul"
                         width="56"
                         height="56"
@@ -539,7 +539,7 @@ export default function JasaModal(props) {
                       <span>
                         {props.isUploading
                           ? "Mengunggah..."
-                          : props.formData?.foto_sampul
+                          : props.formData?.link_image
                           ? "Ganti Gambar"
                           : "Pilih Gambar"}
                       </span>

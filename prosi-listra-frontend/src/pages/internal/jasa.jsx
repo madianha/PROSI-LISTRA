@@ -37,14 +37,14 @@ const INITIAL_FORM = {
   tipe_jasa: "tari",
   nama: "",
   deskripsi: "",
-  posisi_pentas: ["Opening"],
+  kecocokan: ["Opening"],
   id_provinsi: "",
   harga_minimum: "",
   harga_maximum: "",
   min_performer: "1",
   durasi: "",
-  tautan_media: "",
-  foto_sampul: "",
+  link_media: "",
+  link_image: "",
   is_aktif: true,
 };
 
@@ -58,16 +58,9 @@ export function formatRupiahRange(min, max) {
 
 export function formatEyebrowBudaya(item) {
   const tipe = String(item?.tipe_jasa || "tari").toLowerCase();
-  const prov = (item?.nama_provinsi || item?.kultur || "").trim();
-  let posisiStr = "Opening";
-  if (Array.isArray(item?.posisi_pentas) && item.posisi_pentas.length > 0) {
-    posisiStr = item.posisi_pentas.join(", ");
-  } else if (typeof item?.posisi_pentas === "string" && item.posisi_pentas.trim()) {
-    posisiStr = item.posisi_pentas.trim();
-  } else if (typeof item?.nama_kecocokan === "string" && item.nama_kecocokan.trim()) {
-    posisiStr = item.nama_kecocokan.trim();
-  }
-  const posisi = posisiStr.toUpperCase();
+  const prov = (item?.nama_provinsi || "").trim();
+  const kecocokan = Array.isArray(item?.kecocokan) && item.kecocokan.length > 0 ? item.kecocokan : ["Opening"];
+  const posisi = kecocokan.join(", ").toUpperCase();
 
   const parts = [tipe === "musik" ? "MUSIK" : "TARI"];
   if (tipe === "tari" && prov && prov.toLowerCase() !== "nusantara") {
@@ -79,9 +72,8 @@ export function formatEyebrowBudaya(item) {
 
 function JasaThumbnail(props) {
   const [broken, setBroken] = createSignal(false);
-  const src = () => props.item?.foto_sampul || props.item?.link_image || "";
-  const mediaUrl = () =>
-    props.item?.tautan_media || props.item?.link_media || "";
+  const src = () => props.item?.link_image || "";
+  const mediaUrl = () => props.item?.link_media || "";
 
   createEffect(
     on(
@@ -196,7 +188,7 @@ export default function InternalJasa() {
         const namaMatch = String(item.nama || "")
           .toLowerCase()
           .includes(q);
-        const provMatch = String(item.nama_provinsi || item.kultur || "")
+        const provMatch = String(item.nama_provinsi || "")
           .toLowerCase()
           .includes(q);
         if (!namaMatch && !provMatch) {
@@ -209,29 +201,21 @@ export default function InternalJasa() {
 
   const openAddModal = () => {
     setEditingItem(null);
-    setFormData({ ...INITIAL_FORM, posisi_pentas: ["Opening"] });
+    setFormData({ ...INITIAL_FORM, kecocokan: ["Opening"] });
     setFormError("");
     setIsFormModalOpen(true);
   };
 
   const openEditModal = (item) => {
     const tipe = String(item.tipe_jasa || "tari").toLowerCase();
-    let posisiList = ["Opening"];
-    if (Array.isArray(item.posisi_pentas) && item.posisi_pentas.length > 0) {
-      posisiList = [...item.posisi_pentas];
-    } else if (typeof item.posisi_pentas === "string" && item.posisi_pentas.trim()) {
-      posisiList = item.posisi_pentas.split(",").map((s) => s.trim()).filter(Boolean);
-    } else if (typeof item.nama_kecocokan === "string" && item.nama_kecocokan.trim()) {
-      posisiList = item.nama_kecocokan.split(",").map((s) => s.trim()).filter(Boolean);
-    }
-    if (posisiList.length === 0) posisiList = ["Opening"];
+    const posisiList = item.kecocokan?.length ? [...item.kecocokan] : ["Opening"];
 
     setEditingItem(item);
     setFormData({
       tipe_jasa: tipe === "musik" ? "musik" : "tari",
       nama: item.nama || "",
       deskripsi: item.deskripsi || "",
-      posisi_pentas: posisiList,
+      kecocokan: posisiList,
       id_provinsi:
         tipe === "tari" && item.id_provinsi != null
           ? String(item.id_provinsi)
@@ -243,8 +227,8 @@ export default function InternalJasa() {
       min_performer:
         item.min_performer != null ? String(Number(item.min_performer)) : "1",
       durasi: item.durasi != null ? String(Number(item.durasi)) : "",
-      tautan_media: item.tautan_media || item.link_media || "",
-      foto_sampul: item.foto_sampul || item.link_image || "",
+      link_media: item.link_media || "",
+      link_image: item.link_image || "",
       is_aktif: item.is_aktif ?? true,
     });
     setFormError("");
@@ -274,7 +258,7 @@ export default function InternalJasa() {
     setFormError("");
     try {
       const uploadedLocation = await uploadSampulJasa(file);
-      handleFieldChange("foto_sampul", uploadedLocation);
+      handleFieldChange("link_image", uploadedLocation);
     } catch (err) {
       setFormError(err?.message || "Gagal mengunggah foto sampul.");
     } finally {
@@ -335,18 +319,13 @@ export default function InternalJasa() {
       return;
     }
 
-    const tautanMedia = String(data.tautan_media || "").trim();
+    const tautanMedia = String(data.link_media || "").trim();
     if (tautanMedia && !/^https?:\/\/.+/i.test(tautanMedia)) {
       setFormError("Tautan media harus berupa URL yang valid (http:// atau https://).");
       return;
     }
 
-    const rawPosisi = data.posisi_pentas;
-    const posisiPentas = Array.isArray(rawPosisi)
-      ? rawPosisi
-      : typeof rawPosisi === "string" && rawPosisi.trim()
-      ? rawPosisi.split(",").map((s) => s.trim()).filter(Boolean)
-      : [];
+    const posisiPentas = Array.isArray(data.kecocokan) ? data.kecocokan : [];
 
     if (posisiPentas.length === 0) {
       setFormError("Pilih minimal satu posisi pentas.");
@@ -357,14 +336,14 @@ export default function InternalJasa() {
       tipe_jasa,
       nama,
       deskripsi: String(data.deskripsi || "").trim(),
-      posisi_pentas: posisiPentas,
+      kecocokan: posisiPentas,
       id_provinsi: tipe_jasa === "tari" ? Number(data.id_provinsi) : null,
       harga_minimum: hargaMin,
       harga_maximum: hargaMax,
       min_performer: minPerformer,
       durasi,
-      tautan_media: tautanMedia || null,
-      foto_sampul: String(data.foto_sampul || "").trim() || null,
+      link_media: tautanMedia || null,
+      link_image: String(data.link_image || "").trim() || null,
       is_aktif: Boolean(data.is_aktif),
     };
 

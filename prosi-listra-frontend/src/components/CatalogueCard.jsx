@@ -37,14 +37,14 @@ export default function CatalogueCard(props) {
           <span className="rounded-full border border-[#f5d5d6] bg-[#fff0f1] px-3 py-1 font-medium text-[#54141d]">
             Kategori: {type()}
           </span>
-          <span className="text-[#9b8885]">{props.kultur || "Nusantara"}</span>
+          <span className="text-[#9b8885]">{props.nama_provinsi || "Nusantara"}</span>
         </div>
 
-        {props.nama_kecocokan && (
+        {props.kecocokan?.length > 0 && (
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm sm:text-base">
             <span className="text-[#9b8885]">Cocok untuk</span>
             <span className="rounded-full border border-[#e6cfcf] bg-[#fffafa] px-3 py-1 text-[#6d5554]">
-              {props.nama_kecocokan.charAt(0) + props.nama_kecocokan.slice(1).toLowerCase()}
+              {props.kecocokan.join(", ")}
             </span>
           </p>
         )}

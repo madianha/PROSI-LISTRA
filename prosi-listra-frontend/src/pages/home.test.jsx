@@ -2,10 +2,14 @@ import { screen } from "@solidjs/testing-library";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderRoute } from "../test/renderRoute";
 
+// home juga memuat katalog jasa; cukup kosong untuk test ini
+vi.mock("../api/jasa", () => ({ listJasa: vi.fn(async () => []) }));
 vi.mock("../api/berita", () => ({ listBerita: vi.fn() }));
+vi.mock("../api/testimoni", () => ({ listTestimoni: vi.fn() }));
 
 import Home from "./home";
 import { listBerita } from "../api/berita";
+import { listTestimoni } from "../api/testimoni";
 
 const buatBerita = (id, judul, tanggal) => ({
   id_berita: id,
@@ -27,6 +31,7 @@ const daftar = [
 
 beforeEach(() => {
   vi.resetAllMocks();
+  listTestimoni.mockResolvedValue([]);
 });
 
 describe("Halaman Home: Berita Terbaru", () => {

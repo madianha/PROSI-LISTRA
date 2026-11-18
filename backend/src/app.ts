@@ -25,7 +25,6 @@ app.use("/api/berita", beritaRoutes);
 app.use("/api/jasa", jasaRoutes);
 app.use("/api/provinsi", provinsiRoutes);
 app.use("/api/kontak", kontakRoutes);
-app.use("/api/jasa", jasaRoutes);
 app.use("/api/testimoni", testimoniRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/uploads", express.static(UPLOAD_DIR));
