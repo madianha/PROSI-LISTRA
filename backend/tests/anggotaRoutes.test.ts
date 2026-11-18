@@ -191,5 +191,57 @@ describe("Anggota Routes with ERD v5 Schema", () => {
       expect(disimpan).not.toBe("rahasia123");
       expect(bcrypt.compareSync("rahasia123", disimpan)).toBe(true);
     });
+
+    it("PUT /api/anggota/:id: tidak mengubah password_hash bila password tidak disertakan", async () => {
+      const mockClient = {
+        query: vi.fn(),
+        release: vi.fn(),
+      };
+      vi.mocked(pool.connect).mockResolvedValueOnce(mockClient as any);
+
+      // BEGIN
+      mockClient.query.mockResolvedValueOnce({} as any);
+      // UPDATE anggota RETURNING id_anggota
+      mockClient.query.mockResolvedValueOnce({ rowCount: 1, rows: [{ id_anggota: 1 }] } as any);
+      // COMMIT
+      mockClient.query.mockResolvedValueOnce({} as any);
+
+      const updatedAnggota = {
+        id_anggota: 1,
+        nama: "Budi Santoso",
+        email: "budi@student.unpar.ac.id",
+        npm: "6182101001",
+        peran: "Kepengurusan",
+        angkatan_unpar: 2021,
+        jabatan: "Ketua",
+        is_penari: false,
+        is_pemusik: false,
+        is_aktif: true,
+        spesialisasi: [],
+      };
+      vi.mocked(pool.query).mockResolvedValueOnce({ rows: [updatedAnggota] } as any);
+
+      const res = await request(app)
+        .put("/api/anggota/1")
+        .set("Authorization", LOGIN)
+        .send({
+          nama: "Budi Santoso",
+          email: "budi@student.unpar.ac.id",
+          npm: "6182101001",
+          peran: "Kepengurusan",
+          angkatan_unpar: 2021,
+          jabatan: "Ketua",
+          is_aktif: true,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(updatedAnggota);
+
+      // Pastikan TIDAK ADA query update password_hash
+      const updatePasswordCall = mockClient.query.mock.calls.find((call) =>
+        typeof call[0] === "string" && call[0].includes("password_hash =")
+      );
+      expect(updatePasswordCall).toBeUndefined();
+    });
   });
 });

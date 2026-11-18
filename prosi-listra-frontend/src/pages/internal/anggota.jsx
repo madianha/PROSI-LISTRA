@@ -226,8 +226,8 @@ export default function InternalAnggota() {
       angkatan_unpar: data.angkatan_unpar ? Number(data.angkatan_unpar) : null,
       is_aktif: data.is_aktif,
       spesialisasi_ids: data.spesialisasi_ids,
-      // kata sandi hanya dikirim bila diisi (kolomnya hanya tampil untuk Admin/LISTRA)
-      ...(data.password ? { password: data.password } : {}),
+      // kata sandi hanya dikirim bila diisi pada mode Tambah Anggota (tidak dikirim saat Ubah Data)
+      ...(!editingId() && data.password ? { password: data.password } : {}),
     };
 
     setIsSubmitting(true);
