@@ -237,9 +237,13 @@ export default function InternalKontak() {
     setIsSaving(true);
     setSaveError("");
     try {
+      const token = localStorage.getItem("listra_token");
       const response = await fetch(API_URL, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           nomor_wa: normalizePhoneNumber(draftNomor()),
           nama_humas: draftNamaHumas(),

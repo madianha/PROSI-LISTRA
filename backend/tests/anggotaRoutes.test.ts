@@ -12,9 +12,24 @@ vi.mock("../src/db", () => ({
   },
 }));
 
+const adminAuth = `Bearer ${signJwt({ id_anggota: 1, peran: "admin" }, "listra_dev_secret")}`;
+
 describe("Anggota Routes with ERD v5 Schema", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe("autentikasi wajibLogin", () => {
+    it("menolak semua endpoint /api/anggota tanpa token dengan 401", async () => {
+      expect((await request(app).get("/api/anggota/spesialisasi")).status).toBe(401);
+      expect((await request(app).get("/api/anggota")).status).toBe(401);
+      expect((await request(app).get("/api/anggota/1")).status).toBe(401);
+      expect((await request(app).post("/api/anggota").send({ nama: "X", email: "x@unpar.ac.id" })).status).toBe(401);
+      expect((await request(app).put("/api/anggota/1").send({ nama: "X" })).status).toBe(401);
+      expect((await request(app).patch("/api/anggota/1/status").send({ is_aktif: false })).status).toBe(401);
+      expect(pool.query).not.toHaveBeenCalled();
+      expect(pool.connect).not.toHaveBeenCalled();
+    });
   });
 
   describe("GET /api/anggota/spesialisasi", () => {
@@ -25,7 +40,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
       ];
       vi.mocked(pool.query).mockResolvedValueOnce({ rows: mockJasa } as any);
 
-      const res = await request(app).get("/api/anggota/spesialisasi");
+      const res = await request(app).get("/api/anggota/spesialisasi").set("Authorization", adminAuth);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockJasa);
@@ -60,7 +75,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
       ];
       vi.mocked(pool.query).mockResolvedValueOnce({ rows: mockAnggota } as any);
 
-      const res = await request(app).get("/api/anggota");
+      const res = await request(app).get("/api/anggota").set("Authorization", adminAuth);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockAnggota);
@@ -111,6 +126,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
 
       const res = await request(app)
         .post("/api/anggota")
+        .set("Authorization", adminAuth)
         .send({
           nama: "Dewi",
           email: "dewi@student.unpar.ac.id",
@@ -152,7 +168,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
 
     it("menolak kata sandi tanpa login", async () => {
       const res = await request(app).post("/api/anggota").send(body);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(401);
       expect(pool.connect).not.toHaveBeenCalled();
     });
 
@@ -164,7 +180,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
     it("menolak token palsu", async () => {
       const palsu = signJwt({ id_anggota: 1, peran: "admin" }, "bukan-rahasia-server");
       const res = await request(app).post("/api/anggota").set("Authorization", `Bearer ${palsu}`).send(body);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(401);
     });
 
     it("menolak kata sandi kurang dari 8 karakter", async () => {

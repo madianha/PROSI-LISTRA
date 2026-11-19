@@ -9,6 +9,8 @@ const tmpDir = mkdtempSync(path.join(os.tmpdir(), "listra-upload-"));
 vi.stubEnv("UPLOAD_DIR", tmpDir);
 
 const { default: app } = await import("../src/app");
+const { signJwt } = await import("../src/controllers/authController");
+const authHeader = `Bearer ${signJwt({ id_anggota: 1, peran: "admin" }, "listra_dev_secret")}`;
 
 afterAll(() => {
   rmSync(tmpDir, { recursive: true, force: true });
@@ -21,9 +23,17 @@ const PNG = Buffer.from(
 );
 
 describe("POST /api/upload", () => {
+  it("menolak unggah tanpa login dengan 401", async () => {
+    const res = await request(app)
+      .post("/api/upload")
+      .attach("file", PNG, { filename: "foto.png", contentType: "image/png" });
+    expect(res.status).toBe(401);
+  });
+
   it("menyimpan gambar dan mengembalikan { location } untuk TinyMCE", async () => {
     const res = await request(app)
       .post("/api/upload")
+      .set("Authorization", authHeader)
       .attach("file", PNG, { filename: "foto.png", contentType: "image/png" });
 
     expect(res.status).toBe(201);
@@ -34,6 +44,7 @@ describe("POST /api/upload", () => {
   it("gambar yang diunggah bisa dibuka lewat /uploads", async () => {
     const upload = await request(app)
       .post("/api/upload")
+      .set("Authorization", authHeader)
       .attach("file", PNG, { filename: "foto.png", contentType: "image/png" });
     const res = await request(app).get(upload.body.location);
     expect(res.status).toBe(200);
@@ -43,6 +54,7 @@ describe("POST /api/upload", () => {
   it("menolak file bukan gambar", async () => {
     const res = await request(app)
       .post("/api/upload")
+      .set("Authorization", authHeader)
       .attach("file", Buffer.from("halo"), { filename: "catatan.txt", contentType: "text/plain" });
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("Gambar harus berformat JPG, PNG, WEBP, atau GIF.");
@@ -52,13 +64,14 @@ describe("POST /api/upload", () => {
     const besar = Buffer.alloc(5 * 1024 * 1024 + 1);
     const res = await request(app)
       .post("/api/upload")
+      .set("Authorization", authHeader)
       .attach("file", besar, { filename: "besar.jpg", contentType: "image/jpeg" });
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("Ukuran gambar maksimal 5 MB.");
   });
 
   it("menolak request tanpa file", async () => {
-    const res = await request(app).post("/api/upload");
+    const res = await request(app).post("/api/upload").set("Authorization", authHeader);
     expect(res.status).toBe(400);
     expect(res.body.message).toBe("File gambar wajib dikirim.");
   });

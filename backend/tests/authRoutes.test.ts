@@ -29,7 +29,7 @@ describe("Auth self-service", () => {
 
     it("memakai id dari token dan tidak mengembalikan hash", async () => {
       vi.mocked(pool.query).mockResolvedValueOnce({
-        rows: [{ id_anggota: 7, nama: "Budi", email: "a@student.unpar.ac.id", peran: "anggota", spesialisasi: [] }],
+        rows: [{ id_anggota: 7, nama: "Budi", email: "a@student.unpar.ac.id", peran: "anggota", is_aktif: true, spesialisasi: [] }],
       } as any);
       const res = await request(app).get("/api/auth/me").set(auth);
       expect(res.status).toBe(200);
@@ -39,12 +39,20 @@ describe("Auth self-service", () => {
       expect(vi.mocked(pool.query).mock.calls[0][0]).not.toContain("password_hash");
     });
 
+    it("menolak akun nonaktif dengan 401", async () => {
+      vi.mocked(pool.query).mockResolvedValueOnce({
+        rows: [{ id_anggota: 7, nama: "Budi", email: "a@student.unpar.ac.id", peran: "anggota", is_aktif: false, spesialisasi: [] }],
+      } as any);
+      const res = await request(app).get("/api/auth/me").set(auth);
+      expect(res.status).toBe(401);
+    });
+
     it("fallback mencari lewat email bila token tidak punya id_anggota", async () => {
       const emailOnlyToken = signJwt({ email: "a@student.unpar.ac.id", peran: "anggota" }, "listra_dev_secret");
       vi.mocked(pool.query)
         .mockResolvedValueOnce({ rows: [{ id_anggota: 7 }] } as any)
         .mockResolvedValueOnce({
-          rows: [{ id_anggota: 7, nama: "Budi", email: "a@student.unpar.ac.id", peran: "anggota", spesialisasi: [] }],
+          rows: [{ id_anggota: 7, nama: "Budi", email: "a@student.unpar.ac.id", peran: "anggota", is_aktif: true, spesialisasi: [] }],
         } as any);
       const res = await request(app).get("/api/auth/me").set({ Authorization: `Bearer ${emailOnlyToken}` });
       expect(res.status).toBe(200);
@@ -59,6 +67,7 @@ describe("Auth self-service", () => {
             nama: "Budi",
             email: "a@student.unpar.ac.id",
             peran: "anggota",
+            is_aktif: true,
             spesialisasi: [
               { id_jasa: 2, id_spesialisasi: 2, nama: "Tari Merak", nama_spesialisasi: "Tari Merak", tipe_jasa: "tari", kategori: "tari" },
               { id_jasa: 5, id_spesialisasi: 5, nama: "Gamelan", nama_spesialisasi: "Gamelan", tipe_jasa: "musik", kategori: "musik" },

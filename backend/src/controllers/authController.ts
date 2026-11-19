@@ -123,8 +123,8 @@ export async function me(_req: Request, res: Response): Promise<void> {
       return;
     }
     const anggota = await getAnggotaById(id);
-    if (!anggota) {
-      res.status(404).json({ message: "Akun tidak ditemukan." });
+    if (!anggota || !anggota.is_aktif) {
+      res.status(401).json({ message: "Sesi login tidak valid atau akun tidak aktif." });
       return;
     }
     res.status(200).json(anggota);

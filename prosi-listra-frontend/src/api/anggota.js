@@ -1,5 +1,11 @@
-async function request(url, options) {
-  const res = await fetch(url, options);
+async function request(url, options = {}) {
+  const token = localStorage.getItem("listra_token");
+  const headers = {
+    ...(options.headers ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const res = await fetch(url, { ...options, headers });
   if (res.status === 204) return null;
 
   const body = await res.json().catch(() => null);
@@ -10,14 +16,9 @@ async function request(url, options) {
 }
 
 function kirimJson(method, data) {
-  // token login ikut dikirim; backend memakainya untuk cek siapa yang boleh mengatur kata sandi
-  const token = localStorage.getItem("listra_token");
   return {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   };
 }

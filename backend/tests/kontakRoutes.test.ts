@@ -1,6 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { signJwt } from "../src/controllers/authController";
 import kontakRoutes from "../src/routes/kontakRoutes";
 import * as kontakRepository from "../src/repositories/kontakRepository";
 
@@ -8,6 +9,8 @@ vi.mock("../src/repositories/kontakRepository", () => ({
   getKontak: vi.fn(),
   updateKontak: vi.fn(),
 }));
+
+const authHeader = `Bearer ${signJwt({ id_anggota: 1, peran: "admin" }, "listra_dev_secret")}`;
 
 describe("Kontak Routes with nama_humas", () => {
   beforeEach(() => {
@@ -38,6 +41,19 @@ describe("Kontak Routes with nama_humas", () => {
     expect(res.body.nama).toBe("Bagas Nugroho");
   });
 
+  it("PUT /api/kontak rejects unauthenticated requests with 401", async () => {
+    const res = await request(app)
+      .put("/api/kontak")
+      .send({
+        nomor_wa: "6289999999999",
+        nama_humas: "Siti Rahma",
+        template_pesan: "Pesan baru",
+      });
+
+    expect(res.status).toBe(401);
+    expect(kontakRepository.updateKontak).not.toHaveBeenCalled();
+  });
+
   it("PUT /api/kontak updates nama_humas successfully", async () => {
     vi.mocked(kontakRepository.updateKontak).mockResolvedValue({
       id_kontak: 1,
@@ -53,6 +69,7 @@ describe("Kontak Routes with nama_humas", () => {
 
     const res = await request(app)
       .put("/api/kontak")
+      .set("Authorization", authHeader)
       .send({
         nomor_wa: "6289999999999",
         nama_humas: "Siti Rahma",

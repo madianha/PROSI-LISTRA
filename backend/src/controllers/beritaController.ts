@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { bacaPengguna } from "../middleware/wajibLogin";
 import * as beritaRepository from "../repositories/beritaRepository";
 import { validateBerita } from "../validation/beritaValidation";
 
@@ -12,13 +13,9 @@ function parseId(raw: string): number | null {
   return id > 0 && Number.isSafeInteger(id) ? id : null;
 }
 
-/**
- * ?semua=1 ikut menampilkan draf (dipakai Kelola Berita).
- * Catatan: belum ada login, jadi siapa pun yang tahu ?semua=1 bisa melihat draf.
- * Nanti tambahkan pengecekan login di sini.
- */
+/** ?semua=1 ikut menampilkan draf (dipakai Kelola Berita), hanya berlaku bila pengguna sudah login. */
 function opsiBaca(req: Request): beritaRepository.OpsiBaca {
-  return { semua: req.query.semua === "1" };
+  return { semua: req.query.semua === "1" && bacaPengguna(req) !== null };
 }
 
 export async function listBerita(req: Request, res: Response): Promise<void> {
