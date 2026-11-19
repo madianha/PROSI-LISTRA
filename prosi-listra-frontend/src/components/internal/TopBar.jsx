@@ -1,5 +1,6 @@
 import { createEffect, createSignal, onMount } from "solid-js";
-import { useLocation, useNavigate } from "@solidjs/router";
+import { A, useLocation, useNavigate } from "@solidjs/router";
+import UserAvatar from "./UserAvatar";
 import logoListra from "../../img/logo-listra.png";
 import logoUnpar from "../../img/Logo-UNPAR.png";
 
@@ -44,8 +45,18 @@ export default function TopBar() {
       {/* flex-1 = empty space that pushes the user info to the right */}
       <span className="flex-1" />
 
-      {/* hidden sm:inline = hide the name on small phones */}
-      <span className="hidden text-sm sm:inline">{userName()}</span>
+      <A
+        href="/internal/profile"
+        aria-label="Profil akun"
+        aria-current={location.pathname === "/internal/profile" ? "page" : undefined}
+        class={`flex items-center gap-2 rounded-full py-1 pl-3 pr-1.5 transition-colors hover:bg-[#f8eff0] ${
+          location.pathname === "/internal/profile" ? "bg-[#f8eff0] text-[#4a0e17]" : "text-[#302929]"
+        }`}
+      >
+        {/* hidden sm:inline = hide the name on small phones, avatar stays */}
+        <span class="hidden max-w-[160px] truncate text-sm font-medium sm:inline">{userName()}</span>
+        <UserAvatar class="h-8 w-8" />
+      </A>
       <button
         type="button"
         onClick={handleLogout}

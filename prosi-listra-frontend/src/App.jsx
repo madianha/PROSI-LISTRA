@@ -22,6 +22,7 @@ import InternalBerita from "./pages/internal/berita";
 import InternalBeritaForm from "./pages/internal/berita-form";
 import InternalTestimoni from "./pages/internal/testimoni";
 import InternalKontak from "./pages/internal/kontak";
+import InternalProfile from "./pages/internal/profile";
 
 function PublicLayout(props) {
   return (
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="/berita/:id/ubah" component={InternalBeritaForm} />
         <Route path="/testimoni" component={InternalTestimoni} />
         <Route path="/kontak" component={InternalKontak} />
+        <Route path="/profile" component={InternalProfile} />
       </Route>
     </Router>
   );
