@@ -38,6 +38,18 @@ describe("Auth self-service", () => {
       expect(vi.mocked(pool.query).mock.calls[0][1]).toEqual([7]);
       expect(vi.mocked(pool.query).mock.calls[0][0]).not.toContain("password_hash");
     });
+
+    it("fallback mencari lewat email bila token tidak punya id_anggota", async () => {
+      const emailOnlyToken = signJwt({ email: "a@student.unpar.ac.id", peran: "anggota" }, "listra_dev_secret");
+      vi.mocked(pool.query)
+        .mockResolvedValueOnce({ rows: [{ id_anggota: 7 }] } as any)
+        .mockResolvedValueOnce({
+          rows: [{ id_anggota: 7, nama: "Budi", email: "a@student.unpar.ac.id", peran: "anggota", spesialisasi: [] }],
+        } as any);
+      const res = await request(app).get("/api/auth/me").set({ Authorization: `Bearer ${emailOnlyToken}` });
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ id_anggota: 7, nama: "Budi", peran: "Anggota" });
+    });
   });
 
   describe("PUT /api/auth/change-password", () => {

@@ -28,11 +28,13 @@ describe("TopBar profil", () => {
   });
   afterEach(() => localStorage.clear());
 
-  it("menautkan ke /internal/profile, hanya nama dan avatar siluet", () => {
+  it("menautkan ke /internal/profile, hanya nama dan avatar siluet dengan pill distinct", () => {
     renderRoute(TopBar, { path: "/internal/kalender" });
     const link = screen.getByRole("link", { name: "Profil akun" });
     expect(link.getAttribute("href")).toBe("/internal/profile");
     expect(link.textContent.trim()).toBe("Budi Santoso");
+    expect(link.className).toContain("bg-[#f6ecee]");
+    expect(link.className).toContain("border-[#4a0e17]/35");
     expect(link.querySelector('[data-testid="user-avatar"] svg')).not.toBeNull();
     expect(link.querySelector("img")).toBeNull();
     expect(screen.getByRole("button", { name: "Keluar" })).toBeTruthy();
@@ -40,7 +42,10 @@ describe("TopBar profil", () => {
 
   it("menandai aktif saat di /internal/profile", () => {
     renderRoute(TopBar, { path: "/internal/profile" });
-    expect(screen.getByRole("link", { name: "Profil akun" }).getAttribute("aria-current")).toBe("page");
+    const link = screen.getByRole("link", { name: "Profil akun" });
+    expect(link.getAttribute("aria-current")).toBe("page");
+    expect(link.className).toContain("bg-[#ebd8dc]");
+    expect(link.className).toContain("border-[#4a0e17]");
   });
 });
 
@@ -56,10 +61,23 @@ describe("/internal/profile", () => {
     expect(await screen.findAllByText("budi@student.unpar.ac.id")).not.toHaveLength(0);
     expect(screen.getByText("6182101001")).toBeTruthy();
     expect(screen.getByText("2021")).toBeTruthy();
-    expect(screen.getByText("Aktif")).toBeTruthy();
+    expect(screen.getByText("Status Keanggotaan").nextElementSibling.textContent.trim()).toBe("Aktif");
     expect(screen.getByText("Tari Merak")).toBeTruthy();
     expect(screen.getByText("Jabatan Struktural").nextElementSibling.textContent).toBe("—");
     expect(globalThis.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer tok");
+  });
+
+  it("tidak macet di Memuat profil saat /api/auth/me gagal dan memakai fallback localStorage", async () => {
+    localStorage.setItem(
+      "listra_user",
+      JSON.stringify({ nama: "Budi Santoso", email: "budi@student.unpar.ac.id", peran: "listra", jabatan: "Ketua" })
+    );
+    globalThis.fetch = vi.fn(async () => json({ message: "Silakan login terlebih dahulu." }, false));
+    renderRoute(InternalProfile, { path: "/internal/profile" });
+    expect((await screen.findByRole("alert")).textContent).toContain("Silakan login terlebih dahulu.");
+    expect(screen.queryByText(/Memuat profil/)).toBeNull();
+    expect(screen.getAllByText("Budi Santoso").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Kepengurusan").length).toBeGreaterThan(0);
   });
 
   it("validasi sisi klien tanpa memanggil API", async () => {

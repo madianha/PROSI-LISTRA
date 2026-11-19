@@ -4,7 +4,7 @@ export default function UserAvatar(props) {
     <span
       data-testid="user-avatar"
       aria-hidden="true"
-      class={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#efe7e8] text-[#8c7377] ${props.class ?? "h-8 w-8"}`}
+      class={`flex shrink-0 items-center justify-center overflow-hidden rounded-full ${props.tone ?? "bg-[#e6d7da] text-[#5c3d42]"} ${props.class ?? "h-8 w-8"}`}
     >
       <svg viewBox="0 0 24 24" fill="currentColor" class="h-full w-full">
         <circle cx="12" cy="9" r="4" />

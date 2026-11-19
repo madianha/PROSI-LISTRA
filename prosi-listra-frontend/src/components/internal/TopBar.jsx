@@ -49,13 +49,15 @@ export default function TopBar() {
         href="/internal/profile"
         aria-label="Profil akun"
         aria-current={location.pathname === "/internal/profile" ? "page" : undefined}
-        class={`flex items-center gap-2 rounded-full py-1 pl-3 pr-1.5 transition-colors hover:bg-[#f8eff0] ${
-          location.pathname === "/internal/profile" ? "bg-[#f8eff0] text-[#4a0e17]" : "text-[#302929]"
+        class={`flex items-center gap-2 rounded-full border py-1 pl-3.5 pr-1.5 text-[#2b090e] transition-colors ${
+          location.pathname === "/internal/profile"
+            ? "border-[#4a0e17] bg-[#ebd8dc] ring-1 ring-[#4a0e17]/20"
+            : "border-[#4a0e17]/35 bg-[#f6ecee] hover:border-[#4a0e17]/60 hover:bg-[#efe0e3]"
         }`}
       >
         {/* hidden sm:inline = hide the name on small phones, avatar stays */}
         <span class="hidden max-w-[160px] truncate text-sm font-medium sm:inline">{userName()}</span>
-        <UserAvatar class="h-8 w-8" />
+        <UserAvatar class="h-8 w-8" tone="bg-[#e6d7da] text-[#5c3d42]" />
       </A>
       <button
         type="button"
