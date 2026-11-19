@@ -49,20 +49,38 @@ function authHeaders() {
 
 const kosong = (v) => (v === null || v === undefined || v === "" ? "—" : v);
 
-function Field(props) {
-  return (
-    <div>
-      <dt class="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6e5a5d]">{props.label}</dt>
-      <dd class="mt-1 text-sm text-[#302929]">{props.children}</dd>
-    </div>
-  );
+function getSpesialisasiName(item) {
+  if (typeof item === "string") return item;
+  return item?.nama_spesialisasi || item?.nama || item?.nama_jasa || "";
+}
+
+function filterSpesialisasiTari(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((item) => {
+    const type = String(item?.tipe_jasa || item?.kategori || "").toLowerCase();
+    if (type === "tari" || type.includes("tari")) return true;
+    if (type === "musik" || type.includes("musik")) return false;
+    const name = String(typeof item === "string" ? item : (item?.nama_spesialisasi || item?.nama || item?.nama_jasa || "")).toLowerCase();
+    return name.includes("tari");
+  });
+}
+
+function filterSpesialisasiMusik(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter((item) => {
+    const type = String(item?.tipe_jasa || item?.kategori || "").toLowerCase();
+    if (type === "musik" || type.includes("musik")) return true;
+    if (type === "tari" || type.includes("tari")) return false;
+    const name = String(typeof item === "string" ? item : (item?.nama_spesialisasi || item?.nama || item?.nama_jasa || "")).toLowerCase();
+    return !name.includes("tari");
+  });
 }
 
 function PasswordField(props) {
   const [show, setShow] = createSignal(false);
   return (
     <label class="block w-full">
-      <span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6e5a5d]">
+      <span class="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6e5a5d]">
         {props.label}
       </span>
       <div class="relative w-full">
@@ -73,7 +91,7 @@ function PasswordField(props) {
           autocomplete={props.autocomplete}
           value={props.value}
           onInput={(e) => props.onInput(e.currentTarget.value)}
-          class="h-11 w-full rounded-xl border border-[#e3d3d5] bg-white pl-3.5 pr-11 text-sm text-[#302929] transition focus:border-[#4a0e17] focus:outline-none focus:ring-4 focus:ring-[#4a0e17]/[0.07]"
+          class="h-11 w-full rounded-xl border border-[#e3d3d5] bg-white pl-3.5 pr-11 text-[15px] font-medium text-[#1f1214] transition focus:border-[#4a0e17] focus:outline-none focus:ring-4 focus:ring-[#4a0e17]/[0.07]"
         />
         <button
           type="button"
@@ -100,7 +118,7 @@ function PasswordField(props) {
         </button>
       </div>
       <Show when={props.hint}>
-        <span class="mt-1.5 block text-xs text-[#6e5a5d]">{props.hint}</span>
+        <span class="mt-1.5 block text-xs text-[#5c474a]">{props.hint}</span>
       </Show>
     </label>
   );
@@ -216,17 +234,14 @@ export default function InternalProfile() {
 
   return (
     <div class="mx-auto max-w-6xl">
-      <header>
+      <header class="mb-6">
         <h1 class="font-serif text-2xl font-bold text-[#39000a]">Profil Akun</h1>
-        <p class="mt-1 text-sm text-[#6e5a5d]">
-          Lihat informasi keanggotaan dan kelola keamanan kata sandi Anda.
-        </p>
       </header>
 
-      <div class="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+      <div class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
         <section
           aria-labelledby="judul-info"
-          class="rounded-2xl border border-[#ede0e2] bg-white p-6 shadow-sm sm:p-8 lg:col-span-7"
+          class="flex flex-col rounded-2xl border border-[#e6d7da] bg-white p-7 shadow-[0_1px_2px_rgba(43,9,14,0.03)] sm:p-8 lg:col-span-7"
         >
           <h2 id="judul-info" class="sr-only">Informasi Akun</h2>
 
@@ -252,77 +267,137 @@ export default function InternalProfile() {
 
           <Show when={profile()}>
             {(u) => (
-              <>
-                <div class="flex items-center gap-4 border-b border-[#ede0e2] pb-6">
-                  <UserAvatar class="h-14 w-14" />
-                  <div class="min-w-0">
-                    <p class="truncate font-serif text-xl font-bold text-[#39000a]">{kosong(u().nama)}</p>
-                    <p class="truncate text-sm text-[#6e5a5d]">{kosong(u().email)}</p>
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      <span class="rounded-full bg-[#f8eff0] px-2.5 py-0.5 text-xs font-semibold text-[#4a0e17]">
+              <div>
+                {/* Top Identity Header */}
+                <div class="flex items-center gap-5 border-b border-[#e6d7da] pb-6">
+                  <UserAvatar class="h-16 w-16" />
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate font-serif text-2xl font-bold tracking-tight text-[#2b090e]">
+                      {kosong(u().nama)}
+                    </p>
+                    <p class="mt-0.5 truncate text-[15px] font-medium text-[#5c474a]">
+                      {kosong(u().email)}
+                    </p>
+                    <div class="mt-2.5 flex items-center">
+                      <span class="inline-flex items-center rounded-full border border-[#4a0e17]/40 bg-[#f8eff0] px-3 py-0.5 text-xs font-semibold text-[#4a0e17]">
                         {kosong(u().peran)}
-                      </span>
-                      <span
-                        class={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          u().is_aktif ? "bg-emerald-50 text-emerald-800" : "bg-[#efe7e8] text-[#6e5a5d]"
-                        }`}
-                      >
-                        {u().is_aktif ? "Aktif" : "Nonaktif"}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <dl class="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2">
-                  <Field label="Nama Lengkap">{kosong(u().nama)}</Field>
-                  <Field label="Email UNPAR">{kosong(u().email)}</Field>
-                  <Field label="NPM">{kosong(u().npm)}</Field>
-                  <Field label="Angkatan UNPAR">{kosong(u().angkatan_unpar)}</Field>
-                  <Field label="Peran">{kosong(u().peran)}</Field>
-                  <Field label="Jabatan Struktural">{kosong(u().jabatan)}</Field>
-                  <Field label="Status Keanggotaan">
-                    <span
-                      class={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        u().is_aktif ? "bg-emerald-50 text-emerald-800" : "bg-[#efe7e8] text-[#6e5a5d]"
-                      }`}
-                    >
-                      {u().is_aktif ? "Aktif" : "Nonaktif"}
-                    </span>
-                  </Field>
-                  <div class="sm:col-span-2">
-                    <Field label="Spesialisasi Seni">
-                      <Show
-                        when={u().spesialisasi?.length}
-                        fallback={<span>—</span>}
+                {/* Streamlined, Non-Redundant Metadata Grid */}
+                <dl class="mt-6 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+                  <div>
+                    <dt class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a6367]">
+                      NPM
+                    </dt>
+                    <dd class="text-[15px] font-medium leading-snug text-[#1f1214] tabular-nums sm:text-base">
+                      {kosong(u().npm)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a6367]">
+                      Angkatan UNPAR
+                    </dt>
+                    <dd class="text-[15px] font-medium leading-snug text-[#1f1214] tabular-nums sm:text-base">
+                      {kosong(u().angkatan_unpar)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a6367]">
+                      Jabatan Struktural
+                    </dt>
+                    <dd class="text-[15px] font-medium leading-snug text-[#1f1214] sm:text-base">
+                      {kosong(u().jabatan)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a6367]">
+                      Status Keanggotaan
+                    </dt>
+                    <dd class="leading-snug">
+                      <span
+                        class={`inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold ${
+                          u().is_aktif
+                            ? "border border-emerald-700/35 bg-emerald-50/90 text-emerald-900"
+                            : "border border-rose-700/35 bg-rose-50/90 text-rose-900"
+                        }`}
                       >
-                        <ul class="flex flex-wrap gap-2">
-                          <For each={u().spesialisasi}>
-                            {(s) => (
-                              <li class="rounded-full border border-[#ede0e2] bg-[#fbf8f7] px-3 py-1 text-xs text-[#4a0e17]">
-                                {s.nama_spesialisasi}
-                              </li>
-                            )}
-                          </For>
-                        </ul>
-                      </Show>
-                    </Field>
+                        {u().is_aktif ? "Aktif" : "Nonaktif"}
+                      </span>
+                    </dd>
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <dt class="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a6367]">
+                      Spesialisasi Seni
+                    </dt>
+                    <dd class="leading-snug">
+                      <div class="rounded-xl border border-[#dcc8cc] bg-[#fbf8f7] p-4 sm:p-5">
+                        {/* Top Subsection — SPESIALISASI TARI */}
+                        <div>
+                          <div class="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#4a373a]">
+                            SPESIALISASI TARI
+                          </div>
+                          <Show
+                            when={filterSpesialisasiTari(u().spesialisasi).length > 0}
+                            fallback={<span class="text-sm text-[#7a6367]">—</span>}
+                          >
+                            <ul class="flex flex-wrap gap-2">
+                              <For each={filterSpesialisasiTari(u().spesialisasi)}>
+                                {(s) => (
+                                  <li class="inline-flex items-center rounded-full border border-[#4a0e17]/25 bg-white px-3.5 py-1 text-xs font-medium text-[#2b090e] sm:text-[13px]">
+                                    {getSpesialisasiName(s)}
+                                  </li>
+                                )}
+                              </For>
+                            </ul>
+                          </Show>
+                        </div>
+
+                        {/* Horizontal Divider Line */}
+                        <div class="my-4 border-t border-[#e2d1d4]" />
+
+                        {/* Bottom Subsection — SPESIALISASI MUSIK */}
+                        <div>
+                          <div class="mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#4a373a]">
+                            SPESIALISASI MUSIK
+                          </div>
+                          <Show
+                            when={filterSpesialisasiMusik(u().spesialisasi).length > 0}
+                            fallback={<span class="text-sm text-[#7a6367]">—</span>}
+                          >
+                            <ul class="flex flex-wrap gap-2">
+                              <For each={filterSpesialisasiMusik(u().spesialisasi)}>
+                                {(s) => (
+                                  <li class="inline-flex items-center rounded-full border border-[#4a0e17]/25 bg-white px-3.5 py-1 text-xs font-medium text-[#2b090e] sm:text-[13px]">
+                                    {getSpesialisasiName(s)}
+                                  </li>
+                                )}
+                              </For>
+                            </ul>
+                          </Show>
+                        </div>
+                      </div>
+                    </dd>
                   </div>
                 </dl>
-              </>
+              </div>
             )}
           </Show>
         </section>
 
         <section
           aria-labelledby="judul-sandi"
-          class="rounded-2xl border border-[#ede0e2] bg-white p-6 shadow-sm sm:p-8 lg:col-span-5"
+          class="flex flex-col rounded-2xl border border-[#e6d7da] bg-white p-7 shadow-[0_1px_2px_rgba(43,9,14,0.03)] sm:p-8 lg:col-span-5"
         >
-          <h2 id="judul-sandi" class="font-serif text-xl font-bold text-[#39000a]">Ganti Kata Sandi</h2>
-          <p class="mt-1 text-sm text-[#6e5a5d]">
-            Gunakan kata sandi yang sulit ditebak dan tidak dipakai di tempat lain.
-          </p>
+          <h2 id="judul-sandi" class="mb-5 font-serif text-xl font-bold text-[#2b090e]">Ganti Kata Sandi</h2>
 
-          <form onSubmit={submit} class="mt-6 w-full space-y-5" novalidate>
+          <form onSubmit={submit} class="w-full space-y-5" novalidate>
             <Show when={error()}>
               <p role="alert" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                 {error()}

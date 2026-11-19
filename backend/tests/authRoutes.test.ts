@@ -50,6 +50,28 @@ describe("Auth self-service", () => {
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ id_anggota: 7, nama: "Budi", peran: "Anggota" });
     });
+
+    it("mengembalikan spesialisasi beserta nama dan tipe_jasa / kategori (tari vs musik)", async () => {
+      vi.mocked(pool.query).mockResolvedValueOnce({
+        rows: [
+          {
+            id_anggota: 7,
+            nama: "Budi",
+            email: "a@student.unpar.ac.id",
+            peran: "anggota",
+            spesialisasi: [
+              { id_jasa: 2, id_spesialisasi: 2, nama: "Tari Merak", nama_spesialisasi: "Tari Merak", tipe_jasa: "tari", kategori: "tari" },
+              { id_jasa: 5, id_spesialisasi: 5, nama: "Gamelan", nama_spesialisasi: "Gamelan", tipe_jasa: "musik", kategori: "musik" },
+            ],
+          },
+        ],
+      } as any);
+      const res = await request(app).get("/api/auth/me").set(auth);
+      expect(res.status).toBe(200);
+      expect(res.body.spesialisasi).toHaveLength(2);
+      expect(res.body.spesialisasi[0]).toMatchObject({ nama: "Tari Merak", tipe_jasa: "tari" });
+      expect(res.body.spesialisasi[1]).toMatchObject({ nama: "Gamelan", tipe_jasa: "musik" });
+    });
   });
 
   describe("PUT /api/auth/change-password", () => {

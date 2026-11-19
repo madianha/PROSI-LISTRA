@@ -5,6 +5,7 @@ export interface Spesialisasi {
   nama_spesialisasi: string;
   kategori: string;
   id_jasa?: number;
+  nama?: string;
   nama_jasa?: string;
   tipe_jasa?: string;
 }
@@ -24,6 +25,10 @@ export interface Anggota {
     id_spesialisasi: number;
     nama_spesialisasi: string;
     kategori: string;
+    id_jasa?: number;
+    nama?: string;
+    nama_jasa?: string;
+    tipe_jasa?: string;
   }>;
 }
 
@@ -128,6 +133,7 @@ export async function getAnggota(filters: FilterAnggota = {}): Promise<Anggota[]
           json_build_object(
             'id_jasa', j.id_jasa,
             'id_spesialisasi', j.id_jasa,
+            'nama', j.nama,
             'nama_spesialisasi', j.nama,
             'nama_jasa', j.nama,
             'kategori', j.tipe_jasa,
@@ -166,6 +172,7 @@ export async function getAnggotaById(id: number): Promise<Anggota | null> {
           json_build_object(
             'id_jasa', j.id_jasa,
             'id_spesialisasi', j.id_jasa,
+            'nama', j.nama,
             'nama_spesialisasi', j.nama,
             'nama_jasa', j.nama,
             'kategori', j.tipe_jasa,

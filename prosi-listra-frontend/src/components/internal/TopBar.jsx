@@ -45,27 +45,41 @@ export default function TopBar() {
       {/* flex-1 = empty space that pushes the user info to the right */}
       <span className="flex-1" />
 
-      <A
-        href="/internal/profile"
-        aria-label="Profil akun"
-        aria-current={location.pathname === "/internal/profile" ? "page" : undefined}
-        class={`flex items-center gap-2 rounded-full border py-1 pl-3.5 pr-1.5 text-[#2b090e] transition-colors ${
-          location.pathname === "/internal/profile"
-            ? "border-[#4a0e17] bg-[#ebd8dc] ring-1 ring-[#4a0e17]/20"
-            : "border-[#4a0e17]/35 bg-[#f6ecee] hover:border-[#4a0e17]/60 hover:bg-[#efe0e3]"
-        }`}
-      >
-        {/* hidden sm:inline = hide the name on small phones, avatar stays */}
-        <span class="hidden max-w-[160px] truncate text-sm font-medium sm:inline">{userName()}</span>
-        <UserAvatar class="h-8 w-8" tone="bg-[#e6d7da] text-[#5c3d42]" />
-      </A>
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="rounded border border-gray-300 px-3 py-1 text-xs hover:bg-gray-100"
-      >
-        Keluar
-      </button>
+      <div className="flex items-center gap-3">
+        <A
+          href="/internal/profile"
+          aria-label="Profil akun"
+          class="inline-flex h-10 items-center gap-2 rounded-full border border-[#4a0e17]/30 bg-[#f6ecee] py-1 pl-3.5 pr-1.5 text-[#2b090e] transition-colors hover:bg-[#efe0e3]"
+        >
+          {/* hidden sm:inline = hide the name on small phones, avatar stays */}
+          <span class="hidden max-w-[160px] truncate text-sm font-medium sm:inline">{userName()}</span>
+          <UserAvatar class="h-8 w-8" tone="bg-[#e6d7da] text-[#5c3d42]" />
+        </A>
+
+        <span className="h-5 w-px bg-[#e6d7da]" aria-hidden="true" />
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="group inline-flex h-9 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3.5 text-[13px] font-semibold text-neutral-900 transition-colors duration-150 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white active:scale-[0.98]"
+        >
+          <span>Keluar</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            className="h-4 w-4 stroke-[1.8] transition-transform duration-150 group-hover:translate-x-0.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+      </div>
     </header>
   );
 }
