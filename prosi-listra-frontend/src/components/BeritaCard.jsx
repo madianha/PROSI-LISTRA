@@ -1,5 +1,6 @@
 import { A } from "@solidjs/router";
 import { Show } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import GambarSampul from "./GambarSampul";
 import Icon from "./Icon";
@@ -31,12 +32,14 @@ function IsiKartu(props) {
           </Show>
         </div>
 
-        {/* line-clamp-3 = judul panjang dipotong di baris ke-3 */}
-        <h2
+        {/* line-clamp-3 = judul panjang dipotong di baris ke-3.
+            Dynamic = h3 bila kartu berada di bawah judul bagian h2 (Beranda), selain itu h2 */}
+        <Dynamic
+          component={props.judulH3 ? "h3" : "h2"}
           className="mt-2 line-clamp-3 font-serif text-lg font-bold leading-snug text-[#302929]"
         >
           {props.berita.judul}
-        </h2>
+        </Dynamic>
 
         {/* mt-auto = baris ini selalu menempel di bawah kartu */}
         <span
@@ -56,6 +59,7 @@ function IsiKartu(props) {
  * Kartu berita.
  * props.berita    = satu baris dari tabel berita
  * props.prioritas = (opsional) gambar dimuat langsung, untuk kartu yang terlihat tanpa scroll
+ * props.judulH3   = (opsional) judul kartu sebagai h3, untuk kartu di bawah judul bagian h2 (Beranda)
  */
 export default function BeritaCard(props) {
   const kelas =
@@ -66,12 +70,12 @@ export default function BeritaCard(props) {
       when={jenisBerita(props.berita) === "tautan"}
       fallback={
         <A href={`/berita/${props.berita.id_berita}`} className={kelas}>
-          <IsiKartu berita={props.berita} prioritas={props.prioritas} />
+          <IsiKartu berita={props.berita} prioritas={props.prioritas} judulH3={props.judulH3} />
         </A>
       }
     >
       <a href={props.berita.url_artikel} target="_blank" rel="noopener noreferrer" className={kelas}>
-        <IsiKartu berita={props.berita} prioritas={props.prioritas} />
+        <IsiKartu berita={props.berita} prioritas={props.prioritas} judulH3={props.judulH3} />
       </a>
     </Show>
   );

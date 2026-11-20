@@ -1,12 +1,11 @@
 import { Router, Route, Navigate } from "@solidjs/router";
-import Navbar from "./components/Navbar";
+import PublicLayout from "./components/PublicLayout";
 import Home from "./pages/home";
 import TentangKami from "./pages/tetang-kami";
 import Jasa from "./pages/jasa";
 import JasaDetail from "./pages/jasa-detail";
 import Jadwal from "./pages/jadwal"
 import Testimoni from "./pages/testimoni";
-import Footer from "./components/Footer";
 import Berita from "./pages/berita";
 import BeritaDetail from "./pages/berita-detail";
 import LoginInternal from "./pages/internal/login";
@@ -26,27 +25,12 @@ import InternalTestimoni from "./pages/internal/testimoni";
 import InternalKontak from "./pages/internal/kontak";
 import InternalProfile from "./pages/internal/profile";
 
-function PublicLayout(props) {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <div className="w-full flex-1 bg-[#fffafa]">
-        {/* <CatalogueCard />
-        <CatalogueCard />
-        <CatalogueCard /> */}
-        {props.children}
-      </div>
-      <Footer/>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <Router>
-      {/* Public pages: Navbar + Footer */}
-      <Route path="/" component={() => <><Navbar /><Home /></>} />
+      {/* Halaman publik: Navbar + isi + Footer (components/PublicLayout.jsx) */}
       <Route path="/" component={PublicLayout}>
+        <Route path="/" component={Home} />
         {/* <Route path="/tentang-kami" component={TentangKami} /> */}
         <Route path="/jasa" component={Jasa} />
         <Route path="/jasa/:id" component={JasaDetail} />

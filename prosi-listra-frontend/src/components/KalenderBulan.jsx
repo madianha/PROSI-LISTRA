@@ -48,7 +48,7 @@ export default function KalenderBulan(props) {
                     ? "inline-grid size-6 place-items-center rounded-full bg-[#39000a] font-bold text-white"
                     : sel.diBulanIni
                       ? "text-[#302929]"
-                      : "text-[#b8a7a5]"
+                      : "text-[#7d6966]"
                 }`}
               >
                 {Number(sel.tanggal.slice(8))}

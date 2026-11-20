@@ -70,7 +70,8 @@ describe("Jadwal Acara publik", () => {
     const diKalender = screen.getAllByRole("button", { name: "Acara privat" });
     expect(diKalender).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "Gelar Karya LISTRA" })).toHaveLength(1);
-    expect(screen.getByText("Acara Job External")).toBeTruthy();
+    // keterangan warna di atas kalender + label jenis di kartu "Acara privat"
+    expect(screen.getAllByText("Acara Job External")).toHaveLength(2);
 
     Element.prototype.scrollIntoView = () => {};
     fireEvent.click(diKalender[0]);

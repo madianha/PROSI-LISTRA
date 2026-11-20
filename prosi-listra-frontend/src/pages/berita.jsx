@@ -11,12 +11,12 @@ export default function Berita() {
 
   return (
     <>
-      <CustomHeader category="KABAR & PRESTASI" pageName="Berita LISTRA" colorText="text-white">
+      <CustomHeader pageName="Berita LISTRA">
         <p>Liputan kegiatan dan prestasi LISTRA UNPAR</p>
       </CustomHeader>
 
-      <div className="px-6 py-10">
-        <div className="mx-auto w-full max-w-[1100px]">
+      <div className="px-5 py-10 sm:px-8">
+        <div className="mx-auto w-full max-w-[1110px]">
           <Switch>
             <Match when={berita.loading}>
               <p className="py-16 text-center text-sm text-[#685856]">Memuat berita...</p>
@@ -41,7 +41,7 @@ export default function Berita() {
 
             <Match when={berita()}>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {/* berita terbaru tampil lebar di atas, sisanya grid biasa */}
+                {/* prioritas = 3 kartu pertama (baris pertama) langsung dimuat gambarnya */}
                 <For each={berita()}>
                   {(item, i) => <BeritaCard berita={item} prioritas={i() < 3} />}
                 </For>

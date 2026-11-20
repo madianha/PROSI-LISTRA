@@ -1,5 +1,5 @@
 import { A, useParams } from "@solidjs/router";
-import { createResource, Match, Switch } from "solid-js";
+import { createResource, Match, Show, Switch } from "solid-js";
 import { faArrowLeft, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import GambarSampul from "../components/GambarSampul";
 import Icon from "../components/Icon";
@@ -26,7 +26,8 @@ export default function BeritaDetail() {
   const [berita] = createResource(() => params.id, (id) => getBerita(id));
   // judul tab browser = judul berita (juga yang muncul saat link dibagikan)
   // berita() melempar error bila gagal dimuat, jadi hanya dibaca saat sudah siap
-  useJudulHalaman(() => (berita.state === "ready" ? berita().judul : ""));
+  // berita tidak ada / gagal dimuat: judul umum "Berita", bukan judul situs saja
+  useJudulHalaman(() => (berita.state === "ready" ? berita().judul : berita.error ? "Berita" : ""));
 
   return (
     <article className="mx-auto w-full max-w-3xl px-6 py-10">
@@ -56,12 +57,16 @@ export default function BeritaDetail() {
             </h1>
           </header>
 
-          {/* fetchpriority="high" = sampul adalah elemen terbesar, dimuat paling dulu */}
-          <GambarSampul
-            src={berita().url_gambar}
-            fetchpriority="high"
-            class="mt-8 aspect-[16/9] w-full rounded-xl object-cover"
-          />
+          {/* fetchpriority="high" = sampul adalah elemen terbesar, dimuat paling dulu.
+              Berita tanpa sampul: tidak ada kotak kosong di atas isi berita */}
+          <Show when={berita().url_gambar}>
+            <GambarSampul
+              src={berita().url_gambar}
+              fetchpriority="high"
+              sembunyikanBilaGagal
+              class="mt-8 aspect-[16/9] w-full rounded-xl object-cover"
+            />
+          </Show>
 
           <Switch>
             <Match when={jenisBerita(berita()) === "tautan"}>

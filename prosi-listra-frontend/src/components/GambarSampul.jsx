@@ -7,6 +7,7 @@ import Icon from "./Icon";
  * berukuran sama, bukan ikon gambar rusak bawaan browser.
  * props.src, props.alt, props.class   = seperti <img>
  * props.loading, props.fetchpriority  = (opsional) diteruskan ke <img>
+ * props.sembunyikanBilaGagal          = (opsional) gambar gagal dimuat = tidak tampil sama sekali (bukan kotak polos)
  */
 export default function GambarSampul(props) {
   const [gagal, setGagal] = createSignal(false);
@@ -17,17 +18,22 @@ export default function GambarSampul(props) {
     <Show
       when={!gagal()}
       fallback={
-        <div
-          role={props.alt ? "img" : undefined}
-          aria-label={props.alt || undefined}
-          className={`flex items-center justify-center bg-[#ece4df] text-[#948280] ${props.class ?? ""}`}
-        >
-          <Icon icon={faImage} class="text-xl" />
-        </div>
+        props.sembunyikanBilaGagal ? null : (
+          <div
+            role={props.alt ? "img" : undefined}
+            aria-label={props.alt || undefined}
+            className={`flex items-center justify-center bg-[#ece4df] text-[#948280] ${props.class ?? ""}`}
+          >
+            <Icon icon={faImage} class="text-xl" />
+          </div>
+        )
       }
     >
+      {/* referrerpolicy no-referrer: unpar.ac.id menolak gambar yang diminta dari situs lain
+          (dengan Referer localhost/domain LISTRA gambar dialihkan, tanpa Referer gambar tampil) */}
       <img
         src={props.src}
+        referrerpolicy="no-referrer"
         alt={props.alt ?? ""}
         loading={props.loading}
         fetchpriority={props.fetchpriority}
