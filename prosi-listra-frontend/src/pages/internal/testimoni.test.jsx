@@ -47,7 +47,7 @@ describe("Halaman Kelola Testimoni", () => {
     renderRoute(InternalTestimoni);
     expect(await screen.findByText("Ani")).toBeTruthy();
     expect(screen.getByRole("tab", { name: /Semua \(3\)/ })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: /Menunggu \(1\)/ })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: /Ditunggu \(1\)/ })).toBeTruthy();
   });
 
   it("filter status hanya menampilkan yang sesuai", async () => {
@@ -58,21 +58,35 @@ describe("Halaman Kelola Testimoni", () => {
     expect(screen.queryByText("Ani")).toBeNull();
   });
 
-  it("saklar Tampil terkunci untuk testimoni yang belum disetujui", async () => {
+  it("tombol per status: Ditunggu = Terima/Tolak, Diterima = saklar Tampil + Hapus, Ditolak = hanya Hapus", async () => {
     renderRoute(InternalTestimoni);
     await screen.findByText("Ani");
-    expect(within(kartu("Ani")).getByRole("switch").disabled).toBe(true);
-    expect(within(kartu("Budi")).getByRole("switch").disabled).toBe(false);
+    const tombol = (nama) => within(kartu(nama)).queryAllByRole("button").map((b) => b.textContent.trim());
+
+    // Ditunggu: belum pernah diterima/ditolak, belum ada saklar Tampil
+    expect(within(kartu("Ani")).getByText("Ditunggu")).toBeTruthy();
+    expect(tombol("Ani")).toEqual(["Terima", "Tolak"]);
+    expect(within(kartu("Ani")).queryByRole("switch")).toBeNull();
+
+    // Diterima: saklar Tampil + Hapus
+    expect(within(kartu("Budi")).getByText("Diterima")).toBeTruthy();
+    expect(within(kartu("Budi")).getByRole("switch")).toBeTruthy();
+    expect(tombol("Budi")).toEqual(["Hapus"]);
+
+    // Ditolak: hanya Hapus, tanpa saklar
+    expect(within(kartu("Citra")).getByText("Ditolak")).toBeTruthy();
+    expect(within(kartu("Citra")).queryByRole("switch")).toBeNull();
+    expect(tombol("Citra")).toEqual(["Hapus"]);
   });
 
-  it("Setujui mengubah status lalu memperbarui baris itu", async () => {
+  it("Terima mengubah status lalu memperbarui baris itu", async () => {
     setStatusTestimoni.mockResolvedValue(buat(1, "Ani", "disetujui"));
     renderRoute(InternalTestimoni);
     await screen.findByText("Ani");
 
-    fireEvent.click(within(kartu("Ani")).getByText("Setujui"));
+    fireEvent.click(within(kartu("Ani")).getByText("Terima"));
     await waitFor(() => expect(setStatusTestimoni).toHaveBeenCalledWith(1, "disetujui"));
-    await waitFor(() => expect(within(kartu("Ani")).queryByText("Setujui")).toBeNull());
+    await waitFor(() => expect(within(kartu("Ani")).queryByText("Terima")).toBeNull());
   });
 
   it("saklar Tampil memanggil API", async () => {

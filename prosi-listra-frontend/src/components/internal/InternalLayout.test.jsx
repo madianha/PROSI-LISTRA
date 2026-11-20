@@ -2,6 +2,12 @@ import { MemoryRouter, Route, createMemoryHistory, useLocation } from "@solidjs/
 import { render, screen, waitFor } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import InternalLayout from "./InternalLayout";
+import LoginInternal from "../../pages/internal/login";
+
+// token berbentuk JWT (belum kedaluwarsa) supaya lolos cek sudahLogin() di browser
+const token = (exp) => `x.${btoa(JSON.stringify({ id_anggota: 2, exp })).replace(/=+$/, "")}.y`;
+const EXP_BERLAKU = Math.floor(Date.now() / 1000) + 3600;
+const tokenBerlaku = (nama) => token(EXP_BERLAKU) + nama;
 
 function LokasiSekarang() {
   const location = useLocation();
@@ -59,7 +65,7 @@ describe("InternalLayout auth guard", () => {
   });
 
   it("token palsu atau kedaluwarsa (401 dari /api/auth/me): menghapus localStorage dan mengarahkan ke /internal/login", async () => {
-    localStorage.setItem("listra_token", "token-palsu");
+    localStorage.setItem("listra_token", tokenBerlaku("token-palsu"));
     localStorage.setItem("listra_user", JSON.stringify({ nama: "Palsu" }));
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
@@ -80,7 +86,7 @@ describe("InternalLayout auth guard", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/auth/me",
       expect.objectContaining({
-        headers: { Authorization: "Bearer token-palsu" },
+        headers: { Authorization: `Bearer ${tokenBerlaku("token-palsu")}` },
       }),
     );
     expect(localStorage.getItem("listra_token")).toBeNull();
@@ -89,7 +95,7 @@ describe("InternalLayout auth guard", () => {
   });
 
   it("gagal jaringan/diblokir saat memverifikasi /api/auth/me: fail-closed dan redirect ke /internal/login", async () => {
-    localStorage.setItem("listra_token", "token-diblokir");
+    localStorage.setItem("listra_token", tokenBerlaku("token-diblokir"));
     localStorage.setItem("listra_user", JSON.stringify({ nama: "User" }));
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
@@ -104,7 +110,7 @@ describe("InternalLayout auth guard", () => {
   });
 
   it("token valid (200 dari /api/auth/me): merender TopBar, SideNav, dan konten halaman internal", async () => {
-    localStorage.setItem("listra_token", "token-sah");
+    localStorage.setItem("listra_token", tokenBerlaku("token-sah"));
     localStorage.setItem("listra_user", JSON.stringify({ nama: "Admin LISTRA", peran: "admin" }));
     vi.stubGlobal(
       "fetch",
@@ -121,5 +127,52 @@ describe("InternalLayout auth guard", () => {
     expect(screen.getByRole("link", { name: "Profil akun" }).textContent.trim()).toBe("Admin LISTRA");
     expect(screen.getByRole("link", { name: "Kalender Event" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Ubah kontak" })).toBeTruthy();
+  });
+});
+
+function buka(url) {
+  const history = createMemoryHistory();
+  history.set({ value: url, replace: true });
+  return render(() => (
+    <MemoryRouter history={history}>
+      <Route path="/internal/login" component={LoginInternal} />
+      <Route path="/internal" component={InternalLayout}>
+        <Route path="/testimoni" component={() => <p>Isi halaman internal</p>} />
+      </Route>
+    </MemoryRouter>
+  ));
+}
+
+const storage = (isi) => {
+  const peta = new Map(Object.entries(isi));
+  return { getItem: (k) => peta.get(k) ?? null, setItem: (k, v) => peta.set(k, v), removeItem: (k) => peta.delete(k) };
+};
+
+describe("Panel internal wajib login", () => {
+  it("belum login: dibawa ke /internal/login dengan pesan", async () => {
+    vi.stubGlobal("localStorage", storage({}));
+    buka("/internal/testimoni");
+    expect(await screen.findByText("You haven't Login, please login to access /internal")).toBeTruthy();
+    expect(screen.queryByText("Isi halaman internal")).toBeNull();
+  });
+
+  it("token kedaluwarsa: sama seperti belum login", async () => {
+    vi.stubGlobal("localStorage", storage({ listra_token: token(Date.now() / 1000 - 60) }));
+    buka("/internal/testimoni");
+    expect(await screen.findByText("You haven't Login, please login to access /internal")).toBeTruthy();
+  });
+
+  it("sudah login: halaman internal tampil", async () => {
+    vi.stubGlobal("localStorage", storage({ listra_token: token(Date.now() / 1000 + 3600), listra_user: '{"nama":"Humas"}' }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ nama: "Humas", is_aktif: true }) }));
+    buka("/internal/testimoni");
+    expect(await screen.findByText("Isi halaman internal")).toBeTruthy();
+  });
+
+  it("membuka halaman login biasa tidak menampilkan pesan", async () => {
+    vi.stubGlobal("localStorage", storage({}));
+    buka("/internal/login");
+    expect(await screen.findByRole("button", { name: "Masuk" })).toBeTruthy();
+    expect(screen.queryByText(/You haven't Login/)).toBeNull();
   });
 });

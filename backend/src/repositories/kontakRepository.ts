@@ -31,30 +31,29 @@ export async function getKontak(): Promise<KontakWhatsapp | null> {
   return result.rows[0] ?? null;
 }
 
-export async function updateKontak(
-  nomor?: string | null,
-  nama?: string | null,
-  template?: string | null,
-  idKontak?: number,
-): Promise<KontakWhatsapp | null> {
+/**
+ * Simpan satu-satunya baris kontak (id_kontak selalu 1, lihat chk_kontak_satu_baris).
+ * Belum ada = dibuat, sudah ada = diperbarui. Jadi tabel kosong pun bisa diisi dari panel internal.
+ */
+export async function simpanKontak(nomor: string, nama: string, template: string): Promise<KontakWhatsapp> {
   const result = await pool.query<KontakWhatsapp>(
-    `UPDATE kontak_whatsapp
-     SET 
-       nomor_wa = COALESCE($1, nomor_wa),
-       template_pesan = COALESCE($2, template_pesan),
-       nama_humas = COALESCE($3, nama_humas)
-     WHERE id_kontak = COALESCE($4, (SELECT id_kontak FROM kontak_whatsapp ORDER BY id_kontak ASC LIMIT 1))
-     RETURNING 
+    `INSERT INTO kontak_whatsapp (id_kontak, nomor_wa, nama_humas, template_pesan)
+     VALUES (1, $1, $2, $3)
+     ON CONFLICT (id_kontak) DO UPDATE
+       SET nomor_wa = EXCLUDED.nomor_wa,
+           nama_humas = EXCLUDED.nama_humas,
+           template_pesan = EXCLUDED.template_pesan
+     RETURNING
        id_kontak,
        id_kontak AS id,
        nomor_wa AS nomor_tujuan,
        nomor_wa,
        nomor_wa AS no_telepon,
        nomor_wa AS nomor_whatsapp,
-       COALESCE(nama_humas, 'Humas LISTRA') AS nama_humas,
-       COALESCE(nama_humas, 'Humas LISTRA') AS nama,
+       nama_humas,
+       nama_humas AS nama,
        template_pesan;`,
-    [nomor ?? null, template ?? null, nama ?? null, idKontak ?? null],
+    [nomor, nama, template],
   );
-  return result.rows[0] ?? null;
+  return result.rows[0];
 }

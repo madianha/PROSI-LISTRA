@@ -13,7 +13,7 @@ function parseId(raw: string): number | null {
   return id > 0 && Number.isSafeInteger(id) ? id : null;
 }
 
-/** ?semua=1 ikut menampilkan draf (dipakai Kelola Berita), hanya berlaku bila pengguna sudah login. */
+/** ?semua=1 ikut menampilkan draf (dipakai Kelola Berita), hanya untuk pengguna yang login. */
 function opsiBaca(req: Request): beritaRepository.OpsiBaca {
   return { semua: req.query.semua === "1" && bacaPengguna(req) !== null };
 }

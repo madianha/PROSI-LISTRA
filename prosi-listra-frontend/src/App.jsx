@@ -12,7 +12,9 @@ import BeritaDetail from "./pages/berita-detail";
 import LoginInternal from "./pages/internal/login";
 
 import InternalLayout from "./components/internal/InternalLayout";
+import HalamanTidakAda from "./components/HalamanTidakAda";
 import InternalKalender from "./pages/internal/kalender";
+import InternalAcaraDetail from "./pages/internal/acara-detail";
 import InternalJasa from "./pages/internal/jasa";
 import InternalKatalog from "./pages/internal/katalog";
 import InternalAlatMusik from "./pages/internal/alat-musik";
@@ -52,6 +54,8 @@ export default function App() {
         <Route path="/berita" component={Berita} />
         <Route path="/berita/:id" component={BeritaDetail} />
         <Route path="/testimoni" component={Testimoni} />
+        {/* alamat publik yang tidak ada: halaman 404, bukan layar kosong */}
+        <Route path="*" component={HalamanTidakAda} />
       </Route>
 
       <Route path="/internal/login" component={LoginInternal} />
@@ -62,6 +66,7 @@ export default function App() {
       {/* Internal pages: TopBar + SideNav */}
       <Route path="/internal" component={InternalLayout}>
         <Route path="/kalender" component={InternalKalender} />
+        <Route path="/kalender/:id" component={InternalAcaraDetail} />
         <Route path="/jasa" component={InternalJasa} />
         <Route path="/katalog" component={InternalKatalog} />
         <Route path="/alat-musik" component={InternalAlatMusik} />
@@ -73,6 +78,9 @@ export default function App() {
         <Route path="/testimoni" component={InternalTestimoni} />
         <Route path="/kontak" component={InternalKontak} />
         <Route path="/profile" component={InternalProfile} />
+        {/* alamat internal yang tidak ada: tetap lewat InternalLayout, jadi yang belum login
+            diarahkan ke /internal/login; yang sudah login melihat halaman 404 */}
+        <Route path="*" component={() => <HalamanTidakAda internal />} />
       </Route>
     </Router>
   );

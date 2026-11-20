@@ -1,4 +1,4 @@
-import { createMemo, createResource, For, Show } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, For, on, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../Icon";
@@ -6,6 +6,14 @@ import { getSpesialisasiList } from "../../../api/anggota";
 
 export default function AnggotaModal(props) {
   const [internalSpesialisasi] = createResource(getSpesialisasiList);
+  const [searchQuery, setSearchQuery] = createSignal("");
+
+  createEffect(
+    on(
+      () => props.isOpen,
+      () => setSearchQuery("")
+    )
+  );
 
   const allSpesialisasi = createMemo(() => {
     const fromProps = typeof props.spesialisasiList === "function"
@@ -53,9 +61,56 @@ export default function AnggotaModal(props) {
     });
   });
 
+  const getItemId = (sp) => Number(sp?.id_spesialisasi ?? sp?.id_jasa ?? sp?.id);
+  const getItemLabel = (sp) => String(sp?.nama_spesialisasi || sp?.nama_jasa || sp?.nama || "");
+
+  const filteredTari = createMemo(() => {
+    const q = searchQuery().trim().toLowerCase();
+    const list = tariOptions();
+    if (!q) return list;
+    return list.filter((sp) => getItemLabel(sp).toLowerCase().includes(q));
+  });
+
+  const filteredMusik = createMemo(() => {
+    const q = searchQuery().trim().toLowerCase();
+    const list = musikOptions();
+    if (!q) return list;
+    return list.filter((sp) => getItemLabel(sp).toLowerCase().includes(q));
+  });
+
+  const isSearching = () => searchQuery().trim() !== "";
+  const hasAnyMatches = () => filteredTari().length > 0 || filteredMusik().length > 0;
+
   const selectedIds = () => {
     const ids = props.formData?.spesialisasi_ids || props.selectedSpesialisasi || [];
     return Array.isArray(ids) ? ids.map((id) => Number(id)) : [];
+  };
+
+  const selectedItems = createMemo(() => {
+    const ids = selectedIds();
+    if (ids.length === 0) return [];
+
+    const map = new Map();
+    for (const sp of [...tariOptions(), ...musikOptions(), ...allSpesialisasi()]) {
+      const id = getItemId(sp);
+      if (!map.has(id)) {
+        map.set(id, sp);
+      }
+    }
+
+    return ids.map((id) => {
+      const sp = map.get(id);
+      const label = sp ? getItemLabel(sp) : `Spesialisasi #${id}`;
+      return { id, label };
+    });
+  });
+
+  const handleReset = () => {
+    if (typeof props.setFormData === "function") {
+      props.setFormData("spesialisasi_ids", []);
+    } else {
+      selectedIds().forEach((id) => props.onToggleSpesialisasi?.(id));
+    }
   };
 
   return (
@@ -131,8 +186,8 @@ export default function AnggotaModal(props) {
                 </div>
               </div>
 
-              {/* Kata sandi: hanya tampil bila yang login Admin atau LISTRA (backend juga mengecek) */}
-              <Show when={props.bolehAturPassword}>
+              {/* Kata sandi: hanya tampil pada mode Tambah Anggota (bukan Ubah Data) bila yang login Admin atau LISTRA */}
+              <Show when={props.bolehAturPassword && !props.editingId}>
                 <div>
                   <label class="mb-1 block text-xs font-semibold text-[#302929]">
                     Kata Sandi
@@ -142,7 +197,7 @@ export default function AnggotaModal(props) {
                     type="password"
                     minLength={8}
                     autocomplete="new-password"
-                    placeholder={props.editingId ? "Kosongkan bila tidak diubah" : "Kosongkan untuk memakai password123"}
+                    placeholder="Kosongkan untuk memakai password123"
                     value={props.formData?.password || ""}
                     onInput={(e) => props.setFormData("password", e.currentTarget.value)}
                     class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-[#302929] shadow-2xs focus:border-[#4a0e17] focus:ring-1 focus:ring-[#4a0e17] focus:outline-none"
@@ -247,75 +302,169 @@ export default function AnggotaModal(props) {
                   Pilih keahlian tari atau alat musik tradisional yang dikuasai.
                 </p>
 
-                <div class="rounded-xl border border-stone-300 bg-[#f9f7f5] p-4 space-y-3.5 shadow-inner">
-                  <div>
-                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
-                      SPESIALISASI TARI
-                    </div>
-                    <div class="flex flex-wrap gap-2 pt-0.5">
-                      <For
-                        each={tariOptions()}
-                        fallback={
-                          <span class="text-xs text-gray-400 italic">
-                            Memuat atau belum ada pilihan tari...
-                          </span>
-                        }
+                <div class="rounded-xl border border-[#ede0e2] bg-[#fbf8f7] p-3.5 space-y-3 shadow-2xs">
+                  {/* Search Input Bar */}
+                  <div class="relative flex items-center">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-stone-400">
+                      <svg
+                        aria-hidden="true"
+                        fill="none"
+                        height="14"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="14"
+                        xmlns="http://www.w3.org/2000/svg"
                       >
-                        {(sp) => {
-                          const id = Number(sp.id_spesialisasi ?? sp.id_jasa ?? sp.id);
-                          const label = sp.nama_spesialisasi || sp.nama_jasa || sp.nama;
-                          const isSelected = () => selectedIds().includes(id);
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => props.onToggleSpesialisasi(id)}
-                              class={`px-3 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer ${
-                                isSelected()
-                                  ? "bg-red-800 text-white border-red-800"
-                                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                              }`}
-                            >
-                              {label}
-                            </button>
-                          );
-                        }}
-                      </For>
-                    </div>
+                        <circle cx="11" cy="11" r="7" />
+                        <path d="m20 20-3.5-3.5" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Cari nama tari atau alat musik..."
+                      value={searchQuery()}
+                      onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                      class="w-full rounded-lg border border-[#ede0e2] bg-white pl-8 pr-8 py-1.5 text-xs text-[#302929] placeholder:text-[#a19290] focus:border-[#4a0e17] focus:ring-1 focus:ring-[#4a0e17] focus:outline-none transition-colors"
+                    />
+                    <Show when={searchQuery().trim() !== ""}>
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        aria-label="Hapus pencarian"
+                        class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer text-sm font-bold"
+                      >
+                        ×
+                      </button>
+                    </Show>
                   </div>
 
-                  <div class="border-t border-stone-200/90 pt-3">
-                    <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
-                      SPESIALISASI MUSIK
-                    </div>
-                    <div class="flex flex-wrap gap-2 pt-0.5">
-                      <For
-                        each={musikOptions()}
-                        fallback={
-                          <span class="text-xs text-gray-400 italic">
-                            Memuat atau belum ada pilihan musik...
-                          </span>
-                        }
-                      >
-                        {(sp) => {
-                          const id = Number(sp.id_spesialisasi ?? sp.id_jasa ?? sp.id);
-                          const label = sp.nama_spesialisasi || sp.nama_jasa || sp.nama;
-                          const isSelected = () => selectedIds().includes(id);
-                          return (
+                  {/* Selected Items Summary Strip */}
+                  <Show when={selectedIds().length > 0}>
+                    <div class="flex items-start justify-between gap-2 rounded-lg bg-white/80 p-2 border border-[#ede0e2]">
+                      <div class="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
+                        <span class="text-[11px] font-bold text-[#4a0e17] shrink-0 select-none">
+                          Terpilih ({selectedIds().length}):
+                        </span>
+                        <For each={selectedItems()}>
+                          {(item) => (
                             <button
                               type="button"
-                              onClick={() => props.onToggleSpesialisasi(id)}
-                              class={`px-3 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer ${
-                                isSelected()
-                                  ? "bg-red-800 text-white border-red-800"
-                                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                              }`}
+                              onClick={() => props.onToggleSpesialisasi?.(item.id)}
+                              title={`Hapus ${item.label}`}
+                              class="inline-flex items-center gap-1 rounded-full bg-[#4a0e17] px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs hover:bg-[#641420] transition-colors cursor-pointer select-none"
                             >
-                              {label}
+                              <span>✓</span>
+                              <span class="truncate max-w-[160px]">{item.label}</span>
+                              <span class="text-xs font-bold leading-none opacity-80 hover:opacity-100">×</span>
                             </button>
-                          );
-                        }}
-                      </For>
+                          )}
+                        </For>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        class="shrink-0 text-[11px] font-semibold text-[#8a7977] hover:text-[#4a0e17] transition-colors underline cursor-pointer pt-0.5"
+                      >
+                        Reset
+                      </button>
                     </div>
+                  </Show>
+
+                  {/* Scrollable Categorized Pill Area */}
+                  <div class="max-h-[220px] overflow-y-auto pr-1 space-y-3 [scrollbar-width:thin] [scrollbar-color:#d5c2c5_transparent]">
+                    <Show
+                      when={!isSearching() || hasAnyMatches()}
+                      fallback={
+                        <div class="py-6 text-center text-xs text-[#8a7977]">
+                          Tidak ada spesialisasi yang cocok dengan "{searchQuery()}".
+                        </div>
+                      }
+                    >
+                      {/* SPESIALISASI TARI */}
+                      <Show when={!isSearching() || filteredTari().length > 0}>
+                        <div>
+                          <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
+                            SPESIALISASI TARI ({filteredTari().length})
+                          </div>
+                          <div class="flex flex-wrap gap-2 pt-0.5">
+                            <For
+                              each={filteredTari()}
+                              fallback={
+                                <span class="text-xs text-gray-400 italic">
+                                  Memuat atau belum ada pilihan tari...
+                                </span>
+                              }
+                            >
+                              {(sp) => {
+                                const id = getItemId(sp);
+                                const label = getItemLabel(sp);
+                                const isSelected = () => selectedIds().includes(id);
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => props.onToggleSpesialisasi?.(id)}
+                                    class={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer select-none ${
+                                      isSelected()
+                                        ? "bg-[#4a0e17] text-white border-[#4a0e17] shadow-xs"
+                                        : "bg-white text-stone-700 border-[#ede0e2] hover:bg-stone-50 hover:border-stone-400"
+                                    }`}
+                                  >
+                                    <Show when={isSelected()}>
+                                      <span class="text-[11px] leading-none">✓</span>
+                                    </Show>
+                                    <span>{label}</span>
+                                  </button>
+                                );
+                              }}
+                            </For>
+                          </div>
+                        </div>
+                      </Show>
+
+                      {/* SPESIALISASI MUSIK */}
+                      <Show when={!isSearching() || filteredMusik().length > 0}>
+                        <div class={(!isSearching() || filteredTari().length > 0) ? "border-t border-[#ede0e2] pt-3" : ""}>
+                          <div class="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-700">
+                            SPESIALISASI MUSIK ({filteredMusik().length})
+                          </div>
+                          <div class="flex flex-wrap gap-2 pt-0.5">
+                            <For
+                              each={filteredMusik()}
+                              fallback={
+                                <span class="text-xs text-gray-400 italic">
+                                  Memuat atau belum ada pilihan musik...
+                                </span>
+                              }
+                            >
+                              {(sp) => {
+                                const id = getItemId(sp);
+                                const label = getItemLabel(sp);
+                                const isSelected = () => selectedIds().includes(id);
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => props.onToggleSpesialisasi?.(id)}
+                                    class={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer select-none ${
+                                      isSelected()
+                                        ? "bg-[#4a0e17] text-white border-[#4a0e17] shadow-xs"
+                                        : "bg-white text-stone-700 border-[#ede0e2] hover:bg-stone-50 hover:border-stone-400"
+                                    }`}
+                                  >
+                                    <Show when={isSelected()}>
+                                      <span class="text-[11px] leading-none">✓</span>
+                                    </Show>
+                                    <span>{label}</span>
+                                  </button>
+                                );
+                              }}
+                            </For>
+                          </div>
+                        </div>
+                      </Show>
+                    </Show>
                   </div>
                 </div>
               </div>

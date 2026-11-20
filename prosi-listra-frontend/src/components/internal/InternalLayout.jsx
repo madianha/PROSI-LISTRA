@@ -1,6 +1,7 @@
 import { createEffect, createSignal, Match, onCleanup, onMount, Switch } from "solid-js";
 import { Navigate, useLocation, useNavigate } from "@solidjs/router";
 import TopBar from "./TopBar";
+import { LOGIN_BELUM_LOGIN, sudahLogin } from "../../utils/sesiLogin";
 import SideNav from "./SideNav";
 
 function clearSession() {
@@ -11,21 +12,18 @@ function clearSession() {
 export default function InternalLayout(props) {
   const navigate = useNavigate();
   const location = useLocation();
-  const initialToken = localStorage.getItem("listra_token");
 
-  if (!initialToken) {
-    localStorage.removeItem("listra_user");
-  }
-
-  const [authStatus, setAuthStatus] = createSignal(initialToken ? "checking" : "unauthenticated");
+  // belum login / sesi kedaluwarsa: ke halaman login. Tanpa token, backend menganggap
+  // pengguna sebagai pengunjung (mis. form testimoni minta verifikasi "bukan robot").
+  // sudahLogin() juga membersihkan sesi yang kedaluwarsa.
+  const [authStatus, setAuthStatus] = createSignal(sudahLogin() ? "checking" : "unauthenticated");
 
   onMount(() => {
-    const token = localStorage.getItem("listra_token");
-    if (!token) {
-      clearSession();
+    if (!sudahLogin()) {
       setAuthStatus("unauthenticated");
       return;
     }
+    const token = localStorage.getItem("listra_token");
 
     const controller = new AbortController();
     onCleanup(() => controller.abort());
@@ -44,23 +42,20 @@ export default function InternalLayout(props) {
         if (err?.name === "AbortError") return;
         clearSession();
         setAuthStatus("unauthenticated");
-        navigate("/internal/login", { replace: true });
+        navigate(LOGIN_BELUM_LOGIN, { replace: true });
       });
   });
 
-  // Pastikan navigasi antar halaman internal langsung ditolak bila token dihapus manual
+  // Pastikan navigasi antar halaman internal langsung ditolak bila token dihapus manual / kedaluwarsa
   createEffect(() => {
     void location.pathname;
-    if (!localStorage.getItem("listra_token")) {
-      clearSession();
-      setAuthStatus("unauthenticated");
-    }
+    if (!sudahLogin()) setAuthStatus("unauthenticated");
   });
 
   return (
     <Switch>
       <Match when={authStatus() === "unauthenticated"}>
-        <Navigate href="/internal/login" />
+        <Navigate href={LOGIN_BELUM_LOGIN} />
       </Match>
       <Match when={authStatus() === "checking"}>
         <div className="min-h-screen bg-[#f5efeb]" aria-busy="true" />

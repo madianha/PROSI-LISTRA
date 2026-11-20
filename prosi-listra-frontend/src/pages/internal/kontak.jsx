@@ -5,6 +5,7 @@ import {
   createSignal,
   Show,
 } from "solid-js";
+import { headerLogin } from "../../utils/sesiLogin";
 
 const JASA_CONTOH = "Tari Merak";
 
@@ -201,6 +202,8 @@ export default function InternalKontak() {
 
   const fetchKontak = async () => {
     const response = await fetch(API_URL);
+    // 404 = tabel kontak_whatsapp masih kosong: bukan error, kontak tinggal diisi
+    if (response.status === 404) return null;
     if (!response.ok) {
       throw new Error(`Gagal memuat data kontak (status ${response.status})`);
     }
@@ -237,13 +240,11 @@ export default function InternalKontak() {
     setIsSaving(true);
     setSaveError("");
     try {
-      const token = localStorage.getItem("listra_token");
+      // belum ada kontak = buat (POST); sudah ada = ubah (PUT)
       const response = await fetch(API_URL, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        method: kontak() ? "PUT" : "POST",
+        // mengubah kontak wajib login
+        headers: { "Content-Type": "application/json", ...headerLogin() },
         body: JSON.stringify({
           nomor_wa: normalizePhoneNumber(draftNomor()),
           nama_humas: draftNamaHumas(),
@@ -252,9 +253,9 @@ export default function InternalKontak() {
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Gagal menyimpan data kontak (status ${response.status})`,
-        );
+        // pesan dari server (mis. "Nomor WhatsApp harus 8-15 angka ...") ditampilkan apa adanya
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message ?? "Gagal menyimpan perubahan. Silakan coba lagi.");
       }
 
       const data = await response.json();
@@ -266,8 +267,7 @@ export default function InternalKontak() {
       await refetch();
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Gagal menyimpan kontak WhatsApp:", error);
-      setSaveError("Gagal menyimpan perubahan. Silakan coba lagi.");
+      setSaveError(error.message);
     } finally {
       setIsSaving(false);
     }
@@ -287,7 +287,7 @@ export default function InternalKontak() {
           disabled={kontak.loading || Boolean(kontak.error)}
           className="shrink-0 rounded-md bg-[#4A0E17] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5a0c1a] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Ubah kontak
+          {kontak() ? "Ubah kontak" : "Isi kontak"}
         </button>
       </div>
 
@@ -316,6 +316,14 @@ export default function InternalKontak() {
           </section>
         }
       >
+        <Show
+          when={kontak()}
+          fallback={
+            <section className="mt-6 rounded-xl border border-[#EEE3DC] bg-[#FDFBF9] p-6 text-sm text-gray-600 sm:p-8">
+              Kontak WhatsApp belum diisi, jadi tombol WhatsApp di website belum tampil. Tekan <strong>Isi kontak</strong> untuk menambahkannya.
+            </section>
+          }
+        >
         <section className="mt-6 rounded-xl border border-[#EEE3DC] bg-[#FDFBF9] p-6 shadow-[0_2px_10px_rgba(84,20,29,0.06)] sm:p-8">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             <Field label="Nomor" value={formatPhoneNumberDisplay(nomor())} />
@@ -338,6 +346,7 @@ export default function InternalKontak() {
             </a>
           </div>
         </section>
+        </Show>
       </Show>
 
       <KontakModal

@@ -344,3 +344,51 @@ export async function toggleStatusAktif(id: number, is_aktif: boolean): Promise<
   }
   return await getAnggotaById(id);
 }
+
+/** Email & NPM yang sudah terdaftar (email dibandingkan tanpa beda huruf besar/kecil). */
+export async function cariTerdaftar(emails: string[], npms: string[]): Promise<{ emails: string[]; npms: string[] }> {
+  const result = await pool.query<{ email: string; npm: string | null }>(
+    `SELECT email, npm FROM anggota
+     WHERE LOWER(email) = ANY($1::text[]) OR npm = ANY($2::text[])`,
+    [emails.map((e) => e.toLowerCase()), npms]
+  );
+  return {
+    emails: result.rows.map((r) => r.email.toLowerCase()),
+    npms: result.rows.map((r) => r.npm).filter((n): n is string => Boolean(n)),
+  };
+}
+
+export type AnggotaBulkInput = Omit<AnggotaInput, "spesialisasi_ids" | "password_hash">;
+
+/** Tambah banyak anggota sekaligus dalam satu transaksi: gagal satu = tidak ada yang tersimpan. */
+export async function createAnggotaBulk(list: AnggotaBulkInput[]): Promise<number> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const data of list) {
+      await client.query(
+        `INSERT INTO anggota (email, password_hash, nama, npm, angkatan_unpar, jabatan, peran, is_penari, is_pemusik, is_aktif)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          data.email,
+          DEFAULT_PASSWORD_HASH,
+          data.nama,
+          data.npm ?? null,
+          data.angkatan_unpar ?? null,
+          data.jabatan ?? null,
+          data.peran,
+          Boolean(data.is_penari),
+          Boolean(data.is_pemusik),
+          data.is_aktif ?? true,
+        ]
+      );
+    }
+    await client.query("COMMIT");
+    return list.length;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

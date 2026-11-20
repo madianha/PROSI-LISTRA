@@ -205,7 +205,7 @@ describe("Internal Anggota Management", () => {
     expect(options).toEqual(["Kepengurusan", "Pelatih", "Anggota", "Alumni"]);
   });
 
-  it("kolom kata sandi tampil untuk Admin/LISTRA", async () => {
+  it("kolom kata sandi tampil untuk Admin/LISTRA pada mode Tambah Anggota", async () => {
     bolehAturPassword.mockReturnValue(true);
     listAnggota.mockResolvedValue(mockAnggotaList);
     renderHalaman();
@@ -214,10 +214,26 @@ describe("Internal Anggota Management", () => {
     fireEvent.click(screen.getByText("Tambah Anggota"));
 
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Tambah Anggota Baru")).toBeTruthy();
+    expect(within(dialog).getByText("Kata Sandi")).toBeTruthy();
     expect(dialog.querySelector('input[type="password"]')).toBeTruthy();
   });
 
-  it("kolom kata sandi tidak tampil untuk peran lain", async () => {
+  it("kolom kata sandi TIDAK tampil pada mode Ubah Data Anggota meskipun Admin/LISTRA", async () => {
+    bolehAturPassword.mockReturnValue(true);
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+    fireEvent.click(screen.getAllByText("Ubah")[0]);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Ubah Data Anggota")).toBeTruthy();
+    expect(within(dialog).queryByText("Kata Sandi")).toBeNull();
+    expect(dialog.querySelector('input[type="password"]')).toBeNull();
+  });
+
+  it("kolom kata sandi tidak tampil untuk peran lain pada mode Tambah Anggota", async () => {
     bolehAturPassword.mockReturnValue(false);
     listAnggota.mockResolvedValue(mockAnggotaList);
     renderHalaman();
@@ -229,7 +245,8 @@ describe("Internal Anggota Management", () => {
     expect(dialog.querySelector('input[type="password"]')).toBeNull();
   });
 
-  it("menyimpan perubahan anggota lalu menutup modal tanpa error", async () => {
+  it("menyimpan perubahan anggota tanpa menyertakan password lalu menutup modal", async () => {
+    bolehAturPassword.mockReturnValue(true);
     listAnggota.mockResolvedValue(mockAnggotaList);
     updateAnggota.mockResolvedValue({ ...mockAnggotaList[0], nama: "Budi Baru" });
     renderHalaman();
@@ -238,10 +255,93 @@ describe("Internal Anggota Management", () => {
     fireEvent.click(screen.getAllByText("Ubah")[0]);
 
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Ubah Data Anggota")).toBeTruthy();
+    expect(dialog.querySelector('input[type="password"]')).toBeNull();
+
     fireEvent.click(within(dialog).getByText("Simpan Perubahan"));
 
-    await waitFor(() => expect(updateAnggota).toHaveBeenCalledWith(1, expect.any(Object)));
+    await waitFor(() => {
+      expect(updateAnggota).toHaveBeenCalledWith(
+        1,
+        expect.not.objectContaining({ password: expect.anything() })
+      );
+    });
     expect(await screen.findByText("Budi Baru")).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("mendukung pencarian spesialisasi seni, strip terpilih, reset, dan filter kategori secara real-time", async () => {
+    const mockSpesialisasi = [
+      { id_jasa: 1, nama_jasa: "Tari Jaipong", tipe_jasa: "TARI", kategori: "TARI" },
+      { id_jasa: 2, nama_jasa: "Tari Saman", tipe_jasa: "TARI", kategori: "TARI" },
+      { id_jasa: 3, nama_jasa: "Gamelan Degung", tipe_jasa: "MUSIK", kategori: "MUSIK" },
+      { id_jasa: 4, nama_jasa: "Angklung", tipe_jasa: "MUSIK", kategori: "MUSIK" },
+    ];
+    getSpesialisasiList.mockResolvedValue(mockSpesialisasi);
+    listAnggota.mockResolvedValue(mockAnggotaList);
+    renderHalaman();
+
+    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+    fireEvent.click(screen.getByText("Tambah Anggota"));
+
+    const dialog = await screen.findByRole("dialog");
+
+    // Pastikan header kategori menampilkan hitungan awal (2 Tari, 2 Musik)
+    expect(await within(dialog).findByText("SPESIALISASI TARI (2)")).toBeTruthy();
+    expect(within(dialog).getByText("SPESIALISASI MUSIK (2)")).toBeTruthy();
+
+    const searchInput = within(dialog).getByPlaceholderText("Cari nama tari atau alat musik...");
+
+    // 1. Pilih Tari Jaipong (id: 1)
+    const jaipongPill = within(dialog).getByRole("button", { name: "Tari Jaipong" });
+    fireEvent.click(jaipongPill);
+
+    // Strip terpilih tampil
+    expect(within(dialog).getByText(/Terpilih \(1\):/i)).toBeTruthy();
+    expect(within(dialog).getByTitle("Hapus Tari Jaipong")).toBeTruthy();
+
+    // 2. Filter pencarian: "angklung"
+    fireEvent.input(searchInput, { target: { value: "angklung" } });
+
+    // Tari tidak cocok -> disembunyikan; Musik hanya tampil Angklung (1)
+    expect(within(dialog).queryByText(/SPESIALISASI TARI/i)).toBeNull();
+    expect(within(dialog).getByText("SPESIALISASI MUSIK (1)")).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "Angklung" })).toBeTruthy();
+    expect(within(dialog).queryByRole("button", { name: "Gamelan Degung" })).toBeNull();
+
+    // Di strip terpilih, Tari Jaipong tetap terlihat dan bisa dihapus
+    expect(within(dialog).getByTitle("Hapus Tari Jaipong")).toBeTruthy();
+
+    // Pilih juga Angklung (id: 4)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Angklung" }));
+    expect(within(dialog).getByText(/Terpilih \(2\):/i)).toBeTruthy();
+
+    // 3. Tombol clear (×) pada search bar
+    const clearSearchBtn = within(dialog).getByLabelText("Hapus pencarian");
+    fireEvent.click(clearSearchBtn);
+    expect(searchInput.value).toBe("");
+
+    // Kedua kategori tampil kembali penuh
+    expect(within(dialog).getByText("SPESIALISASI TARI (2)")).toBeTruthy();
+    expect(within(dialog).getByText("SPESIALISASI MUSIK (2)")).toBeTruthy();
+
+    // 4. Hapus Tari Jaipong lewat tombol pill di strip terpilih
+    fireEvent.click(within(dialog).getByTitle("Hapus Tari Jaipong"));
+    expect(within(dialog).getByText(/Terpilih \(1\):/i)).toBeTruthy();
+    expect(within(dialog).queryByTitle("Hapus Tari Jaipong")).toBeNull();
+    expect(within(dialog).getByTitle("Hapus Angklung")).toBeTruthy();
+
+    // 5. Tombol Reset untuk mengosongkan semua pilihan
+    const resetBtn = within(dialog).getByRole("button", { name: "Reset" });
+    fireEvent.click(resetBtn);
+    expect(within(dialog).queryByText(/Terpilih \(/i)).toBeNull();
+
+    // 6. Pencarian tanpa hasil -> pesan status kosong
+    fireEvent.input(searchInput, { target: { value: "xyz123" } });
+    expect(within(dialog).queryByText(/SPESIALISASI TARI/i)).toBeNull();
+    expect(within(dialog).queryByText(/SPESIALISASI MUSIK/i)).toBeNull();
+    expect(
+      within(dialog).getByText('Tidak ada spesialisasi yang cocok dengan "xyz123".')
+    ).toBeTruthy();
   });
 });
