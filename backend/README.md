@@ -22,33 +22,19 @@ Backend Express.js + PostgreSQL untuk fitur **Kontak WhatsApp**, **Berita**, dan
    Copy-Item .env.example .env   # PowerShell
    ```
 
-3. Buat tabel kontak WhatsApp dengan menjalankan SQL berikut di pgAdmin
-   (jika tabel belum ada / belum ada data awal):
-
-   ```sql
-   CREATE TABLE kontak_whatsapp (
-       id INT PRIMARY KEY DEFAULT 1,
-       nomor_wa VARCHAR(50) NOT NULL,
-       nama_humas VARCHAR(255) NOT NULL,
-       template_pesan TEXT NOT NULL
-   );
-
-   INSERT INTO kontak_whatsapp (id, nomor_wa, nama_humas, template_pesan)
-   VALUES (
-       1,
-       '628123456789',
-       'Bagas Nugroho (Koor Humas)',
-       'Halo Humas LISTRA, saya tertarik dengan {jasa}. Boleh minta informasi lebih lanjut?'
-   )
-   ON CONFLICT (id) DO NOTHING;
-   ```
-
-   Lalu buat tabel berita (dan data awal) dengan menjalankan file
-   `listra-web/db/berita.sql` di pgAdmin, atau:
+3. Buat database lalu jalankan file SQL di `listra-web/db/` sesuai urutan
+   (nama database mengikuti `PGDATABASE` di `.env`):
 
    ```bash
-   psql -U postgres -d prosi_listra -f ../listra-web/db/berita.sql
+   createdb -U postgres listra_db
+   cd ../listra-web/db
+   psql -U postgres -d listra_db -f master.sql     # semua tabel
+   psql -U postgres -d listra_db -f junction.sql   # tabel penghubung
+   psql -U postgres -d listra_db -f insert.sql     # data dasar + akun awal
+   psql -U postgres -d listra_db -f dummy.sql      # opsional: data contoh development
    ```
+
+   Reset database: `dropdb -U postgres --force listra_db`, lalu ulangi langkah ini.
 
 4. Jalankan server (development):
 
