@@ -55,6 +55,12 @@ describe("GET /api/berita", () => {
     expect(mocked.listBerita).toHaveBeenCalledWith({ semua: false });
   });
 
+  it("?semua=1 tanpa login tetap hanya meminta berita publik", async () => {
+    mocked.listBerita.mockResolvedValue([]);
+    await request(app).get("/api/berita?semua=1");
+    expect(mocked.listBerita).toHaveBeenCalledWith({ semua: false });
+  });
+
   it("?semua=1 ikut meminta draf (Kelola Berita)", async () => {
     mocked.listBerita.mockResolvedValue([]);
     await request(app).get("/api/berita?semua=1").set("Authorization", LOGIN);
@@ -75,6 +81,13 @@ describe("GET /api/berita/:id", () => {
     mocked.getBerita.mockResolvedValue(barisTautan);
     const res = await request(app).get("/api/berita/1").set("Authorization", LOGIN);
     expect(res.status).toBe(200);
+    expect(mocked.getBerita).toHaveBeenCalledWith(1, { semua: false });
+  });
+
+  it("?semua=1 tanpa login tidak boleh membuka draf", async () => {
+    mocked.getBerita.mockResolvedValue(null);
+    const res = await request(app).get("/api/berita/1?semua=1");
+    expect(res.status).toBe(404);
     expect(mocked.getBerita).toHaveBeenCalledWith(1, { semua: false });
   });
 

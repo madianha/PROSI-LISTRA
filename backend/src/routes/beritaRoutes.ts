@@ -7,7 +7,6 @@ import {
   setPublik,
   updateBerita,
 } from "../controllers/beritaController";
-
 import { wajibLogin } from "../middleware/wajibLogin";
 
 const router = Router();

@@ -40,6 +40,8 @@ describe("alamat yang tidak ada", () => {
 
   it("internal sudah login: halaman 404 dengan tautan ke Kalender Event", async () => {
     vi.stubGlobal("localStorage", storage({ listra_token: token(), listra_user: '{"nama":"Humas"}' }));
+    // InternalLayout memverifikasi sesi ke /api/auth/me sebelum menampilkan halaman
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ nama: "Humas", is_aktif: true }) }));
     buka("/internal/berita/list");
     expect(await screen.findByRole("heading", { name: "Halaman tidak ditemukan" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ke Kalender Event" }).getAttribute("href")).toBe("/internal/kalender");

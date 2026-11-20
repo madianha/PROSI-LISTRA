@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { Request, Response } from "express";
 import { pool } from "../db";
+import { getAnggotaById } from "../repositories/anggotaRepository";
 
 export function signJwt(payload: Record<string, unknown>, secret: string): string {
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -89,6 +90,98 @@ export async function login(req: Request, res: Response): Promise<void> {
     });
   } catch (error) {
     console.error("Login error:", error);
+    res.status(500).json({ message: "Terjadi kesalahan pada server." });
+  }
+}
+
+const MIN_PANJANG_PASSWORD = 8; // sama dengan aturan kata sandi di anggotaController
+
+async function resolvePenggunaId(pengguna: Record<string, unknown> | undefined): Promise<number | null> {
+  if (!pengguna) return null;
+  const rawId = pengguna.id_anggota ?? pengguna.id ?? pengguna.sub;
+  const parsedId = typeof rawId === "number" ? rawId : typeof rawId === "string" ? Number(rawId) : NaN;
+  if (Number.isInteger(parsedId) && parsedId > 0) {
+    return parsedId;
+  }
+  const email = typeof pengguna.email === "string" ? pengguna.email.trim() : "";
+  if (email) {
+    const res = await pool.query<{ id_anggota: number }>(
+      "SELECT id_anggota FROM anggota WHERE LOWER(email) = LOWER($1) LIMIT 1",
+      [email]
+    );
+    if (res.rows[0]?.id_anggota) return res.rows[0].id_anggota;
+  }
+  return null;
+}
+
+/** GET /api/auth/me: data anggota yang sedang login (id dari token, tanpa hash kata sandi). */
+export async function me(_req: Request, res: Response): Promise<void> {
+  try {
+    const id = await resolvePenggunaId(res.locals.pengguna as Record<string, unknown> | undefined);
+    if (!id) {
+      res.status(401).json({ message: "Sesi login tidak valid. Silakan login ulang." });
+      return;
+    }
+    const anggota = await getAnggotaById(id);
+    if (!anggota || !anggota.is_aktif) {
+      res.status(401).json({ message: "Sesi login tidak valid atau akun tidak aktif." });
+      return;
+    }
+    res.status(200).json(anggota);
+  } catch (error) {
+    console.error("Me error:", error);
+    res.status(500).json({ message: "Terjadi kesalahan pada server." });
+  }
+}
+
+/** PUT /api/auth/change-password: ganti kata sandi akun yang sedang login. */
+export async function changePassword(req: Request, res: Response): Promise<void> {
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  const lama = str(req.body?.kata_sandi_lama);
+  const baru = str(req.body?.kata_sandi_baru);
+  const konfirmasi = str(req.body?.konfirmasi_kata_sandi);
+
+  if (!lama || !baru || !konfirmasi) {
+    res.status(400).json({ message: "Semua kolom kata sandi wajib diisi." });
+    return;
+  }
+  if (baru.length < MIN_PANJANG_PASSWORD) {
+    res.status(400).json({ message: `Kata sandi baru minimal ${MIN_PANJANG_PASSWORD} karakter.` });
+    return;
+  }
+  if (baru !== konfirmasi) {
+    res.status(400).json({ message: "Konfirmasi kata sandi tidak sesuai." });
+    return;
+  }
+
+  try {
+    const id = await resolvePenggunaId(res.locals.pengguna as Record<string, unknown> | undefined);
+    if (!id) {
+      res.status(401).json({ message: "Sesi login tidak valid. Silakan login ulang." });
+      return;
+    }
+    const result = await pool.query(
+      "SELECT password_hash FROM anggota WHERE id_anggota = $1 AND is_aktif = TRUE",
+      [id]
+    );
+    const row = result.rows[0];
+    if (!row) {
+      res.status(404).json({ message: "Akun tidak ditemukan." });
+      return;
+    }
+    if (!(await bcrypt.compare(lama, row.password_hash))) {
+      res.status(400).json({ message: "Kata sandi lama tidak sesuai." });
+      return;
+    }
+    if (baru === lama) {
+      res.status(400).json({ message: "Kata sandi baru tidak boleh sama dengan kata sandi lama." });
+      return;
+    }
+    const hash = await bcrypt.hash(baru, 10);
+    await pool.query("UPDATE anggota SET password_hash = $1 WHERE id_anggota = $2", [hash, id]);
+    res.status(200).json({ message: "Kata sandi berhasil diperbarui." });
+  } catch (error) {
+    console.error("Change password error:", error);
     res.status(500).json({ message: "Terjadi kesalahan pada server." });
   }
 }
