@@ -86,8 +86,14 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* menu HP: daftar bersusun, tampil saat tombol menu ditekan */}
-        <ul id="menu-hp" className={`${menuTerbuka() ? "block" : "hidden"} border-t border-white/10 py-2 sm:hidden`}>
+        {/* menu HP: daftar bersusun, tampil saat tombol menu ditekan.
+            max-h-[calc(100svh-4rem)] + overflow-y-auto = di layar pendek (mis. laptop di-zoom besar) daftarnya
+            digulir di dalam menu, karena menu menempel dan tidak ikut tergulir bersama halaman;
+            overscroll-contain = menggulir sampai ujung daftar tidak ikut menggulir halaman di belakangnya */}
+        <ul
+          id="menu-hp"
+          className={`${menuTerbuka() ? "block" : "hidden"} max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain border-t border-white/10 py-2 sm:hidden`}
+        >
           <For each={MENU}>
             {(menu) => (
               <li>
