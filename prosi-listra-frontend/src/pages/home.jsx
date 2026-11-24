@@ -35,11 +35,12 @@ function Pembuka() {
   const terungkap = useDigulir();
   // kelas untuk bagian yang muncul saat digulir:
   // opacity-0 (bukan dihapus) = teks tetap terbaca oleh pembaca layar;
-  // group-has-[:focus-visible] = ikut muncul saat tombol di dalamnya dipilih dengan Tab (bukan saat diklik mouse);
+  // pointer-events-none = selama belum tampil, klik/ketukan tembus ke video (tombol tak terlihat tidak ikut tertekan);
+  // group-has-[:focus-visible] = ikut muncul (dan bisa diklik) saat tombol di dalamnya dipilih dengan Tab, bukan saat diklik mouse;
   // motion-reduce:transition-none = langsung muncul tanpa memudar bila animasi dimatikan di perangkat
   const muncul = () =>
-    `transition-opacity duration-500 motion-reduce:transition-none group-has-[:focus-visible]:opacity-100 ${
-      terungkap() ? "opacity-100" : "opacity-0"
+    `transition-opacity duration-500 motion-reduce:transition-none group-has-[:focus-visible]:pointer-events-auto group-has-[:focus-visible]:opacity-100 ${
+      terungkap() ? "opacity-100" : "pointer-events-none opacity-0"
     }`;
 
   return (

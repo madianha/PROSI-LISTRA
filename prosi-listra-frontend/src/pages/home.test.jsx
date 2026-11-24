@@ -155,6 +155,16 @@ describe("Pembuka Beranda: video layar penuh", () => {
     expect(pembuka().dataset.terungkap).toBe("false");
   });
 
+  it("paling atas: teks dan tombol yang belum tampil tidak bisa diklik atau diketuk", () => {
+    listBerita.mockResolvedValue([]);
+    renderRoute(Home);
+    // jsdom tidak memuat CSS, jadi yang dicek kelasnya: pointer-events-none = klik tembus ke video
+    const blokTeks = screen.getByRole("heading", { level: 1 }).parentElement;
+    expect(blokTeks.className).toContain("pointer-events-none");
+    gulirKe(1);
+    expect(blokTeks.className).not.toContain("pointer-events-none");
+  });
+
   it("dimuat ulang di tengah halaman: teks langsung tampil", () => {
     listBerita.mockResolvedValue([]);
     aturGulir(300);
