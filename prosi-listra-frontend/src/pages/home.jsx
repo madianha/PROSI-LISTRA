@@ -32,10 +32,12 @@ function Pembuka() {
   };
 
   return (
-    // isolate = lapisan video & warna (-z-20, -z-10) tetap di belakang teks, tidak bocor ke luar bagian ini
+    // isolate = lapisan video & warna (-z-20, -z-10) tetap di belakang teks, tidak bocor ke luar bagian ini.
+    // -mt-16 = naik 64px ke balik menu yang tembus pandang (tinggi menu di Navbar.jsx; ubah keduanya bersamaan);
+    // pt-32 dan +4rem = mengganti ruang yang tertutup menu
     <section
       aria-labelledby="judul-beranda"
-      className="relative isolate flex min-h-[72svh] items-center justify-center overflow-hidden bg-[#39000a] px-5 pb-24 pt-16 text-center sm:px-8"
+      className="relative isolate -mt-16 flex min-h-[calc(72svh+4rem)] items-center justify-center overflow-hidden bg-[#39000a] px-5 pb-24 pt-32 text-center sm:px-8"
     >
       {/* object-cover = video memenuhi bagian ini tanpa gepeng; aria-hidden karena hanya latar */}
       <video
