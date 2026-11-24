@@ -1,5 +1,5 @@
 import { A, useLocation } from "@solidjs/router";
-import { createEffect, createSignal, For, on } from "solid-js";
+import { createEffect, createSignal, For, on, onCleanup, onMount } from "solid-js";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import Icon from "./Icon";
 import logoListra from "../img/logo-listra.png";
@@ -20,8 +20,30 @@ export default function Navbar() {
   // pindah halaman = menu HP tertutup lagi
   createEffect(on(() => lokasi.pathname, () => setMenuTerbuka(false), { defer: true }));
 
+  // true = halaman sudah digulir ke bawah, walau hanya 1px
+  const [digulir, setDigulir] = createSignal(window.scrollY > 0);
+  onMount(() => {
+    const cek = () => setDigulir(window.scrollY > 0);
+    // passive = pendengar ini tidak pernah menahan guliran, jadi menggulir tetap mulus
+    window.addEventListener("scroll", cek, { passive: true });
+    onCleanup(() => window.removeEventListener("scroll", cek));
+  });
+
+  // tembus pandang hanya di Beranda paling atas (video terlihat di belakang menu);
+  // digulir atau menu HP dibuka = latar marun
+  const tembus = () => lokasi.pathname === "/" && !digulir() && !menuTerbuka();
+
   return (
-    <header className="border-b border-[#f0dedf] bg-white text-[#39000a]">
+    // sticky top-0 = menu tetap menempel di atas layar saat halaman digulir;
+    // z-30 = di atas isi halaman dan tombol WhatsApp (z-20), di bawah jendela dialog (z-50).
+    // data-tembus = "true" saat tembus pandang (dibaca oleh test).
+    // shadow-[inset_0_-1px_0_...] = garis tipis di bawah menu tanpa menambah tinggi, supaya video Beranda pas di bawah menu
+    <header
+      data-tembus={tembus() ? "true" : "false"}
+      className={`sticky top-0 z-30 text-white transition-colors duration-200 ${
+        tembus() ? "bg-transparent" : "bg-[#39000a] shadow-[inset_0_-1px_0_#ffffff1a]"
+      }`}
+    >
       <nav
         aria-label="Menu utama"
         onKeyDown={(e) => e.key === "Escape" && setMenuTerbuka(false)}
@@ -45,9 +67,9 @@ export default function Navbar() {
                   <A
                     href={menu.href}
                     end={menu.end}
-                    class="relative inline-flex min-h-11 items-center px-3 text-sm transition-colors after:absolute after:inset-x-3 after:bottom-1.5 after:h-0.5 after:bg-[#d4af37] hover:text-[#39000a]"
-                    activeClass="font-semibold text-[#54141d] after:opacity-100"
-                    inactiveClass="text-[#5f5152] after:opacity-0"
+                    class="relative inline-flex min-h-11 items-center px-3 text-sm transition-colors after:absolute after:inset-x-3 after:bottom-1.5 after:h-0.5 after:bg-[#d4af37] hover:text-white"
+                    activeClass="font-semibold text-white after:opacity-100"
+                    inactiveClass="text-white/80 after:opacity-0"
                   >
                     {menu.label}
                   </A>
@@ -56,30 +78,31 @@ export default function Navbar() {
             </For>
           </ul>
 
-          {/* tombol menu: hanya di HP (sm:hidden) */}
+          {/* tombol menu: hanya di HP (sm:hidden); bg-white/10 = putih tipis di atas latar gelap */}
           <button
             type="button"
             aria-expanded={menuTerbuka()}
             aria-controls="menu-hp"
             aria-label={menuTerbuka() ? "Tutup menu" : "Buka menu"}
             onClick={() => setMenuTerbuka(!menuTerbuka())}
-            className="grid size-11 cursor-pointer place-items-center rounded-lg text-lg hover:bg-[#fff0f1] active:bg-[#f9e3e4] sm:hidden"
+            className="grid size-11 cursor-pointer place-items-center rounded-lg text-lg hover:bg-white/10 active:bg-white/15 sm:hidden"
           >
             <Icon icon={menuTerbuka() ? faXmark : faBars} />
           </button>
         </div>
 
         {/* menu HP: daftar bersusun, tampil saat tombol menu ditekan */}
-        <ul id="menu-hp" className={`${menuTerbuka() ? "block" : "hidden"} border-t border-[#f0dedf] py-2 sm:hidden`}>
+        <ul id="menu-hp" className={`${menuTerbuka() ? "block" : "hidden"} border-t border-white/10 py-2 sm:hidden`}>
           <For each={MENU}>
             {(menu) => (
               <li>
+                {/* shadow-[inset_3px_0_0_#d4af37] = garis emas di tepi kiri halaman yang sedang dibuka, sama dengan menu internal */}
                 <A
                   href={menu.href}
                   end={menu.end}
                   class="flex min-h-11 items-center rounded-lg px-3 text-base"
-                  activeClass="bg-[#fff0f1] font-semibold text-[#54141d]"
-                  inactiveClass="text-[#302929] hover:bg-[#fff8f7]"
+                  activeClass="bg-[#5a0c1a] font-semibold text-white shadow-[inset_3px_0_0_#d4af37]"
+                  inactiveClass="text-white/80 hover:bg-white/5 hover:text-white"
                 >
                   {menu.label}
                 </A>
