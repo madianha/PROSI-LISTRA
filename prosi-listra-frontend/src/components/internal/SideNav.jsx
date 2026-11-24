@@ -30,9 +30,9 @@ export default function SideNav() {
     item.aktif ? item.aktif(location.pathname) : location.pathname.startsWith(item.href);
 
   return (
-    // Phone: a row you can swipe sideways (flex + overflow-x-auto).
-    // md: (tablet and up): a column stuck below the top bar (md:flex-col md:sticky).
-    <nav className="flex gap-1 overflow-x-auto bg-[#39000a] p-3 md:sticky md:top-[54px] md:flex-col md:overflow-visible">
+    // Daftar bersusun di semua ukuran (flex-col).
+    // HP: tampil di dalam menu TopBar (tombol menu). md ke atas: sidebar yang menempel di bawah bar atas (md:sticky md:top-[54px]).
+    <nav className="flex flex-col gap-1 bg-[#39000a] p-3 md:sticky md:top-[54px]">
       <For each={MENU}>
         {(item) => (
           <A
@@ -43,7 +43,8 @@ export default function SideNav() {
               "bg-[#5a0c1a] text-white shadow-[inset_3px_0_0_#d4af37]": isAktif(item),
               "text-white/70 hover:text-white": !isAktif(item),
             }}
-            className="whitespace-nowrap rounded px-3 py-2 text-sm font-medium transition-colors"
+            // py-3 = tinggi 44px di HP agar mudah diketuk; md:py-2 = ukuran sidebar seperti semula
+            className="whitespace-nowrap rounded px-3 py-3 text-sm font-medium transition-colors md:py-2"
           >
             {item.label}
           </A>

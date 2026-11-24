@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, createMemoryHistory, useLocation } from "@solidjs/router";
-import { render, screen, waitFor } from "@solidjs/testing-library";
+import { fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import InternalLayout from "./InternalLayout";
 import LoginInternal from "../../pages/internal/login";
@@ -32,6 +32,8 @@ function renderInternal(url = "/internal/kontak") {
       <Route path="/internal/login" component={LokasiSekarang} />
       <Route path="/internal" component={InternalLayout}>
         <Route path="/kontak" component={HalamanRahasia} />
+        {/* halaman internal lain: menampilkan alamatnya, untuk test pindah halaman lewat menu */}
+        <Route path="*" component={LokasiSekarang} />
       </Route>
       <Route path="*" component={LokasiSekarang} />
     </MemoryRouter>
@@ -58,7 +60,8 @@ describe("InternalLayout auth guard", () => {
     await waitFor(() => {
       expect(screen.getByTestId("lokasi").textContent).toBe("/internal/login");
     });
-    expect(screen.queryByText("LISTRA · Panel Internal")).toBeNull();
+    // banner = bar atas panel internal (<header>)
+    expect(screen.queryByRole("banner")).toBeNull();
     expect(screen.queryByRole("button", { name: "Ubah kontak" })).toBeNull();
     expect(localStorage.getItem("listra_user")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -76,8 +79,8 @@ describe("InternalLayout auth guard", () => {
 
     renderInternal("/internal/kontak");
 
-    // Selama verifikasi berjalan, UI internal tidak boleh tampil
-    expect(screen.queryByText("LISTRA · Panel Internal")).toBeNull();
+    // Selama verifikasi berjalan, UI internal (termasuk bar atas) tidak boleh tampil
+    expect(screen.queryByRole("banner")).toBeNull();
     expect(screen.queryByRole("button", { name: "Ubah kontak" })).toBeNull();
 
     await waitFor(() => {
@@ -123,10 +126,109 @@ describe("InternalLayout auth guard", () => {
 
     renderInternal("/internal/kontak");
 
-    expect(await screen.findByText("LISTRA · Panel Internal")).toBeTruthy();
+    // bar atas: judul lengkap, logo LISTRA bukan tautan, logo UNPAR tidak ada lagi
+    const bar = await screen.findByRole("banner");
+    expect(bar.textContent).toContain("LISTRA · Panel Internal");
+    expect(within(bar).getByAltText("Logo Listra").closest("a")).toBeNull();
+    expect(within(bar).queryByAltText("Logo UNPAR")).toBeNull();
     expect(screen.getByRole("link", { name: "Profil akun" }).textContent.trim()).toBe("Admin LISTRA");
     expect(screen.getByRole("link", { name: "Kalender Event" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Ubah kontak" })).toBeTruthy();
+  });
+});
+
+describe("Menu HP panel internal", () => {
+  beforeEach(() => {
+    localStorage.setItem("listra_token", tokenBerlaku("token-sah"));
+    localStorage.setItem("listra_user", JSON.stringify({ nama: "Admin LISTRA" }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ nama: "Admin LISTRA", is_aktif: true }) }),
+    );
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  // menu = elemen yang ditunjuk aria-controls tombol menu.
+  // jsdom tidak membaca CSS: selama menu terbuka setiap tautan ada dua (sidebar + menu), jadi dicari dengan within(menu).
+  async function bukaMenu() {
+    fireEvent.click(await screen.findByRole("button", { name: "Buka menu" }));
+    const tombol = screen.getByRole("button", { name: "Tutup menu" });
+    return { tombol, menu: document.getElementById(tombol.getAttribute("aria-controls")) };
+  }
+
+  it("tombol menu membuka menu di dalam bar atas: 8 tautan sidebar, lalu Keluar", async () => {
+    renderInternal("/internal/kontak");
+    const tombolBuka = await screen.findByRole("button", { name: "Buka menu" });
+    expect(tombolBuka.getAttribute("aria-expanded")).toBe("false");
+    // tertutup: menu belum ada di halaman
+    expect(document.getElementById(tombolBuka.getAttribute("aria-controls"))).toBeNull();
+
+    const { tombol, menu } = await bukaMenu();
+    expect(tombol.getAttribute("aria-expanded")).toBe("true");
+    // di dalam bar atas yang menempel di atas layar, jadi bisa dibuka dari posisi gulir mana pun
+    expect(screen.getByRole("banner").contains(menu)).toBe(true);
+    expect(within(menu).getAllByRole("link").map((a) => a.textContent.trim())).toEqual([
+      "Kalender Event",
+      "Katalog Jasa",
+      "Alat Musik",
+      "Anggota",
+      "Kelola Berita",
+      "Berita Baru",
+      "Testimoni",
+      "Kontak WhatsApp",
+    ]);
+    expect(within(menu).getByRole("button", { name: "Keluar" })).toBeTruthy();
+  });
+
+  it("tombol menu ditekan lagi: menu tertutup", async () => {
+    renderInternal("/internal/kontak");
+    const { tombol, menu } = await bukaMenu();
+    fireEvent.click(tombol);
+    expect(tombol.getAttribute("aria-expanded")).toBe("false");
+    expect(tombol.getAttribute("aria-label")).toBe("Buka menu");
+    expect(menu.isConnected).toBe(false);
+  });
+
+  it("memilih tautan di menu: pindah halaman dan menu tertutup", async () => {
+    renderInternal("/internal/kontak");
+    const { tombol, menu } = await bukaMenu();
+    fireEvent.click(within(menu).getByRole("link", { name: "Kalender Event" }));
+    await waitFor(() => expect(screen.getByTestId("lokasi").textContent).toBe("/internal/kalender"));
+    expect(tombol.getAttribute("aria-expanded")).toBe("false");
+    expect(menu.isConnected).toBe(false);
+  });
+
+  it("Esc: menu tertutup dan fokus kembali ke tombol menu", async () => {
+    renderInternal("/internal/kontak");
+    const { tombol, menu } = await bukaMenu();
+    const tautan = within(menu).getByRole("link", { name: "Anggota" });
+    tautan.focus();
+    fireEvent.keyDown(tautan, { key: "Escape" });
+    expect(tombol.getAttribute("aria-expanded")).toBe("false");
+    expect(menu.isConnected).toBe(false);
+    expect(document.activeElement).toBe(tombol);
+  });
+
+  it("Keluar di menu HP: sesi dihapus dan kembali ke /internal/login", async () => {
+    renderInternal("/internal/kontak");
+    const { menu } = await bukaMenu();
+    fireEvent.click(within(menu).getByRole("button", { name: "Keluar" }));
+    await waitFor(() => expect(screen.getByTestId("lokasi").textContent).toBe("/internal/login"));
+    expect(localStorage.getItem("listra_token")).toBeNull();
+    expect(localStorage.getItem("listra_user")).toBeNull();
+  });
+
+  it("Keluar di bar atas (layar md ke atas) tetap sama: sesi dihapus dan kembali ke /internal/login", async () => {
+    renderInternal("/internal/kontak");
+    // menu HP tertutup, jadi hanya ada satu tombol Keluar
+    fireEvent.click(await screen.findByRole("button", { name: "Keluar" }));
+    await waitFor(() => expect(screen.getByTestId("lokasi").textContent).toBe("/internal/login"));
+    expect(localStorage.getItem("listra_token")).toBeNull();
+    expect(localStorage.getItem("listra_user")).toBeNull();
   });
 });
 
