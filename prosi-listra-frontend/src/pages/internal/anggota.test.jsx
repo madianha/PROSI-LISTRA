@@ -8,12 +8,11 @@ vi.mock("../../api/anggota", () => ({
   createAnggota: vi.fn(),
   updateAnggota: vi.fn(),
   toggleStatusAktif: vi.fn(),
-  bolehAturPassword: vi.fn(() => false),
 }));
 
 import InternalAnggota from "./anggota";
 import {
-  bolehAturPassword,
+  createAnggota,
   getSpesialisasiList,
   listAnggota,
   toggleStatusAktif,
@@ -54,6 +53,12 @@ beforeEach(() => {
 function renderHalaman() {
   return renderRoute(InternalAnggota, { path: "/internal/anggota" });
 }
+
+// peran login = nilai di database, seperti yang disimpan halaman login di listra_user
+const PERAN_LOGIN = ["admin", "listra", "humas", "pelatih", "anggota", "alumni"];
+const loginSebagai = (peran) =>
+  localStorage.setItem("listra_user", JSON.stringify({ id_anggota: 9, nama: "Penguji", peran }));
+const CATATAN_SANDI = "Kata sandi awal: password123. Anggota bisa menggantinya di Profil.";
 
 describe("Internal Anggota Management", () => {
   it("merender daftar anggota dari API saat inisialisasi", async () => {
@@ -205,48 +210,66 @@ describe("Internal Anggota Management", () => {
     expect(options).toEqual(["Kepengurusan", "Pelatih", "Anggota", "Alumni"]);
   });
 
-  it("kolom kata sandi tampil untuk Admin/LISTRA pada mode Tambah Anggota", async () => {
-    bolehAturPassword.mockReturnValue(true);
+  // kata sandi anggota lain hanya diganti sysadmin di database: tidak ada kolom Kata Sandi untuk peran apa pun
+  it.each(PERAN_LOGIN)(
+    "Tambah Anggota (login %s): tanpa kolom Kata Sandi, ada catatan kata sandi awal",
+    async (peran) => {
+      loginSebagai(peran);
+      listAnggota.mockResolvedValue(mockAnggotaList);
+      renderHalaman();
+
+      expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+      fireEvent.click(screen.getByText("Tambah Anggota"));
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("Tambah Anggota Baru")).toBeTruthy();
+      expect(within(dialog).queryByText("Kata Sandi")).toBeNull();
+      expect(dialog.querySelector('input[type="password"]')).toBeNull();
+      expect(within(dialog).getByText(CATATAN_SANDI)).toBeTruthy();
+    }
+  );
+
+  it.each(PERAN_LOGIN)(
+    "Ubah Data (login %s): tanpa kolom Kata Sandi dan tanpa catatan kata sandi awal",
+    async (peran) => {
+      loginSebagai(peran);
+      listAnggota.mockResolvedValue(mockAnggotaList);
+      renderHalaman();
+
+      expect(await screen.findByText("Budi Santoso")).toBeTruthy();
+      fireEvent.click(screen.getAllByText("Ubah")[0]);
+
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("Ubah Data Anggota")).toBeTruthy();
+      expect(within(dialog).queryByText("Kata Sandi")).toBeNull();
+      expect(dialog.querySelector('input[type="password"]')).toBeNull();
+      expect(within(dialog).queryByText(CATATAN_SANDI)).toBeNull();
+    }
+  );
+
+  it("menambah anggota tanpa menyertakan password", async () => {
+    loginSebagai("admin");
     listAnggota.mockResolvedValue(mockAnggotaList);
+    createAnggota.mockResolvedValue({ ...mockAnggotaList[1], id_anggota: 3, nama: "Sari Baru" });
     renderHalaman();
 
     expect(await screen.findByText("Budi Santoso")).toBeTruthy();
     fireEvent.click(screen.getByText("Tambah Anggota"));
 
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Tambah Anggota Baru")).toBeTruthy();
-    expect(within(dialog).getByText("Kata Sandi")).toBeTruthy();
-    expect(dialog.querySelector('input[type="password"]')).toBeTruthy();
-  });
+    fireEvent.input(within(dialog).getByPlaceholderText("Nama lengkap anggota"), {
+      target: { value: "Sari Baru" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Tambah Anggota" }));
 
-  it("kolom kata sandi TIDAK tampil pada mode Ubah Data Anggota meskipun Admin/LISTRA", async () => {
-    bolehAturPassword.mockReturnValue(true);
-    listAnggota.mockResolvedValue(mockAnggotaList);
-    renderHalaman();
-
-    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
-    fireEvent.click(screen.getAllByText("Ubah")[0]);
-
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Ubah Data Anggota")).toBeTruthy();
-    expect(within(dialog).queryByText("Kata Sandi")).toBeNull();
-    expect(dialog.querySelector('input[type="password"]')).toBeNull();
-  });
-
-  it("kolom kata sandi tidak tampil untuk peran lain pada mode Tambah Anggota", async () => {
-    bolehAturPassword.mockReturnValue(false);
-    listAnggota.mockResolvedValue(mockAnggotaList);
-    renderHalaman();
-
-    expect(await screen.findByText("Budi Santoso")).toBeTruthy();
-    fireEvent.click(screen.getByText("Tambah Anggota"));
-
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog.querySelector('input[type="password"]')).toBeNull();
+    await waitFor(() => expect(createAnggota).toHaveBeenCalledTimes(1));
+    const payload = createAnggota.mock.calls[0][0];
+    expect(payload.nama).toBe("Sari Baru");
+    expect(payload).not.toHaveProperty("password");
   });
 
   it("menyimpan perubahan anggota tanpa menyertakan password lalu menutup modal", async () => {
-    bolehAturPassword.mockReturnValue(true);
+    loginSebagai("admin");
     listAnggota.mockResolvedValue(mockAnggotaList);
     updateAnggota.mockResolvedValue({ ...mockAnggotaList[0], nama: "Budi Baru" });
     renderHalaman();

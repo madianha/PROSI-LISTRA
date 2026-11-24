@@ -17,7 +17,8 @@ vi.mock("../src/db", () => ({
 
 describe("Anggota Routes with ERD v5 Schema", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // reset (bukan clear): sisa mockResolvedValueOnce yang tidak terpakai ikut dibuang
+    vi.resetAllMocks();
   });
 
   describe("GET /api/anggota/spesialisasi", () => {
@@ -149,62 +150,31 @@ describe("Anggota Routes with ERD v5 Schema", () => {
     });
   });
 
+  // kata sandi anggota hanya diganti sysadmin langsung di database; "password" dari aplikasi selalu diabaikan
   describe("kata sandi anggota", () => {
-    const body = { nama: "Sari", email: "sari@student.unpar.ac.id", peran: "Anggota", password: "rahasia123" };
     const token = (peran: string) => `Bearer ${signJwt({ id_anggota: 1, peran }, "listra_dev_secret")}`;
 
-    it("menolak tanpa login (401)", async () => {
-      const res = await request(app).post("/api/anggota").send(body);
-      expect(res.status).toBe(401);
-      expect(pool.connect).not.toHaveBeenCalled();
-    });
+    it.each(["admin", "listra", "humas", "pelatih", "anggota", "alumni"])(
+      "POST oleh %s: password di body diabaikan, anggota baru tetap memakai password123",
+      async (peran) => {
+        const mockClient = { query: vi.fn().mockResolvedValue({ rows: [{ id_anggota: 11 }] }), release: vi.fn() };
+        vi.mocked(pool.connect).mockResolvedValueOnce(mockClient as any);
+        vi.mocked(pool.query).mockResolvedValueOnce({ rows: [{ id_anggota: 11, nama: "Sari" }] } as any);
 
-    it("menolak kata sandi dari peran selain Admin/LISTRA", async () => {
-      const res = await request(app).post("/api/anggota").set("Authorization", token("humas")).send(body);
-      expect(res.status).toBe(403);
-    });
+        const res = await request(app)
+          .post("/api/anggota")
+          .set("Authorization", token(peran))
+          .send({ nama: "Sari", email: "sari@student.unpar.ac.id", peran: "Anggota", password: "rahasia123" });
 
-    it("menolak token palsu", async () => {
-      const palsu = signJwt({ id_anggota: 1, peran: "admin" }, "bukan-rahasia-server");
-      const res = await request(app).post("/api/anggota").set("Authorization", `Bearer ${palsu}`).send(body);
-      expect(res.status).toBe(401);
-    });
+        expect(res.status).toBe(201);
+        const insert = mockClient.query.mock.calls.find((c) => String(c[0]).includes("INSERT INTO anggota"));
+        expect(bcrypt.compareSync("password123", insert?.[1]?.[1])).toBe(true);
+      },
+    );
 
-    it("menolak kata sandi kurang dari 8 karakter", async () => {
-      const res = await request(app)
-        .post("/api/anggota")
-        .set("Authorization", token("admin"))
-        .send({ ...body, password: "pendek" });
-      expect(res.status).toBe(400);
-    });
-
-    it("Admin: kata sandi disimpan sebagai hash bcrypt, bukan teks biasa", async () => {
-      const mockClient = { query: vi.fn().mockResolvedValue({ rows: [{ id_anggota: 11 }] }), release: vi.fn() };
+    it("PUT /api/anggota/:id dengan password (Admin): password_hash tidak diubah", async () => {
+      const mockClient = { query: vi.fn().mockResolvedValue({ rowCount: 1, rows: [{ id_anggota: 1 }] }), release: vi.fn() };
       vi.mocked(pool.connect).mockResolvedValueOnce(mockClient as any);
-      vi.mocked(pool.query).mockResolvedValueOnce({ rows: [{ id_anggota: 11, nama: "Sari" }] } as any);
-
-      const res = await request(app).post("/api/anggota").set("Authorization", token("listra")).send(body);
-
-      expect(res.status).toBe(201);
-      const insert = mockClient.query.mock.calls.find((c) => String(c[0]).includes("INSERT INTO anggota"));
-      const disimpan = insert?.[1]?.[1];
-      expect(disimpan).not.toBe("rahasia123");
-      expect(bcrypt.compareSync("rahasia123", disimpan)).toBe(true);
-    });
-
-    it("PUT /api/anggota/:id: tidak mengubah password_hash bila password tidak disertakan", async () => {
-      const mockClient = {
-        query: vi.fn(),
-        release: vi.fn(),
-      };
-      vi.mocked(pool.connect).mockResolvedValueOnce(mockClient as any);
-
-      // BEGIN
-      mockClient.query.mockResolvedValueOnce({} as any);
-      // UPDATE anggota RETURNING id_anggota
-      mockClient.query.mockResolvedValueOnce({ rowCount: 1, rows: [{ id_anggota: 1 }] } as any);
-      // COMMIT
-      mockClient.query.mockResolvedValueOnce({} as any);
 
       const updatedAnggota = {
         id_anggota: 1,
@@ -223,7 +193,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
 
       const res = await request(app)
         .put("/api/anggota/1")
-        .set("Authorization", LOGIN)
+        .set("Authorization", token("admin"))
         .send({
           nama: "Budi Santoso",
           email: "budi@student.unpar.ac.id",
@@ -232,6 +202,7 @@ describe("Anggota Routes with ERD v5 Schema", () => {
           angkatan_unpar: 2021,
           jabatan: "Ketua",
           is_aktif: true,
+          password: "rahasia123",
         });
 
       expect(res.status).toBe(200);
