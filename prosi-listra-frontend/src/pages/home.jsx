@@ -8,6 +8,7 @@ import TestimoniCard from "../components/TestimoniCard";
 import { listBerita } from "../api/berita";
 import { listTestimoni } from "../api/testimoni";
 import { listJasa } from "../api/jasa";
+import { useDigulir } from "../utils/digulir";
 // potongan 15 detik (tanpa suara) dan dua gambar diam dari video Tari Bajidor Kahot oleh LISTRA UNPAR
 import videoTari from "../video/tari-bajidor-latar.mp4";
 import posterTari from "../video/tari-bajidor-latar.jpg";
@@ -30,14 +31,26 @@ function Pembuka() {
     if (video.paused) video.play()?.catch?.(() => {});
     else video.pause();
   };
+  // paling atas = video saja; setelah digulir walau 1px, bayangan hitam dan teks muncul (sama dengan menu)
+  const terungkap = useDigulir();
+  // kelas untuk bagian yang muncul saat digulir:
+  // opacity-0 (bukan dihapus) = teks tetap terbaca oleh pembaca layar;
+  // group-has-[:focus-visible] = ikut muncul saat tombol di dalamnya dipilih dengan Tab (bukan saat diklik mouse);
+  // motion-reduce:transition-none = langsung muncul tanpa memudar bila animasi dimatikan di perangkat
+  const muncul = () =>
+    `transition-opacity duration-500 motion-reduce:transition-none group-has-[:focus-visible]:opacity-100 ${
+      terungkap() ? "opacity-100" : "opacity-0"
+    }`;
 
   return (
-    // isolate = lapisan video & warna (-z-20, -z-10) tetap di belakang teks, tidak bocor ke luar bagian ini.
-    // -mt-16 = naik 64px ke balik menu yang tembus pandang (tinggi menu di Navbar.jsx; ubah keduanya bersamaan);
-    // pt-32 dan +4rem = mengganti ruang yang tertutup menu
+    // group = induk untuk group-has-[...] di bawah; isolate = lapisan video & warna (-z-20, -z-10) tetap di belakang teks.
+    // -mt-16 = naik 64px ke balik menu yang tembus pandang (tinggi menu di Navbar.jsx; ubah keduanya bersamaan).
+    // min-h-svh = setinggi layar yang terlihat, di HP maupun laptop; hanya bertambah bila isinya tidak muat.
+    // data-terungkap = "true" saat teks tampil (dibaca oleh test)
     <section
       aria-labelledby="judul-beranda"
-      className="relative isolate -mt-16 flex min-h-[calc(72svh+4rem)] items-center justify-center overflow-hidden bg-[#39000a] px-5 pb-24 pt-32 text-center sm:px-8"
+      data-terungkap={terungkap() ? "true" : "false"}
+      className="group relative isolate -mt-16 flex min-h-svh items-center justify-center overflow-hidden bg-black px-5 pb-24 pt-24 text-center sm:px-8"
     >
       {/* object-cover = video memenuhi bagian ini tanpa gepeng; aria-hidden karena hanya latar */}
       <video
@@ -55,10 +68,12 @@ function Pembuka() {
         onPause={() => setBerputar(false)}
         className="absolute inset-0 -z-20 h-full w-full object-cover"
       />
-      {/* lapisan marun 65% di atas video: teks putih tetap terbaca di bagian video yang terang */}
-      <div className="absolute inset-0 -z-10 bg-[#39000a]/65" />
+      {/* gelap tipis di bagian paling atas, selalu ada: tulisan putih di menu tetap terbaca di atas video yang terang */}
+      <div className="absolute inset-x-0 top-0 -z-10 h-28 bg-linear-to-b from-black/50 to-transparent" />
+      {/* bayangan hitam 60% di atas video, muncul saat digulir: teks putih tetap terbaca di bagian video yang terang */}
+      <div className={`absolute inset-0 -z-10 bg-black/60 ${muncul()}`} />
 
-      <div className="max-w-3xl">
+      <div className={`max-w-3xl ${muncul()}`}>
         <h1 id="judul-beranda" className="text-balance font-serif text-4xl font-bold leading-tight text-white sm:text-5xl">
           Tari dan Musik Tradisional untuk Acara Anda
         </h1>
@@ -79,7 +94,7 @@ function Pembuka() {
         </div>
       </div>
 
-      <p className="absolute bottom-6 left-5 max-w-[65%] text-left text-xs text-white/85 sm:left-8">
+      <p className={`absolute bottom-6 left-5 max-w-[65%] text-left text-xs text-white/85 sm:left-8 ${muncul()}`}>
         Tari Bajidor Kahot, penampilan LISTRA UNPAR
       </p>
       <button

@@ -1,16 +1,9 @@
 import { fireEvent, screen, waitFor } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderRoute } from "../test/renderRoute";
+import { aturGulir, gulirKe } from "../test/gulir";
 import Navbar from "./Navbar";
 
-// jsdom tidak benar-benar menggulir: posisi diatur langsung lalu event scroll dikirim
-function aturGulir(y) {
-  Object.defineProperty(window, "scrollY", { value: y, configurable: true, writable: true });
-}
-function gulirKe(y) {
-  aturGulir(y);
-  fireEvent.scroll(window);
-}
 const bar = () => screen.getByRole("banner");
 
 afterEach(() => aturGulir(0));

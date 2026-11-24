@@ -1,7 +1,8 @@
 import { A, useLocation } from "@solidjs/router";
-import { createEffect, createSignal, For, on, onCleanup, onMount } from "solid-js";
+import { createEffect, createSignal, For, on } from "solid-js";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import Icon from "./Icon";
+import { useDigulir } from "../utils/digulir";
 import logoListra from "../img/logo-listra.png";
 import logoUnpar from "../img/Logo-UNPAR.png";
 
@@ -20,14 +21,8 @@ export default function Navbar() {
   // pindah halaman = menu HP tertutup lagi
   createEffect(on(() => lokasi.pathname, () => setMenuTerbuka(false), { defer: true }));
 
-  // true = halaman sudah digulir ke bawah, walau hanya 1px
-  const [digulir, setDigulir] = createSignal(window.scrollY > 0);
-  onMount(() => {
-    const cek = () => setDigulir(window.scrollY > 0);
-    // passive = pendengar ini tidak pernah menahan guliran, jadi menggulir tetap mulus
-    window.addEventListener("scroll", cek, { passive: true });
-    onCleanup(() => window.removeEventListener("scroll", cek));
-  });
+  // true = halaman sudah digulir ke bawah, walau hanya 1px (utils/digulir.js)
+  const digulir = useDigulir();
 
   // tembus pandang hanya di Beranda paling atas (video terlihat di belakang menu);
   // digulir atau menu HP dibuka = latar marun

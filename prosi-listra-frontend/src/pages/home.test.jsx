@@ -1,6 +1,7 @@
 import { screen } from "@solidjs/testing-library";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderRoute } from "../test/renderRoute";
+import { aturGulir, gulirKe } from "../test/gulir";
 
 // home juga memuat katalog jasa; cukup kosong untuk test ini
 vi.mock("../api/jasa", () => ({ listJasa: vi.fn(async () => []) }));
@@ -131,5 +132,33 @@ describe("Halaman Home: Hubungi Kami", () => {
     expect(await screen.findByText("Belum ada berita.")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /lewat WhatsApp/ })).toBeNull();
     expect(screen.queryByRole("link", { name: "WhatsApp Humas" })).toBeNull();
+  });
+});
+
+describe("Pembuka Beranda: video layar penuh", () => {
+  const pembuka = () => document.querySelector('section[aria-labelledby="judul-beranda"]');
+  afterEach(() => aturGulir(0));
+
+  it("paling atas: hanya video, tapi judul tetap ada untuk pembaca layar", () => {
+    listBerita.mockResolvedValue([]);
+    renderRoute(Home);
+    expect(pembuka().dataset.terungkap).toBe("false");
+    expect(screen.getByRole("heading", { level: 1, name: "Tari dan Musik Tradisional untuk Acara Anda" })).toBeTruthy();
+  });
+
+  it("digulir 1px: teks dan bayangan hitam muncul; kembali ke atas: video saja", () => {
+    listBerita.mockResolvedValue([]);
+    renderRoute(Home);
+    gulirKe(1);
+    expect(pembuka().dataset.terungkap).toBe("true");
+    gulirKe(0);
+    expect(pembuka().dataset.terungkap).toBe("false");
+  });
+
+  it("dimuat ulang di tengah halaman: teks langsung tampil", () => {
+    listBerita.mockResolvedValue([]);
+    aturGulir(300);
+    renderRoute(Home);
+    expect(pembuka().dataset.terungkap).toBe("true");
   });
 });
