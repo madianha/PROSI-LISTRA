@@ -1,5 +1,5 @@
 import { createSignal, Show } from "solid-js";
-import { useNavigate, useSearchParams } from "@solidjs/router";
+import { A, useNavigate, useSearchParams } from "@solidjs/router";
 import { PESAN_BELUM_LOGIN } from "../../utils/sesiLogin";
 import CustomButton from "../../components/CustomButton";
 import logoListra from "../../img/logo-listra.png";
@@ -47,9 +47,13 @@ export default function LoginInternal() {
   return (
     <div class="flex min-h-screen flex-col bg-[#fbf8f7]">
       <header className="sticky top-0 z-20 flex min-h-[54px] items-center gap-3 border-b border-[#f0dedf] bg-white px-4">
-        <img src={logoListra} alt="Logo Listra" className="h-8 w-auto" />
-        <img src={logoUnpar} alt="Logo UNPAR" className="h-8 w-auto" />
-        <span className="font-serif text-lg text-[#39000a]">LISTRA · Panel Internal</span>
+        {/* logo + judul = satu tautan ke Beranda publik; gambar alt="" karena namanya sudah ada di label.
+            min-h-11 = tinggi 44px agar mudah diketuk */}
+        <A href="/" aria-label="LISTRA UNPAR, ke Beranda" class="flex min-h-11 items-center gap-3">
+          <img src={logoListra} alt="" className="h-8 w-auto" />
+          <img src={logoUnpar} alt="" className="h-8 w-auto" />
+          <span className="font-serif text-lg text-[#39000a]">LISTRA · Panel Internal</span>
+        </A>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-12">

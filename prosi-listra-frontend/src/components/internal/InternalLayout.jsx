@@ -63,11 +63,11 @@ export default function InternalLayout(props) {
       <Match when={authStatus() === "authenticated"}>
         <div className="flex min-h-screen flex-col bg-[#f5efeb]">
           <TopBar />
-          {/* Phone: sidebar on top of the page. md: 232px sidebar on the left, page on the right. */}
-          {/* grid-rows-[auto_1fr] = on phones the sidebar row is only as tall as its links */}
-          <div className="grid flex-1 grid-cols-1 grid-rows-[auto_1fr] md:grid-cols-[232px_1fr] md:grid-rows-1">
-            {/* the maroon wrapper makes the sidebar color reach the bottom of the screen */}
-            <div className="bg-[#39000a]">
+          {/* HP: hanya isi halaman (menu ada di tombol menu TopBar). md: sidebar 232px di kiri, halaman di kanan. */}
+          <div className="grid flex-1 grid-cols-1 md:grid-cols-[232px_1fr] md:grid-rows-1">
+            {/* hidden md:block = sidebar baru tampil mulai md (768px);
+                pembungkus marun membuat warna sidebar sampai ke bawah layar */}
+            <div className="hidden bg-[#39000a] md:block">
               <SideNav />
             </div>
             {/* min-w-0 = stops wide content (tables) from pushing the layout wider */}
