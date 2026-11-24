@@ -1,5 +1,132 @@
-import { createResource, createSignal, For, Show } from "solid-js";
-import { createAlatMusik, deleteAlatMusik, listAlatMusik } from "../../api/alatMusik";
+import { createResource, createSignal, createUniqueId, For, onCleanup, onMount, Show } from "solid-js";
+import { Portal } from "solid-js/web";
+import { faPen } from "@fortawesome/free-solid-svg-icons";
+import Icon from "../../components/Icon";
+import { createAlatMusik, deleteAlatMusik, listAlatMusik, updateAlatMusik } from "../../api/alatMusik";
+
+// Kolom daftar. HP: nama | jumlah, tombol Ubah dan Hapus di baris sendiri di bawahnya.
+// sm ke atas: nama | jumlah | aksi dalam satu baris.
+// minmax(0,1fr) = kolom nama mengisi sisa lebar dan boleh menyempit (nama panjang turun baris).
+// Kolom lain lebarnya tetap (bukan auto) supaya header dan setiap baris selalu sejajar.
+const KOLOM = "grid-cols-[minmax(0,1fr)_72px] sm:grid-cols-[minmax(0,1fr)_120px_168px]";
+
+// Ubah dan Hapus berbentuk sama; min-h-11 = tinggi 44px, mudah diketuk di HP
+const TOMBOL_AKSI =
+  "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-[#edd7d7] px-3 text-xs font-semibold text-[#39000a] transition hover:border-[#39000a] hover:bg-rose-50/50";
+
+/**
+ * Jendela ubah jumlah satu alat musik. Namanya tidak bisa diubah di sini.
+ * props.alat     = baris yang diubah ({ id_alat_musik, nama_alat_musik, jumlah })
+ * props.onSimpan = async (jumlah) => ..., lempar Error bila gagal (pesannya tampil di jendela)
+ * props.onTutup  = dipanggil saat Batal, Esc, atau klik di luar jendela
+ */
+function UbahJumlahModal(props) {
+  const idJudul = createUniqueId();
+  const idKolom = createUniqueId();
+  const [jumlah, setJumlah] = createSignal(props.alat.jumlah);
+  const [menyimpan, setMenyimpan] = createSignal(false);
+  const [pesanError, setPesanError] = createSignal("");
+  let kolomJumlah;
+  let tombolSimpan;
+
+  const tekanTombol = (e) => {
+    if (e.key === "Escape") return props.onTutup();
+    // Tab berputar di dalam jendela, tidak lari ke halaman di belakangnya:
+    // Tab di Simpan kembali ke kolom Jumlah, Shift+Tab di kolom Jumlah pindah ke Simpan
+    if (e.key !== "Tab") return;
+    if (e.shiftKey && document.activeElement === kolomJumlah) {
+      e.preventDefault();
+      tombolSimpan.focus();
+    } else if (!e.shiftKey && document.activeElement === tombolSimpan) {
+      e.preventDefault();
+      kolomJumlah.focus();
+    }
+  };
+
+  onMount(() => {
+    kolomJumlah.focus(); // langsung bisa mengetik jumlah baru
+    document.addEventListener("keydown", tekanTombol);
+  });
+
+  onCleanup(() => {
+    document.removeEventListener("keydown", tekanTombol);
+  });
+
+  const simpan = async (e) => {
+    e.preventDefault();
+    setPesanError("");
+    setMenyimpan(true);
+    try {
+      await props.onSimpan(Number(jumlah()));
+    } catch (error) {
+      setPesanError(error.message);
+    } finally {
+      setMenyimpan(false);
+    }
+  };
+
+  return (
+    // Portal = dirender langsung di <body>, jadi tidak terpotong layout halaman
+    <Portal>
+      {/* fixed inset-0 = menutupi seluruh layar; bg-black/40 = latar gelap transparan */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        onClick={(e) => e.target === e.currentTarget && props.onTutup()}
+      >
+        <form
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={idJudul}
+          onSubmit={simpan}
+          className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+        >
+          {/* wrap-break-word = nama panjang tanpa spasi tetap turun baris, tidak keluar dari jendela */}
+          <h2 id={idJudul} className="font-serif text-xl font-bold wrap-break-word text-[#39000a]">
+            {props.alat.nama_alat_musik}
+          </h2>
+
+          <label for={idKolom} className="mt-4 mb-1 block text-xs font-semibold text-[#302929]">
+            Jumlah
+          </label>
+          <input
+            id={idKolom}
+            ref={kolomJumlah}
+            type="number"
+            min="1"
+            required
+            value={jumlah()}
+            onInput={(e) => setJumlah(e.currentTarget.value)}
+            className="min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-[#302929] focus:border-[#39000a] focus:ring-1 focus:ring-[#39000a] focus:outline-none"
+          />
+
+          <Show when={pesanError()}>
+            <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {pesanError()}
+            </p>
+          </Show>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => props.onTutup()}
+              className="min-h-11 cursor-pointer rounded-lg px-4 text-sm font-semibold text-[#685856] hover:bg-[#f5efeb] hover:text-[#302929] active:bg-[#ece4df]"
+            >
+              Batal
+            </button>
+            <button
+              ref={tombolSimpan}
+              type="submit"
+              disabled={menyimpan()}
+              className="min-h-11 cursor-pointer rounded-lg bg-[#39000a] px-4 text-sm font-semibold text-white hover:bg-[#5a0c1a] active:bg-[#2a0007] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {menyimpan() ? "Menyimpan..." : "Simpan"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </Portal>
+  );
+}
 
 export default function InternalAlatMusik() {
   const [modalOpen, setModalOpen] = createSignal(false);
@@ -13,7 +140,9 @@ export default function InternalAlatMusik() {
   const [page, setPage] = createSignal(1);
   const pageSize = 15;
 
-  const [alatMusikList, { refetch }] = createResource(listAlatMusik);
+  const [alatMusikList, { refetch, mutate }] = createResource(listAlatMusik);
+  // baris yang sedang diubah jumlahnya; null = jendela Ubah tertutup
+  const [diubah, setDiubah] = createSignal(null);
 
   const totalPages = () => Math.max(1, Math.ceil((alatMusikList()?.length || 0) / pageSize));
 
@@ -68,6 +197,22 @@ export default function InternalAlatMusik() {
     }
   };
 
+  // Tutup jendela Ubah lalu kembalikan fokus ke tombol Ubah baris itu.
+  // Tombolnya dicari ulang lewat id: setelah disimpan barisnya digambar ulang, tombol lamanya sudah hilang.
+  const tutupUbah = () => {
+    const id = diubah()?.id_alat_musik;
+    setDiubah(null);
+    document.getElementById(`ubah-alat-${id}`)?.focus();
+  };
+
+  const simpanJumlah = async (jumlah) => {
+    const id = diubah().id_alat_musik;
+    const baru = await updateAlatMusik(id, { jumlah });
+    // ganti baris itu saja dengan data dari server, tanpa memuat ulang seluruh daftar
+    mutate((daftar) => daftar.map((a) => (a.id_alat_musik === id ? baru : a)));
+    tutupUbah();
+  };
+
   return (
     <div className="w-full">
       {/* Page Header */}
@@ -97,14 +242,15 @@ export default function InternalAlatMusik() {
       <section className="mt-6 rounded-2xl border border-[#f4e2e2] bg-white shadow-sm overflow-hidden">
         {/* Table Column Header */}
         {/* <div className="border-b border-[#f8eaea] px-6 py-4"> */}
-        <div className="grid grid-cols-[1fr_120px_100px] items-center border-b border-[#f8eaea] px-6 py-4">
+        <div className={`grid items-center gap-x-3 border-b border-[#f8eaea] px-6 py-4 ${KOLOM}`}>
           <p className="font-serif text-[11px] font-bold uppercase tracking-[0.18em] text-[#a0822e]">
             Nama Alat Musik
           </p>
           <p className="font-serif text-[11px] font-bold uppercase tracking-[0.18em] text-[#a0822e] text-center">
             Jumlah
           </p>
-          <p className="font-serif text-[11px] font-bold uppercase tracking-[0.18em] text-[#a0822e] text-right">
+          {/* hidden sm:block = judul Aksi hanya di layar sm ke atas; di HP tombolnya ada di baris sendiri */}
+          <p className="hidden font-serif text-[11px] font-bold uppercase tracking-[0.18em] text-[#a0822e] text-right sm:block">
             Aksi
           </p>
         </div>
@@ -135,9 +281,9 @@ export default function InternalAlatMusik() {
               }
             >
               {(item) => (
-                <div className="grid grid-cols-[1fr_120px_100px] items-center px-6 py-3.5 transition-colors hover:bg-[#fdfaf9]">
-                  {/* Nama Alat Musik */}
-                  <span className="text-[15px] font-semibold text-gray-900">
+                <div className={`grid items-center gap-x-3 gap-y-1 px-6 py-2 transition-colors hover:bg-[#fdfaf9] ${KOLOM}`}>
+                  {/* Nama Alat Musik; wrap-break-word = nama panjang turun baris, tidak mendorong kolom lain */}
+                  <span className="text-[15px] font-semibold wrap-break-word text-gray-900">
                     {item.nama_alat_musik}
                   </span>
 
@@ -148,11 +294,19 @@ export default function InternalAlatMusik() {
                     </span>
                   </div>
 
-                  {/* Aksi Column */}
-                  <div className="flex justify-end">
+                  {/* Aksi Column. col-span-2 = di HP memakai lebar penuh di baris bawah; sm:col-span-1 = kembali jadi kolom ketiga */}
+                  <div className="col-span-2 flex justify-end gap-2 sm:col-span-1">
+                    <button
+                      id={`ubah-alat-${item.id_alat_musik}`}
+                      type="button"
+                      onClick={() => setDiubah(item)}
+                      className={TOMBOL_AKSI}
+                    >
+                      <Icon icon={faPen} /> Ubah
+                    </button>
                     <button
                       onClick={() => handleHapus(item.id_alat_musik, item.nama_alat_musik)}
-                      className="rounded-lg border border-[#edd7d7] px-4 py-1.5 text-xs font-semibold text-[#39000a] transition hover:border-[#39000a] hover:bg-rose-50/50"
+                      className={TOMBOL_AKSI}
                     >
                       Hapus
                     </button>
@@ -286,6 +440,11 @@ export default function InternalAlatMusik() {
             </form>
           </div>
         </div>
+      </Show>
+
+      {/* Jendela Ubah jumlah, tampil selama diubah() berisi satu baris */}
+      <Show when={diubah()}>
+        {(alat) => <UbahJumlahModal alat={alat()} onSimpan={simpanJumlah} onTutup={tutupUbah} />}
       </Show>
     </div>
   );
