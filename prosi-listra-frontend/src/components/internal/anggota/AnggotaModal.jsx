@@ -186,23 +186,12 @@ export default function AnggotaModal(props) {
                 </div>
               </div>
 
-              {/* Kata sandi: hanya tampil pada mode Tambah Anggota (bukan Ubah Data) bila yang login Admin atau LISTRA */}
-              <Show when={props.bolehAturPassword && !props.editingId}>
-                <div>
-                  <label class="mb-1 block text-xs font-semibold text-[#302929]">
-                    Kata Sandi
-                  </label>
-                  {/* minLength 8 = sama dengan aturan di backend */}
-                  <input
-                    type="password"
-                    minLength={8}
-                    autocomplete="new-password"
-                    placeholder="Kosongkan untuk memakai password123"
-                    value={props.formData?.password || ""}
-                    onInput={(e) => props.setFormData("password", e.currentTarget.value)}
-                    class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-[#302929] shadow-2xs focus:border-[#4a0e17] focus:ring-1 focus:ring-[#4a0e17] focus:outline-none"
-                  />
-                </div>
+              {/* Catatan kata sandi awal, hanya pada mode Tambah Anggota: kata sandi anggota lain
+                  hanya diganti sysadmin di database (text-xs = huruf kecil, warna teks pendukung) */}
+              <Show when={!props.editingId}>
+                <p class="text-xs text-[#685856]">
+                  Kata sandi awal: password123. Anggota bisa menggantinya di Profil.
+                </p>
               </Show>
 
               {/* Baris 2: NPM & Angkatan */}

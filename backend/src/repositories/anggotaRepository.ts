@@ -42,7 +42,6 @@ export interface AnggotaInput {
   is_penari?: boolean;
   is_pemusik?: boolean;
   is_aktif?: boolean;
-  password_hash?: string;
   spesialisasi_ids?: number[];
 }
 
@@ -68,7 +67,7 @@ function mapAnggotaRow(row: Anggota): Anggota {
   };
 }
 
-// hash bcrypt dari "password123", dipakai bila anggota baru dibuat tanpa kata sandi
+// hash bcrypt dari "password123" = kata sandi awal setiap anggota baru (bisa diganti sendiri di Profil)
 const DEFAULT_PASSWORD_HASH = "$2b$10$51hy9WpPoBTAetHUOAGFFOe.rxh0I4VKAL3TRBMn4Kpvu5TVZ5XL2";
 
 export async function getSpesialisasiList(): Promise<Spesialisasi[]> {
@@ -213,8 +212,6 @@ export async function createAnggota(data: AnggotaInput): Promise<Anggota> {
       }
     }
 
-    const passwordHash = data.password_hash || DEFAULT_PASSWORD_HASH;
-
     const insertAnggotaQuery = `
       INSERT INTO anggota (
         email, password_hash, nama, npm, angkatan_unpar, jabatan, peran, is_penari, is_pemusik, is_aktif
@@ -223,7 +220,7 @@ export async function createAnggota(data: AnggotaInput): Promise<Anggota> {
     `;
     const anggotaResult = await client.query(insertAnggotaQuery, [
       data.email ?? "",
-      passwordHash,
+      DEFAULT_PASSWORD_HASH,
       data.nama,
       data.npm ?? null,
       data.angkatan_unpar ?? null,
@@ -305,11 +302,6 @@ export async function updateAnggota(id: number, data: AnggotaInput): Promise<Ang
       return null;
     }
 
-    // kata sandi hanya diganti bila dikirim (sudah di-hash dan dicek izinnya di controller)
-    if (data.password_hash) {
-      await client.query("UPDATE anggota SET password_hash = $1 WHERE id_anggota = $2", [data.password_hash, id]);
-    }
-
     if (spIds !== undefined) {
       await client.query(`DELETE FROM spesialisasi WHERE id_anggota = $1`, [id]);
       if (spIds.length > 0) {
@@ -358,7 +350,7 @@ export async function cariTerdaftar(emails: string[], npms: string[]): Promise<{
   };
 }
 
-export type AnggotaBulkInput = Omit<AnggotaInput, "spesialisasi_ids" | "password_hash">;
+export type AnggotaBulkInput = Omit<AnggotaInput, "spesialisasi_ids">;
 
 /** Tambah banyak anggota sekaligus dalam satu transaksi: gagal satu = tidak ada yang tersimpan. */
 export async function createAnggotaBulk(list: AnggotaBulkInput[]): Promise<number> {

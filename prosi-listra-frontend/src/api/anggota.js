@@ -13,7 +13,7 @@ async function request(url, options = {}) {
 }
 
 function kirimJson(method, data) {
-  // token login ikut dikirim; backend memakainya untuk cek siapa yang boleh mengatur kata sandi
+  // token login ikut dikirim: semua route /api/anggota wajib login
   const token = localStorage.getItem("listra_token");
   return {
     method,
@@ -23,16 +23,6 @@ function kirimJson(method, data) {
     },
     body: JSON.stringify(data),
   };
-}
-
-/** true bila pengguna yang login berperan Admin atau LISTRA (boleh mengatur kata sandi anggota). */
-export function bolehAturPassword() {
-  try {
-    const user = JSON.parse(localStorage.getItem("listra_user") ?? "null");
-    return ["admin", "listra"].includes(user?.peran);
-  } catch {
-    return false;
-  }
 }
 
 export function listAnggota({ search = "", peran = "", angkatan = "", signal } = {}) {
