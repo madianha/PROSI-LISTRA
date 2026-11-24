@@ -94,17 +94,19 @@ function Pembuka() {
         </div>
       </div>
 
-      <p className={`absolute bottom-6 left-5 max-w-[65%] text-left text-xs text-white/85 sm:left-8 ${muncul()}`}>
-        Tari Bajidor Kahot, penampilan LISTRA UNPAR
-      </p>
-      <button
-        type="button"
-        onClick={ubahPutar}
-        aria-label={berputar() ? "Jeda video" : "Putar video"}
-        className="absolute bottom-4 right-5 grid size-11 cursor-pointer place-items-center rounded-full bg-black/45 text-white hover:bg-black/65 active:bg-black/75 sm:right-8"
-      >
-        <Icon icon={berputar() ? faPause : faPlay} />
-      </button>
+      {/* kiri bawah: tombol jeda (selalu ada, video bergerak harus bisa dihentikan) dan keterangan video (muncul saat digulir).
+          Kanan bawah sengaja kosong: di situ tombol WhatsApp melayang, yang menutupi apa pun di bawahnya */}
+      <div className="absolute bottom-4 left-5 flex items-center gap-3 text-left sm:left-8">
+        <button
+          type="button"
+          onClick={ubahPutar}
+          aria-label={berputar() ? "Jeda video" : "Putar video"}
+          className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-black/45 text-white hover:bg-black/65 active:bg-black/75"
+        >
+          <Icon icon={berputar() ? faPause : faPlay} />
+        </button>
+        <p className={`max-w-52 text-xs text-white/85 ${muncul()}`}>Tari Bajidor Kahot, penampilan LISTRA UNPAR</p>
+      </div>
     </section>
   );
 }
