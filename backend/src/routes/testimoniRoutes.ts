@@ -6,6 +6,7 @@ import {
   listSemua,
   setAktif,
   setStatus,
+  updateTestimoni,
 } from "../controllers/testimoniController";
 import { wajibLogin } from "../middleware/wajibLogin";
 
@@ -19,6 +20,8 @@ router.post("/", createTestimoni);
 router.get("/semua", wajibLogin, listSemua);
 router.patch("/:id/status", wajibLogin, setStatus);
 router.patch("/:id/aktif", wajibLogin, setAktif);
+// ubah dan hapus hanya untuk testimoni yang ditolak
+router.put("/:id", wajibLogin, updateTestimoni);
 router.delete("/:id", wajibLogin, deleteTestimoni);
 
 export default router;

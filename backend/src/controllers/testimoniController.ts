@@ -14,6 +14,13 @@ function parseId(raw: string): number | null {
   return id > 0 && Number.isSafeInteger(id) ? id : null;
 }
 
+/** Sumber yang dipilih pengurus (tambah maupun ubah): kosong = "web"; null = tidak sah. */
+function sumberPengurus(body: Request["body"]): string | null {
+  const sumber = body?.sumber ?? "web";
+  return SUMBER_TESTIMONI.includes(sumber) ? sumber : null;
+}
+const SUMBER_TIDAK_SAH = { message: "Sumber harus web atau whatsapp." };
+
 /** GET /api/testimoni: yang tampil di website (disetujui + aktif). */
 export async function listPublik(_req: Request, res: Response): Promise<void> {
   try {
@@ -36,9 +43,9 @@ export async function listSemua(_req: Request, res: Response): Promise<void> {
 
 /**
  * POST /api/testimoni
- * Pengunjung (tanpa login): selalu masuk sebagai "menunggu", sumber "web", tidak tampil.
- * Pengurus yang login (mis. menyalin testimoni dari WhatsApp): langsung "disetujui",
- * sumber dan is_aktif boleh dipilih.
+ * Semua testimoni baru masuk antrean: "menunggu" dan tidak tampil sampai diterima pengurus.
+ * Pengunjung (tanpa login): wajib lolos Turnstile, sumber selalu "web".
+ * Pengurus yang login (mis. menyalin testimoni dari WhatsApp): tanpa Turnstile, sumber boleh dipilih.
  */
 export async function createTestimoni(req: Request, res: Response): Promise<void> {
   const hasil = validateTestimoni(req.body);
@@ -64,18 +71,61 @@ export async function createTestimoni(req: Request, res: Response): Promise<void
       return;
     }
   } else {
-    const sumber = req.body?.sumber ?? "web";
-    if (!SUMBER_TESTIMONI.includes(sumber)) {
-      res.status(400).json({ message: "Sumber harus web atau whatsapp." });
+    const sumber = sumberPengurus(req.body);
+    if (!sumber) {
+      res.status(400).json(SUMBER_TIDAK_SAH);
       return;
     }
-    extra = { status: "disetujui", sumber, is_aktif: req.body?.is_aktif !== false };
+    extra = { ...extra, sumber };
   }
 
   try {
     res.status(201).json(await repo.createTestimoni(hasil.data, extra));
   } catch (error) {
     console.error("Gagal menyimpan testimoni:", error);
+    res.status(500).json(ERROR_SERVER);
+  }
+}
+
+/**
+ * PUT /api/testimoni/:id (login): ubah testimoni yang ditolak.
+ * Setelah diubah, testimoni masuk antrean lagi ("menunggu", tidak tampil); tanggal_input tetap.
+ */
+export async function updateTestimoni(req: Request, res: Response): Promise<void> {
+  const id = parseId(req.params.id);
+  if (id === null) {
+    res.status(404).json(TIDAK_DITEMUKAN);
+    return;
+  }
+  const hasil = validateTestimoni(req.body);
+  if (!hasil.ok) {
+    res.status(400).json({ message: hasil.message });
+    return;
+  }
+  const sumber = sumberPengurus(req.body);
+  if (!sumber) {
+    res.status(400).json(SUMBER_TIDAK_SAH);
+    return;
+  }
+
+  try {
+    const lama = await repo.getTestimoni(id);
+    if (!lama) {
+      res.status(404).json(TIDAK_DITEMUKAN);
+      return;
+    }
+    if (lama.status !== "ditolak") {
+      res.status(400).json({ message: "Hanya testimoni yang ditolak yang bisa diubah." });
+      return;
+    }
+    const baru = await repo.updateTestimoni(id, hasil.data, { status: "menunggu", sumber, is_aktif: false });
+    if (!baru) {
+      res.status(404).json(TIDAK_DITEMUKAN);
+      return;
+    }
+    res.json(baru);
+  } catch (error) {
+    console.error("Gagal mengubah testimoni:", error);
     res.status(500).json(ERROR_SERVER);
   }
 }
@@ -134,7 +184,7 @@ export async function setAktif(req: Request, res: Response): Promise<void> {
   }
 }
 
-/** DELETE /api/testimoni/:id (login) */
+/** DELETE /api/testimoni/:id (login): hanya yang ditolak; yang diterima cukup disembunyikan. */
 export async function deleteTestimoni(req: Request, res: Response): Promise<void> {
   const id = parseId(req.params.id);
   if (id === null) {
@@ -142,6 +192,15 @@ export async function deleteTestimoni(req: Request, res: Response): Promise<void
     return;
   }
   try {
+    const lama = await repo.getTestimoni(id);
+    if (!lama) {
+      res.status(404).json(TIDAK_DITEMUKAN);
+      return;
+    }
+    if (lama.status !== "ditolak") {
+      res.status(400).json({ message: "Hanya testimoni yang ditolak yang bisa dihapus." });
+      return;
+    }
     if (!(await repo.deleteTestimoni(id))) {
       res.status(404).json(TIDAK_DITEMUKAN);
       return;

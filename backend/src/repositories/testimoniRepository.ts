@@ -39,6 +39,12 @@ export async function listSemua(): Promise<Testimoni[]> {
   return result.rows;
 }
 
+/** Satu testimoni menurut id; null = tidak ditemukan. */
+export async function getTestimoni(id: number): Promise<Testimoni | null> {
+  const result = await pool.query<Testimoni>(`SELECT ${KOLOM} FROM testimoni WHERE id_testimoni = $1`, [id]);
+  return result.rows[0] ?? null;
+}
+
 export async function createTestimoni(
   data: TestimoniInput,
   extra: { status: string; sumber: string; is_aktif: boolean },
@@ -61,6 +67,38 @@ export async function createTestimoni(
     ],
   );
   return result.rows[0];
+}
+
+/**
+ * Simpan isi baru testimoni yang ditolak; tanggal_input tidak diubah.
+ * "AND status = 'ditolak'" = pengaman bila statusnya berubah sesaat sebelum disimpan.
+ * null = tidak ada baris yang diubah.
+ */
+export async function updateTestimoni(
+  id: number,
+  data: TestimoniInput,
+  extra: { status: string; sumber: string; is_aktif: boolean },
+): Promise<Testimoni | null> {
+  const result = await pool.query<Testimoni>(
+    `UPDATE testimoni
+     SET nama_klien = $1, instansi = $2, nama_acara = $3, is_acara_privat = $4, isi_testimoni = $5,
+         rating = $6, status = $7, sumber = $8, is_aktif = $9
+     WHERE id_testimoni = $10 AND status = 'ditolak'
+     RETURNING ${KOLOM}`,
+    [
+      data.nama_klien,
+      data.instansi,
+      data.nama_acara,
+      data.is_acara_privat,
+      data.isi_testimoni,
+      data.rating,
+      extra.status,
+      extra.sumber,
+      extra.is_aktif,
+      id,
+    ],
+  );
+  return result.rows[0] ?? null;
 }
 
 /** Selain "disetujui", testimoni otomatis disembunyikan (is_aktif false). */
@@ -88,7 +126,8 @@ export async function setAktif(id: number, isAktif: boolean): Promise<Testimoni 
   return result.rows[0] ?? null;
 }
 
+/** Hanya testimoni yang ditolak yang terhapus (pengaman yang sama seperti updateTestimoni). */
 export async function deleteTestimoni(id: number): Promise<boolean> {
-  const result = await pool.query("DELETE FROM testimoni WHERE id_testimoni = $1", [id]);
+  const result = await pool.query("DELETE FROM testimoni WHERE id_testimoni = $1 AND status = 'ditolak'", [id]);
   return (result.rowCount ?? 0) > 0;
 }

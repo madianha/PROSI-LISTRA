@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../src/repositories/testimoniRepository", () => ({
   listPublik: vi.fn(),
   listSemua: vi.fn(),
+  getTestimoni: vi.fn(),
   createTestimoni: vi.fn(),
+  updateTestimoni: vi.fn(),
   setStatus: vi.fn(),
   setAktif: vi.fn(),
   deleteTestimoni: vi.fn(),
@@ -96,19 +98,20 @@ describe("POST /api/testimoni", () => {
     expect(verifikasiTurnstile).not.toHaveBeenCalled();
   });
 
-  it("pengurus login: langsung disetujui dan boleh memilih sumber whatsapp", async () => {
-    mocked.createTestimoni.mockResolvedValue(baris);
+  it("pengurus login: tetap menunggu dan tidak tampil, boleh memilih sumber whatsapp, tanpa pemeriksaan bot", async () => {
+    mocked.createTestimoni.mockResolvedValue({ ...baris, status: "menunggu", sumber: "whatsapp", is_aktif: false });
     const res = await request(app)
       .post("/api/testimoni")
       .set("Authorization", login)
-      .send({ ...body, sumber: "whatsapp" });
+      .send({ ...body, sumber: "whatsapp", status: "disetujui", is_aktif: true });
 
     expect(res.status).toBe(201);
     expect(mocked.createTestimoni).toHaveBeenCalledWith(expect.anything(), {
-      status: "disetujui",
+      status: "menunggu",
       sumber: "whatsapp",
-      is_aktif: true,
+      is_aktif: false,
     });
+    expect(verifikasiTurnstile).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -137,6 +140,7 @@ describe("route internal wajib login", () => {
     ["get", "/api/testimoni/semua"],
     ["patch", "/api/testimoni/1/status"],
     ["patch", "/api/testimoni/1/aktif"],
+    ["put", "/api/testimoni/1"],
     ["delete", "/api/testimoni/1"],
   ] as const)("%s %s tanpa login = 401", async (method, url) => {
     const res = await request(app)[method](url).send({});
@@ -193,9 +197,95 @@ describe("PATCH status / aktif, DELETE", () => {
     expect(res.status).toBe(404);
   });
 
-  it("menghapus", async () => {
+  it("menghapus testimoni yang ditolak", async () => {
+    mocked.getTestimoni.mockResolvedValue({ ...baris, status: "ditolak", is_aktif: false });
     mocked.deleteTestimoni.mockResolvedValue(true);
     const res = await request(app).delete("/api/testimoni/1").set("Authorization", login);
     expect(res.status).toBe(204);
+    expect(mocked.deleteTestimoni).toHaveBeenCalledWith(1);
+  });
+
+  it.each(["menunggu", "disetujui"])("testimoni %s tidak bisa dihapus", async (status) => {
+    mocked.getTestimoni.mockResolvedValue({ ...baris, status });
+    const res = await request(app).delete("/api/testimoni/1").set("Authorization", login);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Hanya testimoni yang ditolak yang bisa dihapus.");
+    expect(mocked.deleteTestimoni).not.toHaveBeenCalled();
+  });
+
+  it("menghapus testimoni yang tidak ada = 404", async () => {
+    mocked.getTestimoni.mockResolvedValue(null);
+    const res = await request(app).delete("/api/testimoni/99").set("Authorization", login);
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("Testimoni tidak ditemukan.");
+    expect(mocked.deleteTestimoni).not.toHaveBeenCalled();
+  });
+});
+
+describe("PUT /api/testimoni/:id (ubah testimoni yang ditolak)", () => {
+  const ditolak = { ...baris, status: "ditolak", is_aktif: false };
+  const ubahan = {
+    nama_klien: "Ibu Ratna Sari",
+    instansi: "PT Nusantara Jaya",
+    nama_acara: "Malam Puncak",
+    is_acara_privat: true,
+    isi_testimoni: "Tariannya rapi dan memukau.",
+    rating: 4,
+    sumber: "whatsapp",
+  };
+
+  it("ditolak: isi diperbarui, kembali menunggu dan tidak tampil, baris baru dikembalikan", async () => {
+    mocked.getTestimoni.mockResolvedValue(ditolak);
+    const hasil = { ...ditolak, ...ubahan, status: "menunggu" };
+    mocked.updateTestimoni.mockResolvedValue(hasil);
+
+    const res = await request(app)
+      .put("/api/testimoni/1")
+      .set("Authorization", login)
+      // status, is_aktif, dan tanggal_input dari body diabaikan
+      .send({ ...ubahan, status: "disetujui", is_aktif: true, tanggal_input: "2020-01-01" });
+
+    expect(res.status).toBe(200);
+    expect(mocked.updateTestimoni).toHaveBeenCalledWith(
+      1,
+      {
+        nama_klien: "Ibu Ratna Sari",
+        instansi: "PT Nusantara Jaya",
+        nama_acara: "Malam Puncak",
+        is_acara_privat: true,
+        isi_testimoni: "Tariannya rapi dan memukau.",
+        rating: 4,
+      },
+      { status: "menunggu", sumber: "whatsapp", is_aktif: false },
+    );
+    expect(res.body).toEqual(hasil);
+  });
+
+  it.each(["menunggu", "disetujui"])("testimoni %s tidak bisa diubah", async (status) => {
+    mocked.getTestimoni.mockResolvedValue({ ...baris, status });
+    const res = await request(app).put("/api/testimoni/1").set("Authorization", login).send(ubahan);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Hanya testimoni yang ditolak yang bisa diubah.");
+    expect(mocked.updateTestimoni).not.toHaveBeenCalled();
+  });
+
+  it("testimoni yang tidak ada = 404", async () => {
+    mocked.getTestimoni.mockResolvedValue(null);
+    const res = await request(app).put("/api/testimoni/99").set("Authorization", login).send(ubahan);
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("Testimoni tidak ditemukan.");
+    expect(mocked.updateTestimoni).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ ...ubahan, nama_klien: " " }, "Nama wajib diisi."],
+    [{ ...ubahan, rating: 9 }, "Rating harus 1 sampai 5."],
+    [{ ...ubahan, sumber: "email" }, "Sumber harus web atau whatsapp."],
+  ])("menolak data tidak valid (%#)", async (kirim, pesan) => {
+    mocked.getTestimoni.mockResolvedValue(ditolak);
+    const res = await request(app).put("/api/testimoni/1").set("Authorization", login).send(kirim);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe(pesan);
+    expect(mocked.updateTestimoni).not.toHaveBeenCalled();
   });
 });

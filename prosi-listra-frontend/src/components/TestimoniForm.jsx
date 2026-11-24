@@ -12,22 +12,24 @@ const LABEL = "mb-1 block text-xs font-semibold text-[#302929]";
 /**
  * Jendela form testimoni.
  * props.judul    = judul jendela
- * props.internal = (opsional) tampilkan pilihan Sumber dan Tampilkan, untuk pengurus.
+ * props.awal     = (opsional) baris testimoni yang diubah; isinya mengisi form
+ * props.internal = (opsional) tampilkan pilihan Sumber, untuk pengurus.
  *                  Form publik (bukan internal) wajib lolos centang "bukan robot" (Turnstile).
  * props.onKirim  = async (data) => ..., lempar Error bila gagal (pesannya ditampilkan)
  * props.onTutup  = dipanggil saat Batal, Esc, atau klik di luar jendela
  */
 export default function TestimoniForm(props) {
   const idJudul = createUniqueId();
+  // dibaca sekali saat jendela dibuka; tanpa props.awal = form kosong
+  const awal = props.awal ?? {};
   const [data, setData] = createSignal({
-    nama_klien: "",
-    instansi: "",
-    nama_acara: "",
-    is_acara_privat: false,
-    rating: null,
-    isi_testimoni: "",
-    sumber: "whatsapp",
-    is_aktif: true,
+    nama_klien: awal.nama_klien ?? "",
+    instansi: awal.instansi ?? "",
+    nama_acara: awal.nama_acara ?? "",
+    is_acara_privat: awal.is_acara_privat ?? false,
+    rating: awal.rating ?? null,
+    isi_testimoni: awal.isi_testimoni ?? "",
+    sumber: awal.sumber ?? "whatsapp",
   });
   const [mengirim, setMengirim] = createSignal(false);
   const [pesanError, setPesanError] = createSignal("");
@@ -89,8 +91,8 @@ export default function TestimoniForm(props) {
         is_acara_privat: d.is_acara_privat,
         rating: d.rating,
         isi_testimoni: d.isi_testimoni,
-        // sumber & is_aktif hanya dipakai backend bila pengirimnya login
-        ...(props.internal ? { sumber: d.sumber, is_aktif: d.is_aktif } : { turnstile_token: token() }),
+        // sumber hanya dipakai backend bila pengirimnya login
+        ...(props.internal ? { sumber: d.sumber } : { turnstile_token: token() }),
       });
     } catch (error) {
       setPesanError(error.message);
@@ -231,7 +233,8 @@ export default function TestimoniForm(props) {
               />
             </div>
 
-            {/* Khusus pengurus: dari mana testimoni ini, dan langsung tampil atau tidak */}
+            {/* Khusus pengurus: dari mana testimoni ini. Tampil atau tidak diatur setelah diterima.
+                sm:grid-cols-2 = kolom Sumber selebar kolom Instansi di atasnya */}
             <Show when={props.internal}>
               <div className="grid gap-3.5 border-t border-[#f0dedf] pt-3.5 sm:grid-cols-2">
                 <div>
@@ -248,15 +251,6 @@ export default function TestimoniForm(props) {
                     <option value="web">Web</option>
                   </select>
                 </div>
-                <label className="flex min-h-11 cursor-pointer items-center gap-2 self-end text-sm text-[#302929]">
-                  <input
-                    type="checkbox"
-                    checked={data().is_aktif}
-                    onChange={(e) => ubah("is_aktif", e.currentTarget.checked)}
-                    className="size-4 accent-[#39000a]"
-                  />
-                  Langsung tampil di website
-                </label>
               </div>
             </Show>
           </div>
