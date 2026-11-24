@@ -1,76 +1,107 @@
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { Match, Show, Switch } from "solid-js";
+import { faImage, faPlay } from "@fortawesome/free-solid-svg-icons";
+import GambarSampul from "./GambarSampul";
 import Icon from "./Icon";
 
+export const formatRupiah = (angka) => `Rp ${Number(angka).toLocaleString("id-ID")}`;
+
+/**
+ * "Rp 3.000.000 – Rp 6.000.000"; satu sisi saja bila sisi lainnya kosong.
+ * whitespace-nowrap = satu angka tidak terpotong ke baris berikutnya; pindah baris hanya di tanda "–".
+ */
+export function RentangHarga(props) {
+  return (
+    <Switch fallback="Hubungi untuk harga">
+      <Match when={props.min != null && props.max != null}>
+        <span className="whitespace-nowrap">{formatRupiah(props.min)}</span> –{" "}
+        <span className="whitespace-nowrap">{formatRupiah(props.max)}</span>
+      </Match>
+      <Match when={props.min != null}>
+        <span className="whitespace-nowrap">{formatRupiah(props.min)}</span>
+      </Match>
+      <Match when={props.max != null}>
+        <span className="whitespace-nowrap">{formatRupiah(props.max)}</span>
+      </Match>
+    </Switch>
+  );
+}
+
+/** "tari" -> "Tari" */
+export const namaTipeJasa = (tipe) => (tipe ? tipe.charAt(0).toUpperCase() + tipe.slice(1).toLowerCase() : "Jasa");
+
+/**
+ * Kartu jasa di Beranda dan halaman Jasa. props = satu baris dari /api/jasa.
+ * props.prioritas = (opsional) foto dimuat langsung, untuk kartu yang terlihat tanpa scroll
+ */
 export default function CatalogueCard(props) {
-  const title = () => props.nama || "";
   const detailHref = () => props.detailHref || `/jasa/${props.id_jasa ?? ""}`;
-  const type = () => props.tipe_jasa
-    ? props.tipe_jasa.charAt(0).toUpperCase() + props.tipe_jasa.slice(1).toLowerCase()
-    : "Jasa";
-  const price = () => {
-    const formatRupiah = (amount) => `Rp ${Number(amount).toLocaleString("id-ID")}`;
-    const min = props.harga_minimum;
-    const max = props.harga_maximum;
-    if (min != null && max != null) return `${formatRupiah(min)} – ${formatRupiah(max)}`;
-    if (min != null) return formatRupiah(min);
-    if (max != null) return formatRupiah(max);
-    return "Hubungi untuk harga";
-  };
 
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-[18px] border border-[#f1dddd] bg-white shadow-[0_6px_18px_rgba(65,20,29,0.07)]">
+    <article className="flex h-full flex-col overflow-hidden rounded-xl border border-[#f0dedf] bg-white">
       {/* Foto = tautan ke detail jasa; video hanya diputar di halaman detail (/jasa/:id).
-          tabIndex -1 + aria-hidden: pengguna keyboard & pembaca layar memakai tombol "Lihat Detail" di bawah */}
+          tabIndex -1 + aria-hidden: pengguna keyboard & pembaca layar memakai tombol "Lihat Detail" di bawah.
+          aspect-[16/10] = tinggi foto selalu proporsional dengan lebarnya */}
       <a
         href={detailHref()}
         tabIndex={-1}
         aria-hidden="true"
-        className="relative block h-40 shrink-0 overflow-hidden bg-gradient-to-br from-[#4a151d] via-[#21070c] to-[#100205]"
+        className="relative block aspect-[16/10] overflow-hidden bg-[#ece4df]"
       >
-        {props.link_image && (
-          <img src={props.link_image} alt={title()} className="h-full w-full object-cover" />
-        )}
+        <Show
+          when={props.link_image}
+          fallback={
+            <span className="flex h-full items-center justify-center text-2xl text-[#948280]">
+              <Icon icon={faImage} />
+            </span>
+          }
+        >
+          <GambarSampul src={props.link_image} loading={props.prioritas ? "eager" : "lazy"} class="h-full w-full object-cover" />
+        </Show>
         {/* penanda: jasa ini punya video (bukan tombol putar) */}
-        {props.link_media && (
-          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-xs font-semibold text-white">
+        <Show when={props.link_media}>
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white">
             <Icon icon={faPlay} class="text-[10px]" /> Video
           </span>
-        )}
+        </Show>
       </a>
 
-      <div className="flex flex-1 flex-col px-4 pb-4 pt-4">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm sm:text-base">
-          <span className="rounded-full border border-[#f5d5d6] bg-[#fff0f1] px-3 py-1 font-medium text-[#54141d]">
-            Kategori: {type()}
-          </span>
-          <span className="text-[#9b8885]">{props.nama_provinsi || "Nusantara"}</span>
-        </div>
-
-        {props.kecocokan?.length > 0 && (
-          <p className="mt-2 flex flex-wrap items-center gap-2 text-sm sm:text-base">
-            <span className="text-[#9b8885]">Cocok untuk</span>
-            <span className="rounded-full border border-[#e6cfcf] bg-[#fffafa] px-3 py-1 text-[#6d5554]">
-              {props.kecocokan.join(", ")}
-            </span>
+      <div className="flex flex-1 flex-col p-5">
+        <p className="text-sm text-[#685856]">
+          {namaTipeJasa(props.tipe_jasa)} <span aria-hidden="true">·</span> <span>{props.nama_provinsi || "Nusantara"}</span>
+        </p>
+        <h3 className="mt-1 font-serif text-xl font-bold leading-snug text-[#39000a]">{props.nama}</h3>
+        <Show when={props.deskripsi}>
+          {/* line-clamp-3 = deskripsi panjang dipotong di baris ke-3, kartu tetap sejajar */}
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4f4140]">{props.deskripsi}</p>
+        </Show>
+        <Show when={props.kecocokan?.length > 0}>
+          <p className="mt-3 text-sm text-[#685856]">
+            Cocok untuk: <span className="text-[#302929]">{props.kecocokan.join(", ")}</span>
           </p>
-        )}
+        </Show>
 
-        <h2 className="mt-4 font-serif text-xl font-bold leading-tight text-[#54141d] sm:text-2xl">{title()}</h2>
-        <p className="mt-3 text-sm leading-6 text-[#9b8885] sm:text-base">{props.deskripsi || ""}</p>
-
-        <div className="mt-auto pt-4">
-          <div className="rounded-xl border border-[#f5e0e1] bg-[#fff0f1] px-4 py-3">
-            <p className="font-serif text-lg font-bold leading-relaxed text-[#54141d] sm:text-xl">{price()}</p>
-            <p className="text-sm text-[#9b8885]">/ penampilan</p>
-            {props.min_performer != null && <p className="mt-1 text-sm text-[#9b8885]">Minimal {props.min_performer} performer</p>}
+        {/* mt-auto = harga dan tombol selalu menempel di bawah kartu */}
+        <div className="mt-auto pt-5">
+          <div className="border-t border-[#f0dedf] pt-4">
+            <p className="font-serif text-lg font-bold text-[#39000a]">
+              <RentangHarga min={props.harga_minimum} max={props.harga_maximum} />
+            </p>
+            <p className="text-sm text-[#685856]">per penampilan</p>
+            <Show when={props.min_performer != null}>
+              <p className="text-sm text-[#685856]">Minimal {props.min_performer} penampil</p>
+            </Show>
+            {/* durasi disimpan dalam menit (dikonfirmasi pengurus LISTRA) */}
+            <Show when={props.durasi != null}>
+              <p className="text-sm text-[#685856]">Durasi {props.durasi} menit</p>
+            </Show>
           </div>
           <a
             href={detailHref()}
             // label untuk pembaca layar: nama jasa & ada/tidaknya video
-            aria-label={`Lihat Detail ${title()}${props.link_media ? ", ada video" : ""}`}
-            className="mt-3 flex min-h-12 items-center justify-center rounded-xl border border-[#e6cfcf] px-4 text-base font-semibold text-[#54141d] transition hover:bg-[#fffafa]"
+            aria-label={`Lihat Detail ${props.nama}${props.link_media ? ", ada video" : ""}`}
+            className="mt-4 flex min-h-11 items-center justify-center rounded-lg border border-[#d9c3c3] px-4 text-sm font-semibold text-[#54141d] transition-colors hover:bg-[#fff0f1] active:bg-[#f9e3e4]"
           >
-            Lihat Detail →
+            Lihat Detail
           </a>
         </div>
       </div>

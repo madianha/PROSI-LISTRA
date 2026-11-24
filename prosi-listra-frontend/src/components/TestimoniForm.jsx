@@ -36,13 +36,45 @@ export default function TestimoniForm(props) {
   let turnstile;
   const ubah = (kolom, nilai) => setData((d) => ({ ...d, [kolom]: nilai }));
   let kolomPertama;
+  let jendela;
+  let fokusSebelumnya;
 
-  const tekanEsc = (e) => e.key === "Escape" && props.onTutup();
+  // Esc menutup jendela; Tab berputar di dalam jendela (tidak lari ke halaman di belakangnya)
+  const tekanTombol = (e) => {
+    if (e.key === "Escape") return props.onTutup();
+    if (e.key !== "Tab" || !jendela) return;
+    const bisaFokus = [
+      ...jendela.querySelectorAll(
+        "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, [tabindex]:not([tabindex='-1'])",
+      ),
+    ];
+    if (bisaFokus.length === 0) return;
+    const pertama = bisaFokus[0];
+    const terakhir = bisaFokus[bisaFokus.length - 1];
+    if (!jendela.contains(document.activeElement)) {
+      e.preventDefault();
+      pertama.focus();
+    } else if (e.shiftKey && document.activeElement === pertama) {
+      e.preventDefault();
+      terakhir.focus();
+    } else if (!e.shiftKey && document.activeElement === terakhir) {
+      e.preventDefault();
+      pertama.focus();
+    }
+  };
   onMount(() => {
+    fokusSebelumnya = document.activeElement;
     kolomPertama.focus();
-    document.addEventListener("keydown", tekanEsc);
+    document.addEventListener("keydown", tekanTombol);
+    // halaman di belakang jendela tidak ikut tergulir
+    document.body.style.overflow = "hidden";
   });
-  onCleanup(() => document.removeEventListener("keydown", tekanEsc));
+  onCleanup(() => {
+    document.removeEventListener("keydown", tekanTombol);
+    document.body.style.overflow = "";
+    // fokus kembali ke tombol yang tadi membuka jendela
+    fokusSebelumnya?.focus?.();
+  });
 
   const kirim = async (e) => {
     e.preventDefault();
@@ -78,6 +110,7 @@ export default function TestimoniForm(props) {
         onClick={(e) => e.target === e.currentTarget && props.onTutup()}
       >
         <form
+          ref={jendela}
           role="dialog"
           aria-modal="true"
           aria-labelledby={idJudul}
@@ -235,7 +268,11 @@ export default function TestimoniForm(props) {
             </div>
           </Show>
 
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="mt-6 flex items-center justify-end gap-2">
+            {/* form publik: jelaskan kenapa Kirim belum bisa ditekan; mr-auto = teks di kiri, tombol di kanan */}
+            <Show when={!props.internal && !token()}>
+              <p className="mr-auto text-xs text-[#685856]">Kirim aktif setelah verifikasi di atas selesai.</p>
+            </Show>
             <button
               type="button"
               onClick={() => props.onTutup()}

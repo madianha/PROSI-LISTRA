@@ -1,11 +1,12 @@
 import { A } from "@solidjs/router";
-import { createMemo, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
 import { faChevronLeft, faChevronRight, faLocationDot } from "@fortawesome/free-solid-svg-icons";
 import CustomHeader from "../components/CustomHeader";
 import Icon from "../components/Icon";
-import KalenderBulan, { KeteranganTipe } from "../components/KalenderBulan";
+import KalenderBulan, { KeteranganTipe, WARNA_TIPE } from "../components/KalenderBulan";
 import { listJadwal } from "../api/acara";
-import { bulanDari, formatBulan, formatJam, formatRentang, formatTanggal, geserBulan, gridBulan, hariIni, rentangBulan } from "../utils/kalender";
+import { bulanDari, formatBulan, formatJam, formatRentang, formatTanggal, geserBulan, gridBulan, hariIni, NAMA_TIPE, rentangBulan } from "../utils/kalender";
+import { useJudulHalaman } from "../utils/judulHalaman";
 
 /**
  * Jadwal Acara publik (UC-04): event per bulan dengan tanggal dan jam per hari.
@@ -14,6 +15,7 @@ import { bulanDari, formatBulan, formatJam, formatRentang, formatTanggal, geserB
 export default function Jadwal() {
   const [bulan, setBulan] = createSignal(bulanDari(hariIni()));
   const [dipilih, setDipilih] = createSignal(null);
+  useJudulHalaman(() => "Jadwal Acara");
   // ambil semua event yang tampil di kotak kalender (termasuk hari bulan sebelah)
   const rentangGrid = createMemo(() => {
     const grid = gridBulan(bulan());
@@ -26,18 +28,43 @@ export default function Jadwal() {
     const { dari, sampai } = rentangBulan(bulan());
     return semua().filter((a) => a.acara_jasa.some((r) => r.tanggal >= dari && r.tanggal <= sampai));
   });
+  // gulir ke kartu acara; halus, kecuali pengguna meminta gerakan dikurangi (pengaturan sistem)
+  const gulirKe = (kartu) => {
+    const kurangiGerak = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    kartu.scrollIntoView({ behavior: kurangiGerak ? "auto" : "smooth", block: "center" });
+  };
+  // acara dari bulan sebelah (kotak abu-abu di kalender) belum punya kartu di daftar bulan ini:
+  // pindah ke bulan acara itu dulu, lalu gulir setelah daftarnya tampil
+  const [menungguGulir, setMenungguGulir] = createSignal(null);
   const pilih = (id) => {
     setDipilih(id);
-    document.getElementById(`jadwal-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const kartu = document.getElementById(`jadwal-${id}`);
+    if (kartu) return gulirKe(kartu);
+    const tanggalPertama = semua()
+      .find((a) => a.id_acara === id)
+      ?.acara_jasa.map((r) => r.tanggal)
+      .sort()[0];
+    if (!tanggalPertama) return;
+    setMenungguGulir(id);
+    setBulan(bulanDari(tanggalPertama));
   };
+  createEffect(() => {
+    const id = menungguGulir();
+    if (id == null || jadwal.loading) return;
+    const kartu = document.getElementById(`jadwal-${id}`);
+    if (kartu) {
+      setMenungguGulir(null);
+      gulirKe(kartu);
+    }
+  });
 
   return (
     <>
-      <CustomHeader category="Agenda" pageName="Jadwal Acara" colorText="text-white">
+      <CustomHeader pageName="Jadwal Acara">
         <p>Tanggal dan jam pertunjukan LISTRA. Acara pribadi klien ditampilkan sebagai "Acara privat".</p>
       </CustomHeader>
 
-      <main className="mx-auto w-full max-w-4xl bg-[#fffafa] px-5 py-8 sm:px-8">
+      <div className="mx-auto w-full max-w-4xl px-5 py-8 sm:px-8">
         <div className="flex items-center justify-center gap-2">
           <button
             type="button"
@@ -96,7 +123,11 @@ export default function Jadwal() {
                         id={`jadwal-${a.id_acara}`}
                         className={`rounded-xl border bg-white p-4 sm:p-5 ${dipilih() === a.id_acara ? "border-[#54141d] ring-1 ring-[#54141d]" : "border-[#f0d9d8]"}`}
                       >
-                        <h3 className="font-serif text-lg font-bold text-[#54141d]">{a.nama_acara}</h3>
+                        {/* label jenis acara memakai warna yang sama dengan kalender dan keterangannya */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <h3 className="font-serif text-lg font-bold text-[#54141d]">{a.nama_acara}</h3>
+                          <span className={`rounded px-2 py-0.5 text-xs ${WARNA_TIPE[a.tipe_acara]}`}>{NAMA_TIPE[a.tipe_acara]}</span>
+                        </div>
                         <p className="mt-1 text-sm text-[#7d6966]">
                           {formatRentang(hari[0], hari[hari.length - 1])}
                           <Show when={a.lokasi}>
@@ -115,7 +146,8 @@ export default function Jadwal() {
                                 {/* jasa aktif bisa dibuka detailnya; jasa nonaktif hanya ditulis namanya */}
                                 <Show when={r.jasa}>
                                   <Show when={r.jasa.is_aktif} fallback={<span className="text-[#7d6966]">{r.jasa.nama}</span>}>
-                                    <A href={`/jasa/${r.jasa.id_jasa}`} className="font-medium text-[#54141d] underline-offset-2 hover:underline">
+                                    {/* selalu bergaris bawah: tautan tidak dibedakan dari teks lain hanya lewat warna */}
+                                    <A href={`/jasa/${r.jasa.id_jasa}`} className="font-medium text-[#54141d] underline underline-offset-2 hover:decoration-2">
                                       {r.jasa.nama}
                                     </A>
                                   </Show>
@@ -133,7 +165,7 @@ export default function Jadwal() {
             </Match>
           </Switch>
         </div>
-      </main>
+      </div>
     </>
   );
 }

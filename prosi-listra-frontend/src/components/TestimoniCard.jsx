@@ -1,4 +1,6 @@
-import { Show } from "solid-js";
+import { For, Show } from "solid-js";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
+import Icon from "./Icon";
 
 /**
  * Kartu testimoni. props = satu baris dari tabel testimoni.
@@ -16,27 +18,34 @@ export default function TestimoniCard(props) {
       : "";
 
   return (
-    <article className="w-full max-w-md rounded-[14px] border border-[#f0d9d8] bg-white px-4 py-4 shadow-[0_4px_14px_rgba(84,20,29,0.06)]">
-      <p className="text-xs text-[#947c79]">{date()}</p>
+    // figure + blockquote + figcaption = kutipan beserta siapa yang mengatakannya
+    <figure className="flex h-full w-full flex-col rounded-xl border border-[#f0dedf] bg-white p-5">
       <Show when={rating() > 0}>
-        <div className="flex items-center gap-2" aria-label={`Rating ${rating()} dari 5`}>
-          <span className="tracking-[-0.08em] text-[#2d2020]" aria-hidden="true">
-            {"★".repeat(rating())}{"☆".repeat(5 - rating())}
+        {/* role="img" + aria-label = pembaca layar mendengar "Rating 4 dari 5", bukan lima ikon bintang */}
+        <div role="img" aria-label={`Rating ${rating()} dari 5`} className="flex items-center gap-2">
+          <span className="flex gap-0.5 text-sm">
+            <For each={[1, 2, 3, 4, 5]}>
+              {(n) => <Icon icon={faStar} class={n <= rating() ? "text-[#c99a1a]" : "text-[#e3d6d3]"} />}
+            </For>
           </span>
-          <span className="font-serif text-sm text-[#8d7774]">{rating()} / 5</span>
+          <span className="text-sm text-[#685856]">{rating()} / 5</span>
         </div>
       </Show>
 
-      <p className="mt-3 text-sm leading-5 text-[#302929]">{props.isi_testimoni}</p>
-      <p className="mt-2 text-sm font-bold leading-5 text-[#302929]">{props.nama_klien}</p>
-      <Show when={props.instansi}>
-        <p className="text-sm leading-5 text-[#947c79]">{props.instansi}</p>
-      </Show>
-      <Show when={props.is_acara_privat || props.nama_acara}>
-        <p className="mt-1 text-sm leading-5 text-[#947c79]">
-          Acara: {props.is_acara_privat ? "Acara privat" : props.nama_acara}
-        </p>
-      </Show>
-    </article>
+      <blockquote className="mt-3 flex-1 text-sm leading-6 text-[#302929]">{props.isi_testimoni}</blockquote>
+
+      <figcaption className="mt-4 border-t border-[#f0dedf] pt-3 text-sm leading-5">
+        <p className="font-semibold text-[#302929]">{props.nama_klien}</p>
+        <Show when={props.instansi}>
+          <p className="text-[#685856]">{props.instansi}</p>
+        </Show>
+        <Show when={props.is_acara_privat || props.nama_acara}>
+          <p className="text-[#685856]">Acara: {props.is_acara_privat ? "Acara privat" : props.nama_acara}</p>
+        </Show>
+        <Show when={date()}>
+          <p className="mt-1 text-xs text-[#685856]">{date()}</p>
+        </Show>
+      </figcaption>
+    </figure>
   );
 }

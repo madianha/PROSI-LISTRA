@@ -3,3 +3,10 @@
 html {
   scrollbar-gutter: stable;
 }
+
+/* menu publik menempel di atas (tinggi 4rem = 64px, lihat Navbar.jsx): elemen isi halaman yang dipilih
+   dengan Tab digulir sampai di bawah menu, tidak tertutup olehnya. Hanya untuk isi (main, footer), bukan
+   untuk menu itu sendiri, supaya memilih tautan menu saat halaman sudah digulir tidak membuat halaman melompat */
+:where(main, footer) * {
+  scroll-margin-top: 4rem;
+}
