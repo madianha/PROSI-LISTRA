@@ -1,5 +1,5 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
-import { faCheck, faPlus, faTrash, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faPen, faPlus, faTrash, faXmark } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../components/Icon";
 import TestimoniForm from "../../components/TestimoniForm";
 import KonfirmasiModal from "../../components/internal/KonfirmasiModal";
@@ -10,6 +10,7 @@ import {
   listSemuaTestimoni,
   setAktifTestimoni,
   setStatusTestimoni,
+  ubahTestimoni,
 } from "../../api/testimoni";
 
 const FILTER = [
@@ -35,6 +36,7 @@ function formatTanggal(iso) {
 
 /**
  * Halaman Kelola Testimoni.
+ * Testimoni baru (dari website maupun Tambah Testimoni) masuk antrean sebagai Ditunggu.
  * Tampil di website hanya bila status Disetujui DAN saklar Tampil menyala.
  */
 export default function InternalTestimoni() {
@@ -44,6 +46,8 @@ export default function InternalTestimoni() {
   const [menyimpan, setMenyimpan] = createSignal(null);
   const [pesanError, setPesanError] = createSignal("");
   const [formTerbuka, setFormTerbuka] = createSignal(false);
+  // testimoni Ditolak yang sedang diubah di jendela form; null = jendela tertutup
+  const [formUbah, setFormUbah] = createSignal(null);
   // { id, nama } menunggu konfirmasi hapus; null = jendela tertutup
   const [konfirmasiHapus, setKonfirmasiHapus] = createSignal(null);
 
@@ -176,8 +180,8 @@ export default function InternalTestimoni() {
 
                     {/* Aksi per status:
                         Ditunggu = Terima / Tolak (belum pernah diputuskan)
-                        Diterima = saklar Tampil + Hapus
-                        Ditolak  = hanya Hapus */}
+                        Diterima = hanya saklar Tampil (bisa disembunyikan, tidak bisa dihapus)
+                        Ditolak  = Ubah (lalu kembali Ditunggu) / Hapus */}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#f0dedf] pt-2">
                       <div className="flex items-center gap-2">
                         <Show when={t.status === "disetujui"}>
@@ -210,7 +214,15 @@ export default function InternalTestimoni() {
                             <Icon icon={faXmark} class="text-xs" /> Tolak
                           </button>
                         </Show>
-                        <Show when={t.status !== "menunggu"}>
+                        <Show when={t.status === "ditolak"}>
+                          <button
+                            type="button"
+                            disabled={menyimpan() === t.id_testimoni}
+                            onClick={() => setFormUbah(t)}
+                            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm text-[#54141d] hover:bg-[#fff7f6] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Icon icon={faPen} class="text-xs" /> Ubah
+                          </button>
                           <button
                             type="button"
                             disabled={menyimpan() === t.id_testimoni}
@@ -230,7 +242,7 @@ export default function InternalTestimoni() {
         </Switch>
       </div>
 
-      {/* Tambah testimoni yang diterima lewat WhatsApp / langsung; tersimpan sebagai Disetujui */}
+      {/* Tambah testimoni yang diterima lewat WhatsApp / langsung; masuk antrean sebagai Ditunggu */}
       <Show when={formTerbuka()}>
         <TestimoniForm
           judul="Tambah Testimoni"
@@ -242,6 +254,24 @@ export default function InternalTestimoni() {
             setFormTerbuka(false);
           }}
         />
+      </Show>
+
+      {/* Ubah testimoni yang ditolak; setelah disimpan kembali ke antrean sebagai Ditunggu */}
+      <Show when={formUbah()}>
+        {(baris) => (
+          <TestimoniForm
+            judul="Ubah Testimoni"
+            internal
+            awal={baris()}
+            onTutup={() => setFormUbah(null)}
+            onKirim={async (data) => {
+              const id = baris().id_testimoni;
+              const baru = await ubahTestimoni(id, data);
+              mutate((daftar) => daftar.map((t) => (t.id_testimoni === id ? baru : t)));
+              setFormUbah(null);
+            }}
+          />
+        )}
       </Show>
 
       <Show when={konfirmasiHapus()}>

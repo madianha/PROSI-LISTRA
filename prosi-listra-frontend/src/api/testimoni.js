@@ -34,11 +34,16 @@ export function listSemuaTestimoni() {
 }
 
 /**
- * Kirim testimoni baru.
- * Pengunjung: masuk sebagai "menunggu". Pengurus yang login: langsung disetujui.
+ * Kirim testimoni baru. Selalu masuk antrean "menunggu" (belum tampil) sampai diterima pengurus,
+ * baik dari pengunjung maupun dari pengurus yang login.
  */
 export function kirimTestimoni(data) {
   return request("/api/testimoni", kirimJson("POST", data));
+}
+
+/** Ubah testimoni yang ditolak (wajib login); setelah disimpan kembali menjadi "menunggu". */
+export function ubahTestimoni(id, data) {
+  return request(`/api/testimoni/${id}`, kirimJson("PUT", data));
 }
 
 export function setStatusTestimoni(id, status) {
