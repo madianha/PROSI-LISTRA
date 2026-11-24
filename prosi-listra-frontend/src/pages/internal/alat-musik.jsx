@@ -29,8 +29,13 @@ function UbahJumlahModal(props) {
   let kolomJumlah;
   let tombolSimpan;
 
+  // selama menyimpan, jendela tidak bisa ditutup: hasil simpanan (termasuk pesan error) harus tetap terlihat
+  const tutup = () => {
+    if (!menyimpan()) props.onTutup();
+  };
+
   const tekanTombol = (e) => {
-    if (e.key === "Escape") return props.onTutup();
+    if (e.key === "Escape") return tutup();
     // Tab berputar di dalam jendela, tidak lari ke halaman di belakangnya:
     // Tab di Simpan kembali ke kolom Jumlah, Shift+Tab di kolom Jumlah pindah ke Simpan
     if (e.key !== "Tab") return;
@@ -71,7 +76,7 @@ function UbahJumlahModal(props) {
       {/* fixed inset-0 = menutupi seluruh layar; bg-black/40 = latar gelap transparan */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-        onClick={(e) => e.target === e.currentTarget && props.onTutup()}
+        onClick={(e) => e.target === e.currentTarget && tutup()}
       >
         <form
           role="dialog"
@@ -108,8 +113,9 @@ function UbahJumlahModal(props) {
           <div className="mt-6 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => props.onTutup()}
-              className="min-h-11 cursor-pointer rounded-lg px-4 text-sm font-semibold text-[#685856] hover:bg-[#f5efeb] hover:text-[#302929] active:bg-[#ece4df]"
+              onClick={tutup}
+              disabled={menyimpan()}
+              className="min-h-11 cursor-pointer rounded-lg px-4 text-sm font-semibold text-[#685856] hover:bg-[#f5efeb] hover:text-[#302929] active:bg-[#ece4df] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Batal
             </button>

@@ -127,6 +127,28 @@ describe("Internal Alat Musik - ubah jumlah", () => {
     expect(updateAlatMusik).not.toHaveBeenCalled();
   });
 
+  it("selama menyimpan, Esc, klik di luar, dan Batal tidak menutup jendela; error yang datang belakangan tetap terlihat", async () => {
+    // simpanan yang belum selesai: baru gagal saat test memanggil gagal()
+    let gagal;
+    updateAlatMusik.mockReturnValue(new Promise((_, tolak) => (gagal = tolak)));
+    renderRoute(InternalAlatMusik);
+    await screen.findByText("Angklung");
+
+    fireEvent.click(tombolUbah("Angklung"));
+    const jendela = screen.getByRole("dialog", { name: "Angklung" });
+    fireEvent.input(within(jendela).getByLabelText("Jumlah"), { target: { value: "20" } });
+    fireEvent.click(within(jendela).getByRole("button", { name: "Simpan" }));
+    await waitFor(() => expect(updateAlatMusik).toHaveBeenCalled());
+
+    fireEvent.keyDown(document.activeElement, { key: "Escape" });
+    fireEvent.click(jendela.parentElement);
+    fireEvent.click(within(jendela).getByRole("button", { name: "Batal" }));
+    expect(screen.getByRole("dialog", { name: "Angklung" })).toBe(jendela);
+
+    gagal(new Error("Koneksi terputus."));
+    expect((await within(jendela).findByRole("alert")).textContent).toBe("Koneksi terputus.");
+  });
+
   it("Tab tetap di dalam jendela, tidak pindah ke halaman di belakang", async () => {
     renderRoute(InternalAlatMusik);
     await screen.findByText("Angklung");
