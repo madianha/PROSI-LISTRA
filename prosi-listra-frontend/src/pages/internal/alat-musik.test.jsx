@@ -5,11 +5,12 @@ import { renderRoute } from "../../test/renderRoute";
 vi.mock("../../api/alatMusik", () => ({
   listAlatMusik: vi.fn(),
   createAlatMusik: vi.fn(),
+  updateAlatMusik: vi.fn(),
   deleteAlatMusik: vi.fn(),
 }));
 
 import InternalAlatMusik from "./alat-musik";
-import { createAlatMusik, listAlatMusik } from "../../api/alatMusik";
+import { createAlatMusik, listAlatMusik, updateAlatMusik } from "../../api/alatMusik";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -50,5 +51,39 @@ describe("Internal Alat Musik", () => {
     fireEvent.click(screen.getByRole("button", { name: "Simpan" }));
 
     expect(await screen.findByText("Alat musik dengan nama tersebut sudah ada.")).toBeTruthy();
+  });
+
+  it("membuka modal ubah dan memperbarui jumlah alat musik", async () => {
+    updateAlatMusik.mockResolvedValue({ id_alat_musik: 1, nama_alat_musik: "Kendang", jumlah: 5 });
+    renderRoute(InternalAlatMusik);
+    await screen.findByText("Kendang");
+
+    const ubahButtons = screen.getAllByRole("button", { name: "Ubah" });
+    fireEvent.click(ubahButtons[0]);
+
+    expect(screen.getByRole("heading", { name: "Ubah Alat Musik" })).toBeTruthy();
+
+    const jumlahInput = screen.getByRole("spinbutton");
+    expect(jumlahInput.value).toBe("2");
+    fireEvent.input(jumlahInput, { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan Perubahan" }));
+
+    await waitFor(() =>
+      expect(updateAlatMusik).toHaveBeenCalledWith(1, { nama_alat_musik: "Kendang", jumlah: 5 })
+    );
+    await waitFor(() => expect(listAlatMusik).toHaveBeenCalledTimes(2));
+  });
+
+  it("pesan error server tampil di modal ubah bila gagal", async () => {
+    updateAlatMusik.mockRejectedValue(new Error("Jumlah minimal 1."));
+    renderRoute(InternalAlatMusik);
+    await screen.findByText("Kendang");
+
+    const ubahButtons = screen.getAllByRole("button", { name: "Ubah" });
+    fireEvent.click(ubahButtons[0]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan Perubahan" }));
+
+    expect(await screen.findByText("Jumlah minimal 1.")).toBeTruthy();
   });
 });

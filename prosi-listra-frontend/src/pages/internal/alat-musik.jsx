@@ -1,5 +1,5 @@
 import { createResource, createSignal, For, Show } from "solid-js";
-import { createAlatMusik, deleteAlatMusik, listAlatMusik } from "../../api/alatMusik";
+import { createAlatMusik, deleteAlatMusik, listAlatMusik, updateAlatMusik } from "../../api/alatMusik";
 
 export default function InternalAlatMusik() {
   const [modalOpen, setModalOpen] = createSignal(false);
@@ -7,6 +7,14 @@ export default function InternalAlatMusik() {
   const [jumlahBaru, setJumlahBaru] = createSignal(1);
   const [loadingAction, setLoadingAction] = createSignal(false);
   const [errorMsg, setErrorMsg] = createSignal("");
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = createSignal(false);
+  const [editId, setEditId] = createSignal(null);
+  const [editNama, setEditNama] = createSignal("");
+  const [editJumlah, setEditJumlah] = createSignal(1);
+  const [loadingEdit, setLoadingEdit] = createSignal(false);
+  const [editErrorMsg, setEditErrorMsg] = createSignal("");
 
   // Pagination state (15 items per page matches the mockup list)
   // Pagination state (15 items per page)
@@ -54,6 +62,35 @@ export default function InternalAlatMusik() {
     }
   };
 
+  const handleBukaEdit = (item) => {
+    setEditId(item.id_alat_musik);
+    setEditNama(item.nama_alat_musik);
+    setEditJumlah(item.jumlah ?? 1);
+    setEditErrorMsg("");
+    setEditModalOpen(true);
+  };
+
+  const handleSimpanEdit = async (e) => {
+    e.preventDefault();
+    if (!editNama().trim()) return;
+
+    setLoadingEdit(true);
+    setEditErrorMsg("");
+    try {
+      await updateAlatMusik(editId(), {
+        nama_alat_musik: editNama().trim(),
+        jumlah: Number(editJumlah()) || 1,
+      });
+
+      setEditModalOpen(false);
+      await refetch();
+    } catch (err) {
+      setEditErrorMsg(err.message || "Gagal memperbarui alat musik.");
+    } finally {
+      setLoadingEdit(false);
+    }
+  };
+
   const handleHapus = async (id, nama) => {
     if (!confirm(`Hapus alat musik "${nama}"?`)) return;
 
@@ -97,7 +134,7 @@ export default function InternalAlatMusik() {
       <section className="mt-6 rounded-2xl border border-[#f4e2e2] bg-white shadow-sm overflow-hidden">
         {/* Table Column Header */}
         {/* <div className="border-b border-[#f8eaea] px-6 py-4"> */}
-        <div className="grid grid-cols-[1fr_120px_100px] items-center border-b border-[#f8eaea] px-6 py-4">
+        <div className="grid grid-cols-[1fr_120px_160px] items-center border-b border-[#f8eaea] px-6 py-4">
           <p className="font-serif text-[11px] font-bold uppercase tracking-[0.18em] text-[#a0822e]">
             Nama Alat Musik
           </p>
@@ -135,7 +172,7 @@ export default function InternalAlatMusik() {
               }
             >
               {(item) => (
-                <div className="grid grid-cols-[1fr_120px_100px] items-center px-6 py-3.5 transition-colors hover:bg-[#fdfaf9]">
+                <div className="grid grid-cols-[1fr_120px_160px] items-center px-6 py-3.5 transition-colors hover:bg-[#fdfaf9]">
                   {/* Nama Alat Musik */}
                   <span className="text-[15px] font-semibold text-gray-900">
                     {item.nama_alat_musik}
@@ -143,16 +180,29 @@ export default function InternalAlatMusik() {
 
                   {/* Jumlah Column */}
                   <div className="flex justify-center">
-                    <span className="inline-flex items-center justify-center rounded-full bg-[#fdf5f5] px-3 py-0.5 text-xs font-bold text-[#39000a] border border-[#f4dede]">
+                    <button
+                      type="button"
+                      onClick={() => handleBukaEdit(item)}
+                      title="Klik untuk mengubah jumlah atau nama alat musik"
+                      className="inline-flex items-center justify-center rounded-full bg-[#fdf5f5] px-3 py-0.5 text-xs font-bold text-[#39000a] border border-[#f4dede] transition hover:bg-[#fae8e8] hover:border-[#39000a] cursor-pointer"
+                    >
                       {item.jumlah ?? 1}
-                    </span>
+                    </button>
                   </div>
 
                   {/* Aksi Column */}
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
                     <button
+                      type="button"
+                      onClick={() => handleBukaEdit(item)}
+                      className="rounded-lg border border-[#dbc0c0] px-3 py-1.5 text-xs font-semibold text-[#39000a] transition hover:border-[#39000a] hover:bg-rose-50/50"
+                    >
+                      Ubah
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleHapus(item.id_alat_musik, item.nama_alat_musik)}
-                      className="rounded-lg border border-[#edd7d7] px-4 py-1.5 text-xs font-semibold text-[#39000a] transition hover:border-[#39000a] hover:bg-rose-50/50"
+                      className="rounded-lg border border-[#edd7d7] px-3 py-1.5 text-xs font-semibold text-[#39000a] transition hover:border-[#39000a] hover:bg-rose-50/50"
                     >
                       Hapus
                     </button>
@@ -281,6 +331,85 @@ export default function InternalAlatMusik() {
                   className="rounded-lg bg-[#39000a] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#520914] disabled:opacity-50"
                 >
                   {loadingAction() ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Show>
+
+      {/* Modal Ubah Alat Musik */}
+      <Show when={editModalOpen()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setEditModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-[#FDFBF9] p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[#eee0e0] pb-4">
+              <h2 className="font-serif text-xl font-bold text-[#39000a]">
+                Ubah Alat Musik
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSimpanEdit} className="mt-4 flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#a0822e]">
+                  Nama Alat Musik
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Kendang, Bonang, Saron..."
+                  value={editNama()}
+                  onInput={(e) => setEditNama(e.currentTarget.value)}
+                  className="mt-1.5 w-full rounded-lg border border-[#dbc0c0] bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a0822e]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#a0822e]">
+                  Jumlah
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={editJumlah()}
+                  onInput={(e) => setEditJumlah(parseInt(e.currentTarget.value, 10) || 1)}
+                  className="mt-1.5 w-full rounded-lg border border-[#dbc0c0] bg-white px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#a0822e]"
+                />
+              </div>
+
+              <Show when={editErrorMsg()}>
+                <p className="rounded-lg bg-rose-50 p-3 text-xs font-semibold text-rose-700">
+                  {editErrorMsg()}
+                </p>
+              </Show>
+
+              <div className="mt-2 flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="rounded-lg border border-[#39000a] px-4 py-2 text-sm font-semibold text-[#39000a] transition hover:bg-rose-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={loadingEdit()}
+                  className="rounded-lg bg-[#39000a] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#520914] disabled:opacity-50"
+                >
+                  {loadingEdit() ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </form>
