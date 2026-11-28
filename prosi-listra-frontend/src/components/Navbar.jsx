@@ -44,14 +44,13 @@ export default function Navbar() {
         onKeyDown={(e) => e.key === "Escape" && setMenuTerbuka(false)}
         className="px-5 sm:px-8"
       >
-        {/* jarak tepi di luar, lebar maksimal di dalam: sama dengan isi halaman dan footer, jadi tepi kirinya sejajar */}
-        <div className="mx-auto max-w-[1110px]">
+        {/* logo dan menu membentang ke sisi kiri dan kanan navbar */}
         <div className="flex min-h-16 items-center justify-between gap-4">
           {/* logo + nama = satu tautan ke Beranda; gambar alt="" karena namanya sudah ada di label */}
           <A href="/" end aria-label="LISTRA UNPAR, ke Beranda" class="flex min-h-11 items-center gap-1.5">
-            <img src={logoListra} alt="" width="32" height="32" className="size-8 object-contain" />
-            <img src={logoUnpar} alt="" width="32" height="32" className="size-8 object-contain" />
-            <span className="ml-1 font-serif text-lg font-bold">LISTRA</span>
+            <img src={logoListra} alt="" width="36" height="36" className="size-9 object-contain" />
+            <img src={logoUnpar} alt="" width="36" height="36" className="size-9 object-contain" />
+            <span className="ml-1 font-serif text-xl font-bold">LISTRA</span>
           </A>
 
           {/* menu layar sm ke atas; after: = garis emas di bawah menu halaman yang sedang dibuka */}
@@ -62,7 +61,7 @@ export default function Navbar() {
                   <A
                     href={menu.href}
                     end={menu.end}
-                    class="relative inline-flex min-h-11 items-center px-3 text-sm transition-colors after:absolute after:inset-x-3 after:bottom-1.5 after:h-0.5 after:bg-[#d4af37] hover:text-white"
+                    class="relative inline-flex min-h-11 items-center px-3 text-base transition-colors after:absolute after:inset-x-3 after:bottom-1.5 after:h-0.5 after:bg-[#d4af37] hover:text-white"
                     activeClass="font-semibold text-white after:opacity-100"
                     inactiveClass="text-white/80 after:opacity-0"
                   >
@@ -85,7 +84,6 @@ export default function Navbar() {
             <Icon icon={menuTerbuka() ? faXmark : faBars} />
           </button>
         </div>
-
         {/* menu HP: daftar bersusun, tampil saat tombol menu ditekan.
             max-h-[calc(100svh-4rem)] + overflow-y-auto = di layar pendek (mis. laptop di-zoom besar) daftarnya
             digulir di dalam menu, karena menu menempel dan tidak ikut tergulir bersama halaman;
@@ -101,7 +99,7 @@ export default function Navbar() {
                 <A
                   href={menu.href}
                   end={menu.end}
-                  class="flex min-h-11 items-center rounded-lg px-3 text-base"
+                  class="flex min-h-11 items-center rounded-lg px-3 text-lg"
                   activeClass="bg-[#5a0c1a] font-semibold text-white shadow-[inset_3px_0_0_#d4af37]"
                   inactiveClass="text-white/80 hover:bg-white/5 hover:text-white"
                 >
@@ -111,7 +109,6 @@ export default function Navbar() {
             )}
           </For>
         </ul>
-        </div>
       </nav>
     </header>
   );
