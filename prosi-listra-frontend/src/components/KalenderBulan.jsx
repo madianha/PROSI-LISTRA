@@ -63,7 +63,7 @@ export default function KalenderBulan(props) {
                       // truncate = nama panjang dipotong dengan "..."
                       className={`block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${
                         a.status === "dibatalkan"
-                          ? "bg-stone-200 text-stone-600 line-through"
+                          ? "border border-stone-300 bg-stone-100 text-stone-700"
                           : WARNA_TIPE[a.tipe_acara]
                       }`}
                     >

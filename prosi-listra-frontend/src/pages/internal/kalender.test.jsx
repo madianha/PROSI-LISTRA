@@ -108,7 +108,7 @@ describe("Kalender Event", () => {
     expect(screen.getByRole("button", { name: "Coba lagi" })).toBeTruthy();
   });
 
-  it("event dibatalkan tetap tampil di kalender internal dengan lencana Dibatalkan dan gaya dicoret", async () => {
+  it("event dibatalkan tetap tampil di kalender internal dengan lencana Dibatalkan tanpa coretan judul", async () => {
     const batal = {
       ...seminar,
       id_acara: 3,
@@ -120,10 +120,12 @@ describe("Kalender Event", () => {
     renderRoute(InternalKalender);
 
     const judul = await screen.findByRole("heading", { name: "Konser Batal" });
-    expect(judul.className).toMatch(/line-through/);
+    expect(judul.className).not.toMatch(/line-through/);
     expect(screen.getByText("Dibatalkan")).toBeTruthy();
     expect(screen.getByText(/Klien membatalkan/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Konser Batal" }).className).toMatch(/line-through/);
+    const tombolKalender = screen.getByRole("button", { name: "Konser Batal" });
+    expect(tombolKalender.className).not.toMatch(/line-through/);
+    expect(tombolKalender.getAttribute("title")).toBe("Konser Batal (Dibatalkan)");
   });
 });
 
@@ -147,14 +149,20 @@ describe("Detail Event", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Batalkan event/ }));
     expect(cancelAcara).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog").textContent).toMatch(/tetap tercatat.*Dibatalkan/i);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toMatch(/Batalkan Event/);
+    expect(dialog.textContent).toMatch(/0\/500/);
 
     fireEvent.input(screen.getByLabelText(/Alasan pembatalan/i), { target: { value: "Klien menjadwal ulang" } });
-    fireEvent.click(screen.getByRole("button", { name: "Ya, batalkan" }));
+    expect(dialog.textContent).toMatch(/21\/500/);
+    fireEvent.click(screen.getByRole("button", { name: "Ya, Batalkan Event" }));
 
     await waitFor(() => expect(cancelAcara).toHaveBeenCalledWith(1, "Klien menjadwal ulang"));
-    expect(await screen.findByText("Dibatalkan")).toBeTruthy();
-    expect(screen.getByText(/Alasan pembatalan: Klien menjadwal ulang/)).toBeTruthy();
+    expect(await screen.findByText("Acara Dibatalkan")).toBeTruthy();
+    expect(screen.getByText("Dibatalkan")).toBeTruthy();
+    expect(screen.getByText(/Dibatalkan pada/)).toBeTruthy();
+    expect(screen.getByText(/Klien menjadwal ulang/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Pembukaan Seminar" }).className).not.toMatch(/line-through/);
     expect(screen.queryByRole("button", { name: /Ubah event/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Batalkan event/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Atur performer/ })).toBeNull();
