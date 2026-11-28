@@ -183,19 +183,29 @@ export default function InternalKalender() {
                 {(a) => (
                   <li
                     id={`acara-${a.id_acara}`}
-                    className={`rounded-xl border bg-white p-4 ${dipilih() === a.id_acara ? "border-[#39000a] ring-1 ring-[#39000a]" : "border-[#f0dedf]"}`}
+                    className={`rounded-xl border p-4 ${
+                      a.status === "dibatalkan"
+                        ? "border-[#e6d5d5] border-l-4 border-l-red-700 bg-[#faf7f6]"
+                        : "border-[#f0dedf] bg-white"
+                    } ${dipilih() === a.id_acara ? "border-[#39000a] ring-1 ring-[#39000a]" : ""}`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           <span className={`rounded px-2 py-0.5 ${WARNA_TIPE[a.tipe_acara]}`}>{NAMA_TIPE[a.tipe_acara]}</span>
+                          <Show when={a.status === "dibatalkan"}>
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 font-semibold text-red-800">
+                              <span className="size-1.5 rounded-full bg-red-600" aria-hidden="true" />
+                              Dibatalkan
+                            </span>
+                          </Show>
                           <Show when={a.is_privat}>
                             <span className="inline-flex items-center gap-1 text-[#685856]">
                               <Icon icon={faEyeSlash} /> Nama disembunyikan di publik
                             </span>
                           </Show>
                         </div>
-                        <h3 className="mt-1 font-semibold text-[#302929]">{a.nama_acara}</h3>
+                        <h3 className="mt-1.5 font-semibold text-[#302929]">{a.nama_acara}</h3>
                         <p className="text-sm text-[#685856]">
                           {formatRentang(a.tanggal_mulai, a.tanggal_selesai)}
                           <Show when={a.lokasi}>
@@ -204,15 +214,22 @@ export default function InternalKalender() {
                           </Show>
                         </p>
                         <p className="mt-1 text-sm text-[#685856]">PJ: {namaPj(a)}</p>
+                        <Show when={a.status === "dibatalkan" && a.alasan_batal}>
+                          <p className="mt-1.5 text-xs text-[#685856]">
+                            <span className="font-semibold text-[#302929]">Alasan:</span> {a.alasan_batal}
+                          </p>
+                        </Show>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <WarnaKecukupan kecukupan={a.kecukupan} />
+                        <Show when={a.status !== "dibatalkan"}>
+                          <WarnaKecukupan kecukupan={a.kecukupan} />
+                        </Show>
                         <A
                           href={`/internal/kalender/${a.id_acara}`}
-                          aria-label={`Kelola acara ${a.nama_acara}`}
-                          className="inline-flex min-h-11 items-center rounded-lg border border-[#e6cfcf] px-4 text-sm font-semibold text-[#54141d] hover:bg-[#fdf7f7]"
+                          aria-label={`${a.status === "dibatalkan" ? "Lihat detail" : "Kelola acara"} ${a.nama_acara}`}
+                          className="inline-flex min-h-11 items-center rounded-lg border border-[#e6cfcf] bg-white px-4 text-sm font-semibold text-[#54141d] hover:bg-[#fdf7f7]"
                         >
-                          Kelola acara
+                          {a.status === "dibatalkan" ? "Lihat detail" : "Kelola acara"}
                         </A>
                       </div>
                     </div>

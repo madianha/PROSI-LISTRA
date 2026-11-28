@@ -29,6 +29,8 @@ export interface AcaraJasa {
   acara_performer: AcaraPerformer[];
 }
 
+export type StatusAcara = "aktif" | "dibatalkan";
+
 export interface Acara {
   id_acara: number;
   tipe_acara: "job_external" | "listra";
@@ -36,6 +38,9 @@ export interface Acara {
   nama_klien: string | null;
   lokasi: string | null;
   is_privat: boolean;
+  status: StatusAcara;
+  alasan_batal: string | null;
+  cancelled_at: string | null;
   acara_pj: { id_anggota: number; nama: string; jabatan: string | null }[];
   acara_jasa: AcaraJasa[];
   // turunan (tidak disimpan)
@@ -66,9 +71,31 @@ export interface RentangTanggal {
 
 type Queryable = { query: typeof pool.query };
 
+let schemaSiap: Promise<void> | null = null;
+
+/** Pastikan kolom soft-delete tersedia di database lokal lama tanpa perlu migrasi manual. */
+export function ensureAcaraSchema(): Promise<void> {
+  if (!schemaSiap) {
+    schemaSiap = pool
+      .query(
+        `ALTER TABLE acara
+           ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'aktif',
+           ADD COLUMN IF NOT EXISTS alasan_batal TEXT,
+           ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`
+      )
+      .then(() => undefined)
+      .catch((err) => {
+        schemaSiap = null;
+        throw err;
+      });
+  }
+  return schemaSiap;
+}
+
 const SELECT_ACARA = `
   SELECT
     a.id_acara, a.tipe_acara, a.nama_acara, a.nama_klien, a.lokasi, a.is_privat,
+    a.status, a.alasan_batal, a.cancelled_at,
     COALESCE((
       SELECT json_agg(json_build_object('id_anggota', an.id_anggota, 'nama', an.nama, 'jabatan', an.jabatan)
                       ORDER BY an.nama)
@@ -154,6 +181,9 @@ export function lengkapiAcara(row: any): Acara {
     nama_klien: row.nama_klien ?? null,
     lokasi: row.lokasi ?? null,
     is_privat: Boolean(row.is_privat),
+    status: row.status === "dibatalkan" ? "dibatalkan" : "aktif",
+    alasan_batal: row.alasan_batal ?? null,
+    cancelled_at: row.cancelled_at ? new Date(row.cancelled_at).toISOString() : null,
     acara_pj: row.acara_pj ?? [],
     acara_jasa: acaraJasa,
     tanggal_mulai: tanggal[0] ?? null,
@@ -163,6 +193,7 @@ export function lengkapiAcara(row: any): Acara {
 }
 
 export async function listAcara(rentang: RentangTanggal = {}): Promise<Acara[]> {
+  await ensureAcaraSchema();
   const values: unknown[] = [];
   const where = filterRentang(rentang, values);
   const result = await pool.query(`${SELECT_ACARA} ${where} ${URUT_TANGGAL}`, values);
@@ -170,14 +201,17 @@ export async function listAcara(rentang: RentangTanggal = {}): Promise<Acara[]> 
 }
 
 export async function getAcaraById(id: number, db: Queryable = pool): Promise<Acara | null> {
+  if (db === pool) await ensureAcaraSchema();
   const result = await db.query(`${SELECT_ACARA} WHERE a.id_acara = $1`, [id]);
   return result.rows[0] ? lengkapiAcara(result.rows[0]) : null;
 }
 
-/** Jadwal publik: tanpa Nama Client, PJ, dan performer; nama & lokasi acara privat disamarkan di SQL. */
+/** Jadwal publik: tanpa event dibatalkan, Nama Client, PJ, dan performer; nama & lokasi acara privat disamarkan di SQL. */
 export async function listJadwalPublik(rentang: RentangTanggal = {}): Promise<JadwalPublik[]> {
+  await ensureAcaraSchema();
   const values: unknown[] = [];
-  const where = filterRentang(rentang, values);
+  const whereRentang = filterRentang(rentang, values);
+  const where = whereRentang ? `${whereRentang} AND a.status <> 'dibatalkan'` : "WHERE a.status <> 'dibatalkan'";
   const result = await pool.query(
     `SELECT
        a.id_acara, a.tipe_acara, a.is_privat,
@@ -274,7 +308,18 @@ async function simpanIsiAcara(client: Queryable, idAcara: number, data: AcaraInp
   }
 }
 
+export type HasilUpdateAcara =
+  | { status: "ok"; acara: Acara }
+  | { status: "not_found" }
+  | { status: "cancelled" };
+
+export type HasilCancelAcara =
+  | { status: "ok"; acara: Acara }
+  | { status: "not_found" }
+  | { status: "already_cancelled" };
+
 export async function createAcara(data: AcaraInput): Promise<Acara> {
+  await ensureAcaraSchema();
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -297,23 +342,29 @@ export async function createAcara(data: AcaraInput): Promise<Acara> {
   }
 }
 
-export async function updateAcara(id: number, data: AcaraInput): Promise<Acara | null> {
+export async function updateAcara(id: number, data: AcaraInput): Promise<HasilUpdateAcara> {
+  await ensureAcaraSchema();
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const updated = await client.query(
+    const cek = await client.query("SELECT status FROM acara WHERE id_acara = $1 FOR UPDATE", [id]);
+    if (cek.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return { status: "not_found" };
+    }
+    if (cek.rows[0].status === "dibatalkan") {
+      await client.query("ROLLBACK");
+      return { status: "cancelled" };
+    }
+    await client.query(
       `UPDATE acara SET tipe_acara = $1, nama_acara = $2, nama_klien = $3, lokasi = $4, is_privat = $5
        WHERE id_acara = $6`,
       [data.tipe_acara, data.nama_acara, data.nama_klien, data.lokasi, data.is_privat, id]
     );
-    if (updated.rowCount === 0) {
-      await client.query("ROLLBACK");
-      return null;
-    }
     await simpanIsiAcara(client, id, data);
     const acara = await getAcaraById(id, client);
     await client.query("COMMIT");
-    return acara;
+    return { status: "ok", acara: acara as Acara };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -322,8 +373,34 @@ export async function updateAcara(id: number, data: AcaraInput): Promise<Acara |
   }
 }
 
-/** acara_pj, acara_jasa, dan acara_performer ikut terhapus (ON DELETE CASCADE). */
-export async function deleteAcara(id: number): Promise<boolean> {
-  const result = await pool.query("DELETE FROM acara WHERE id_acara = $1", [id]);
-  return (result.rowCount ?? 0) > 0;
+/** Soft-delete: tandai event dibatalkan tanpa menghapus riwayat beserta relasinya. */
+export async function cancelAcara(id: number, alasanBatal: string | null = null): Promise<HasilCancelAcara> {
+  await ensureAcaraSchema();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const cek = await client.query("SELECT status FROM acara WHERE id_acara = $1 FOR UPDATE", [id]);
+    if (cek.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return { status: "not_found" };
+    }
+    if (cek.rows[0].status === "dibatalkan") {
+      await client.query("ROLLBACK");
+      return { status: "already_cancelled" };
+    }
+    await client.query(
+      `UPDATE acara
+       SET status = 'dibatalkan', alasan_batal = $2, cancelled_at = NOW()
+       WHERE id_acara = $1`,
+      [id, alasanBatal]
+    );
+    const acara = await getAcaraById(id, client);
+    await client.query("COMMIT");
+    return { status: "ok", acara: acara as Acara };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createAcara, deleteAcara, listAcara, listJadwal } from "./acara";
+import { cancelAcara, createAcara, listAcara, listJadwal } from "./acara";
 
 const ok = (body, status = 200) => new Response(body === null ? null : JSON.stringify(body), { status });
 
@@ -57,9 +57,16 @@ describe("api acara", () => {
     expect(JSON.parse(options.body)).toEqual({ nama_acara: "" });
   });
 
-  it("deleteAcara: 204 = null", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ok(null, 204)));
-    await expect(deleteAcara(9)).resolves.toBeNull();
+  it("cancelAcara mengirim PATCH /cancel dengan alasan opsional", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok({ id_acara: 9, status: "dibatalkan", alasan_batal: "Jadwal berubah" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const hasil = await cancelAcara(9, "  Jadwal berubah  ");
+    expect(hasil.status).toBe("dibatalkan");
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/acara/9/cancel");
+    expect(options.method).toBe("PATCH");
+    expect(JSON.parse(options.body)).toEqual({ alasan_batal: "Jadwal berubah" });
   });
 
   it("server mati: pesan bahasa Indonesia", async () => {

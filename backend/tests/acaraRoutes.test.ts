@@ -11,7 +11,7 @@ vi.mock("../src/repositories/acaraRepository", async (importOriginal) => {
     getAcaraById: vi.fn(),
     createAcara: vi.fn(),
     updateAcara: vi.fn(),
-    deleteAcara: vi.fn(),
+    cancelAcara: vi.fn(),
     getStatusAnggota: vi.fn(),
     getAnggotaTerlibat: vi.fn(),
   };
@@ -83,6 +83,7 @@ describe("/api/acara wajib login", () => {
     ["get", "/api/acara/1"],
     ["post", "/api/acara"],
     ["put", "/api/acara/1"],
+    ["patch", "/api/acara/1/cancel"],
     ["delete", "/api/acara/1"],
   ])("%s %s tanpa token = 401", async (method, url) => {
     const res = await (request(app) as any)[method](url).send(body);
@@ -171,7 +172,7 @@ describe("PUT /api/acara/:id", () => {
   it("anggota yang sudah tercatat di event ini tidak dicek ulang (boleh sudah nonaktif)", async () => {
     mocked.getAnggotaTerlibat.mockResolvedValue([7]);
     mocked.getStatusAnggota.mockResolvedValue([aktif(2, "humas")]);
-    mocked.updateAcara.mockResolvedValue(acaraJadi);
+    mocked.updateAcara.mockResolvedValue({ status: "ok", acara: acaraJadi });
 
     const res = await request(app).put("/api/acara/9").set("Authorization", login).send(body);
 
@@ -181,17 +182,68 @@ describe("PUT /api/acara/:id", () => {
   });
 
   it("event tidak ada = 404", async () => {
-    mocked.updateAcara.mockResolvedValue(null);
+    mocked.updateAcara.mockResolvedValue({ status: "not_found" });
     const res = await request(app).put("/api/acara/99").set("Authorization", login).send(body);
     expect(res.status).toBe(404);
   });
+
+  it("event yang sudah dibatalkan tidak dapat diubah = 400", async () => {
+    mocked.updateAcara.mockResolvedValue({ status: "cancelled" });
+    const res = await request(app).put("/api/acara/9").set("Authorization", login).send(body);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/sudah dibatalkan/i);
+  });
 });
 
-describe("DELETE /api/acara/:id", () => {
-  it("terhapus = 204, tidak ada = 404", async () => {
-    mocked.deleteAcara.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    expect((await request(app).delete("/api/acara/9").set("Authorization", login)).status).toBe(204);
-    expect((await request(app).delete("/api/acara/9").set("Authorization", login)).status).toBe(404);
+describe("PATCH /api/acara/:id/cancel & DELETE /api/acara/:id (soft delete)", () => {
+  const acaraDibatalkan = {
+    ...acaraJadi,
+    status: "dibatalkan" as const,
+    alasan_batal: "Klien menjadwal ulang",
+    cancelled_at: "2026-11-28T05:00:00.000Z",
+  };
+
+  it("PATCH /cancel: menandai dibatalkan dengan alasan opsional; ulang batal = 400; tidak ada = 404", async () => {
+    mocked.cancelAcara
+      .mockResolvedValueOnce({ status: "ok", acara: acaraDibatalkan })
+      .mockResolvedValueOnce({ status: "already_cancelled" })
+      .mockResolvedValueOnce({ status: "not_found" });
+
+    const ok = await request(app)
+      .patch("/api/acara/9/cancel")
+      .set("Authorization", login)
+      .send({ alasan_batal: "  Klien menjadwal ulang  " });
+    expect(ok.status).toBe(200);
+    expect(ok.body.status).toBe("dibatalkan");
+    expect(ok.body.alasan_batal).toBe("Klien menjadwal ulang");
+    expect(mocked.cancelAcara).toHaveBeenCalledWith(9, "Klien menjadwal ulang");
+
+    const duplikat = await request(app).patch("/api/acara/9/cancel").set("Authorization", login).send({});
+    expect(duplikat.status).toBe(400);
+    expect(duplikat.body.message).toMatch(/sudah dibatalkan/i);
+
+    const hilang = await request(app).patch("/api/acara/99/cancel").set("Authorization", login).send({});
+    expect(hilang.status).toBe(404);
+  });
+
+  it("DELETE /api/acara/:id menjalankan soft-delete yang sama (bukan hard delete)", async () => {
+    mocked.cancelAcara
+      .mockResolvedValueOnce({ status: "ok", acara: { ...acaraDibatalkan, alasan_batal: null } })
+      .mockResolvedValueOnce({ status: "already_cancelled" });
+
+    const res = await request(app).delete("/api/acara/9").set("Authorization", login);
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("dibatalkan");
+    expect(mocked.cancelAcara).toHaveBeenCalledWith(9, null);
+
+    const ulang = await request(app).delete("/api/acara/9").set("Authorization", login);
+    expect(ulang.status).toBe(400);
+  });
+
+  it("alasan_batal bukan teks = 400 tanpa menyentuh repository", async () => {
+    const res = await request(app).patch("/api/acara/9/cancel").set("Authorization", login).send({ alasan_batal: 123 });
+    expect(res.status).toBe(400);
+    expect(mocked.cancelAcara).not.toHaveBeenCalled();
   });
 });
 

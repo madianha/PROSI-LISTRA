@@ -7,14 +7,14 @@ vi.mock("../../api/acara", () => ({
   getAcara: vi.fn(),
   createAcara: vi.fn(),
   updateAcara: vi.fn(),
-  deleteAcara: vi.fn(),
+  cancelAcara: vi.fn(),
 }));
 vi.mock("../../api/anggota", () => ({ listAnggota: vi.fn(async () => []) }));
 vi.mock("../../api/jasa", () => ({ listJasa: vi.fn(async () => []) }));
 
 import InternalKalender from "./kalender";
 import InternalAcaraDetail from "./acara-detail";
-import { deleteAcara, getAcara, listAcara } from "../../api/acara";
+import { cancelAcara, getAcara, listAcara } from "../../api/acara";
 
 const performer = (id_anggota, nama) => ({ id_acara_performer: id_anggota, id_anggota, nama_performer: null, anggota: { nama, jabatan: null, peran: "anggota" } });
 
@@ -107,12 +107,37 @@ describe("Kalender Event", () => {
     expect(await screen.findByText(/Kalender belum bisa dimuat/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Coba lagi" })).toBeTruthy();
   });
+
+  it("event dibatalkan tetap tampil di kalender internal dengan lencana Dibatalkan tanpa coretan judul", async () => {
+    const batal = {
+      ...seminar,
+      id_acara: 3,
+      nama_acara: "Konser Batal",
+      status: "dibatalkan",
+      alasan_batal: "Klien membatalkan",
+    };
+    listAcara.mockResolvedValue([seminar, batal]);
+    renderRoute(InternalKalender);
+
+    const judul = await screen.findByRole("heading", { name: "Konser Batal" });
+    expect(judul.className).not.toMatch(/line-through/);
+    expect(screen.getByText("Dibatalkan")).toBeTruthy();
+    expect(screen.getByText(/Klien membatalkan/)).toBeTruthy();
+    const tombolKalender = screen.getByRole("button", { name: "Konser Batal" });
+    expect(tombolKalender.className).not.toMatch(/line-through/);
+    expect(tombolKalender.getAttribute("title")).toBe("Konser Batal (Dibatalkan)");
+  });
 });
 
 describe("Detail Event", () => {
-  it("menampilkan hari, jasa, performer; hapus meminta konfirmasi lalu kembali ke kalender", async () => {
-    getAcara.mockResolvedValue(seminar);
-    deleteAcara.mockResolvedValue(null);
+  it("menampilkan hari, jasa, performer; batalkan event memperbarui status menjadi Dibatalkan (read-only)", async () => {
+    getAcara.mockResolvedValue({ ...seminar, status: "aktif", alasan_batal: null, cancelled_at: null });
+    cancelAcara.mockResolvedValue({
+      ...seminar,
+      status: "dibatalkan",
+      alasan_batal: "Klien menjadwal ulang",
+      cancelled_at: "2026-11-28T05:00:00.000Z",
+    });
     renderRoute(InternalAcaraDetail, { path: "/internal/kalender/:id", url: "/internal/kalender/1" });
 
     expect(await screen.findByRole("heading", { name: "Pembukaan Seminar" })).toBeTruthy();
@@ -122,11 +147,25 @@ describe("Detail Event", () => {
     expect(screen.getByText("Alumni")).toBeTruthy();
     expect(screen.getByText("Panitia")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Hapus event/ }));
-    expect(deleteAcara).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus" }));
-    await waitFor(() => expect(deleteAcara).toHaveBeenCalledWith(1));
-    expect(await screen.findByTestId("lokasi")).toHaveProperty("textContent", "/internal/kalender");
+    fireEvent.click(screen.getByRole("button", { name: /Batalkan event/ }));
+    expect(cancelAcara).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toMatch(/Batalkan Event/);
+    expect(dialog.textContent).toMatch(/0\/500/);
+
+    fireEvent.input(screen.getByLabelText(/Alasan pembatalan/i), { target: { value: "Klien menjadwal ulang" } });
+    expect(dialog.textContent).toMatch(/21\/500/);
+    fireEvent.click(screen.getByRole("button", { name: "Ya, Batalkan Event" }));
+
+    await waitFor(() => expect(cancelAcara).toHaveBeenCalledWith(1, "Klien menjadwal ulang"));
+    expect(await screen.findByText("Acara Dibatalkan")).toBeTruthy();
+    expect(screen.getByText("Dibatalkan")).toBeTruthy();
+    expect(screen.getByText(/Dibatalkan pada/)).toBeTruthy();
+    expect(screen.getByText(/Klien menjadwal ulang/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Pembukaan Seminar" }).className).not.toMatch(/line-through/);
+    expect(screen.queryByRole("button", { name: /Ubah event/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Batalkan event/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Atur performer/ })).toBeNull();
   });
 
   it("event tidak ditemukan: pesan dari server", async () => {

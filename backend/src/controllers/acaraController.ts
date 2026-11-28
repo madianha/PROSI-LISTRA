@@ -149,31 +149,50 @@ export async function updateAcara(req: Request, res: Response): Promise<void> {
       res.status(400).json({ message: salahAnggota });
       return;
     }
-    const updated = await acaraRepo.updateAcara(id, validation.data);
-    if (!updated) {
+    const hasil = await acaraRepo.updateAcara(id, validation.data);
+    if (hasil.status === "not_found") {
       res.status(404).json(TIDAK_DITEMUKAN);
       return;
     }
-    res.json(updated);
+    if (hasil.status === "cancelled") {
+      res.status(400).json({ message: "Event yang sudah dibatalkan tidak dapat diubah." });
+      return;
+    }
+    res.json(hasil.acara);
   } catch (error) {
     kirimErrorSimpan(res, error, "mengubah");
   }
 }
 
-export async function deleteAcara(req: Request, res: Response): Promise<void> {
+export async function cancelAcara(req: Request, res: Response): Promise<void> {
   const id = parseId(req.params.id);
   if (id === null) {
     res.status(404).json(TIDAK_DITEMUKAN);
     return;
   }
+  const rawAlasan = req.body?.alasan_batal;
+  if (rawAlasan !== undefined && rawAlasan !== null && typeof rawAlasan !== "string") {
+    res.status(400).json({ message: "Alasan pembatalan harus berupa teks." });
+    return;
+  }
+  const alasanBatal = typeof rawAlasan === "string" ? rawAlasan.trim() || null : null;
+  if (alasanBatal && alasanBatal.length > 500) {
+    res.status(400).json({ message: "Alasan pembatalan maksimal 500 karakter." });
+    return;
+  }
   try {
-    if (!(await acaraRepo.deleteAcara(id))) {
+    const hasil = await acaraRepo.cancelAcara(id, alasanBatal);
+    if (hasil.status === "not_found") {
       res.status(404).json(TIDAK_DITEMUKAN);
       return;
     }
-    res.status(204).end();
+    if (hasil.status === "already_cancelled") {
+      res.status(400).json({ message: "Event ini sudah dibatalkan sebelumnya." });
+      return;
+    }
+    res.json(hasil.acara);
   } catch (error) {
-    console.error("Gagal menghapus event:", error);
+    console.error("Gagal membatalkan event:", error);
     res.status(500).json(ERROR_SERVER);
   }
 }
