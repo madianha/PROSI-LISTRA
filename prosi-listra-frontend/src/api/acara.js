@@ -50,8 +50,9 @@ export function updateAcara(id, data) {
   return request(`/api/acara/${id}`, kirimJson("PUT", data));
 }
 
-export function deleteAcara(id) {
-  return request(`/api/acara/${id}`, { method: "DELETE" });
+export function cancelAcara(id, alasan_batal = null) {
+  const alasan = typeof alasan_batal === "string" ? alasan_batal.trim() || null : null;
+  return request(`/api/acara/${id}/cancel`, kirimJson("PATCH", { alasan_batal: alasan }));
 }
 
 /** Publik: tanpa Nama Client, PJ, dan performer; acara privat tampil sebagai "Acara privat". */

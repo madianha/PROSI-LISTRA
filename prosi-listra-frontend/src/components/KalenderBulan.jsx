@@ -59,9 +59,13 @@ export default function KalenderBulan(props) {
                     <button
                       type="button"
                       onClick={() => props.onPilih?.(a.id_acara)}
-                      title={a.nama_acara}
+                      title={a.status === "dibatalkan" ? `${a.nama_acara} (Dibatalkan)` : a.nama_acara}
                       // truncate = nama panjang dipotong dengan "..."
-                      className={`block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${WARNA_TIPE[a.tipe_acara]}`}
+                      className={`block w-full cursor-pointer truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${
+                        a.status === "dibatalkan"
+                          ? "bg-stone-200 text-stone-600 line-through"
+                          : WARNA_TIPE[a.tipe_acara]
+                      }`}
                     >
                       {a.nama_acara}
                     </button>

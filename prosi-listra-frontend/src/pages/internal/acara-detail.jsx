@@ -1,21 +1,22 @@
-import { A, useNavigate, useParams } from "@solidjs/router";
-import { createMemo, createResource, createSignal, For, Match, Show, Switch } from "solid-js";
-import { faChevronLeft, faEyeSlash, faLocationDot, faPen, faTrash, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { A, useParams } from "@solidjs/router";
+import { createMemo, createResource, createSignal, createUniqueId, For, Match, onCleanup, onMount, Show, Switch } from "solid-js";
+import { Portal } from "solid-js/web";
+import { faBan, faChevronLeft, faEyeSlash, faLocationDot, faPen, faUsers } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../components/Icon";
-import KonfirmasiModal from "../../components/internal/KonfirmasiModal";
 import EventWizard from "../../components/internal/kalender/EventWizard";
-import { deleteAcara, getAcara, updateAcara } from "../../api/acara";
+import { cancelAcara, getAcara, updateAcara } from "../../api/acara";
 import { formatJam, formatRentang, formatTanggal, NAMA_TIPE, selisihHari } from "../../utils/kalender";
 import { WARNA_TIPE, WarnaKecukupan } from "./kalender";
 
 /** Detail Event: hari, jam, jasa per hari, performer, dan kecukupan. */
 export default function InternalAcaraDetail() {
   const params = useParams();
-  const navigate = useNavigate();
   const [acara, { mutate, refetch }] = createResource(() => params.id, (id) => getAcara(id));
   // null = wizard tertutup; angka = langkah yang dibuka (2 = Info, 4 = Performer)
   const [wizard, setWizard] = createSignal(null);
-  const [konfirmasiHapus, setKonfirmasiHapus] = createSignal(false);
+  const [konfirmasiBatal, setKonfirmasiBatal] = createSignal(false);
+  const [alasanBatal, setAlasanBatal] = createSignal("");
+  const [membatalkan, setMembatalkan] = createSignal(false);
   const [pesanError, setPesanError] = createSignal("");
 
   // baris acara_jasa dikelompokkan per tanggal
@@ -27,14 +28,23 @@ export default function InternalAcaraDetail() {
     return [...peta.entries()].map(([tanggal, baris]) => ({ tanggal, baris }));
   });
 
-  const hapus = async () => {
-    setKonfirmasiHapus(false);
+  const tutupModalBatal = () => {
+    setKonfirmasiBatal(false);
+    setAlasanBatal("");
+  };
+
+  const batalkan = async () => {
+    setMembatalkan(true);
     setPesanError("");
     try {
-      await deleteAcara(acara().id_acara);
-      navigate("/internal/kalender");
+      const hasil = await cancelAcara(acara().id_acara, alasanBatal());
+      mutate(hasil);
+      tutupModalBatal();
     } catch (error) {
       setPesanError(error.message);
+      tutupModalBatal();
+    } finally {
+      setMembatalkan(false);
     }
   };
 
@@ -63,13 +73,24 @@ export default function InternalAcaraDetail() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className={`rounded px-2 py-0.5 ${WARNA_TIPE[a().tipe_acara]}`}>{NAMA_TIPE[a().tipe_acara]}</span>
+                    <Show when={a().status === "dibatalkan"}>
+                      <span className="rounded border border-red-200 bg-red-50 px-2 py-0.5 font-semibold text-red-800">
+                        Dibatalkan
+                      </span>
+                    </Show>
                     <Show when={a().is_privat}>
                       <span className="inline-flex items-center gap-1 text-[#685856]">
                         <Icon icon={faEyeSlash} /> Nama disembunyikan di jadwal publik
                       </span>
                     </Show>
                   </div>
-                  <h1 className="mt-2 font-serif text-2xl font-bold text-[#39000a]">{a().nama_acara}</h1>
+                  <h1
+                    className={`mt-2 font-serif text-2xl font-bold ${
+                      a().status === "dibatalkan" ? "text-[#685856] line-through" : "text-[#39000a]"
+                    }`}
+                  >
+                    {a().nama_acara}
+                  </h1>
                   <p className="mt-1 text-sm text-[#685856]">
                     {formatRentang(a().tanggal_mulai, a().tanggal_selesai)}
                     <Show when={a().lokasi}>
@@ -78,23 +99,34 @@ export default function InternalAcaraDetail() {
                     </Show>
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setWizard(2)}
-                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#e6cfcf] bg-white px-4 text-sm font-semibold text-[#54141d] hover:bg-[#fdf7f7]"
-                  >
-                    <Icon icon={faPen} class="text-xs" /> Ubah event
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setKonfirmasiHapus(true)}
-                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
-                  >
-                    <Icon icon={faTrash} class="text-xs" /> Hapus event
-                  </button>
-                </div>
+                <Show when={a().status !== "dibatalkan"}>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setWizard(2)}
+                      className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#e6cfcf] bg-white px-4 text-sm font-semibold text-[#54141d] hover:bg-[#fdf7f7]"
+                    >
+                      <Icon icon={faPen} class="text-xs" /> Ubah event
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setKonfirmasiBatal(true)}
+                      className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
+                    >
+                      <Icon icon={faBan} class="text-xs" /> Batalkan event
+                    </button>
+                  </div>
+                </Show>
               </div>
+
+              <Show when={a().status === "dibatalkan"}>
+                <div role="status" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+                  <p className="font-semibold">Event ini berstatus Dibatalkan dan tetap tersimpan sebagai data riwayat.</p>
+                  <Show when={a().alasan_batal}>
+                    <p className="mt-1 text-red-800">Alasan pembatalan: {a().alasan_batal}</p>
+                  </Show>
+                </div>
+              </Show>
 
               <Show when={pesanError()}>
                 <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
@@ -196,15 +228,17 @@ export default function InternalAcaraDetail() {
                 </For>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setWizard(4)}
-                className="mt-4 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-[#39000a] px-4 text-sm font-semibold text-white hover:bg-[#5a0c1a]"
-              >
-                <Icon icon={faUsers} class="text-xs" /> Atur performer
-              </button>
+              <Show when={a().status !== "dibatalkan"}>
+                <button
+                  type="button"
+                  onClick={() => setWizard(4)}
+                  className="mt-4 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-[#39000a] px-4 text-sm font-semibold text-white hover:bg-[#5a0c1a]"
+                >
+                  <Icon icon={faUsers} class="text-xs" /> Atur performer
+                </button>
+              </Show>
 
-              <Show when={wizard()}>
+              <Show when={wizard() && a().status !== "dibatalkan"}>
                 <EventWizard
                   acara={a()}
                   langkahAwal={wizard()}
@@ -217,16 +251,96 @@ export default function InternalAcaraDetail() {
                 />
               </Show>
 
-              <Show when={konfirmasiHapus()}>
-                <KonfirmasiModal bahaya labelKonfirmasi="Ya, hapus" onBatal={() => setKonfirmasiHapus(false)} onKonfirmasi={hapus}>
-                  Hapus event <strong>{a().nama_acara}</strong>? Hari, jasa, PJ, dan performernya ikut terhapus dan tidak bisa
-                  dikembalikan.
-                </KonfirmasiModal>
+              <Show when={konfirmasiBatal()}>
+                <ModalBatalEvent
+                  namaAcara={a().nama_acara}
+                  alasan={alasanBatal()}
+                  memproses={membatalkan()}
+                  onUbahAlasan={setAlasanBatal}
+                  onBatal={tutupModalBatal}
+                  onKonfirmasi={batalkan}
+                />
               </Show>
             </>
           )}
         </Match>
       </Switch>
     </div>
+  );
+}
+
+/** Konfirmasi pembatalan event dengan input opsional alasan pembatalan. */
+function ModalBatalEvent(props) {
+  const idJudul = createUniqueId();
+  const idAlasan = createUniqueId();
+  const fokusSebelumnya = document.activeElement;
+  let tombolBatal;
+
+  const tekanEsc = (e) => {
+    if (e.key === "Escape" && !props.memproses) props.onBatal();
+  };
+
+  onMount(() => {
+    tombolBatal.focus();
+    document.addEventListener("keydown", tekanEsc);
+  });
+
+  onCleanup(() => {
+    document.removeEventListener("keydown", tekanEsc);
+    fokusSebelumnya?.focus?.();
+  });
+
+  return (
+    <Portal>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        onClick={(e) => e.target === e.currentTarget && !props.memproses && props.onBatal()}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={idJudul}
+          className="w-full max-w-md rounded-xl bg-white p-6 text-left shadow-xl"
+        >
+          <p id={idJudul} className="text-sm leading-relaxed text-[#302929]">
+            Batalkan event <strong>{props.namaAcara}</strong>? Event tidak akan dihapus dan tetap tercatat di sistem dengan
+            status <strong>Dibatalkan</strong>.
+          </p>
+          <div className="mt-4">
+            <label for={idAlasan} className="mb-1 block text-xs font-semibold text-[#302929]">
+              Alasan pembatalan (opsional)
+            </label>
+            <textarea
+              id={idAlasan}
+              rows={3}
+              maxLength={500}
+              value={props.alasan}
+              onInput={(e) => props.onUbahAlasan(e.currentTarget.value)}
+              placeholder="Mis. Klien menjadwal ulang atau cuaca tidak memungkinkan"
+              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-[#302929] focus:border-[#4a0e17] focus:outline-none focus:ring-1 focus:ring-[#4a0e17]"
+            />
+          </div>
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              ref={tombolBatal}
+              type="button"
+              disabled={props.memproses}
+              onClick={() => props.onBatal()}
+              className="min-h-11 cursor-pointer rounded-lg px-4 text-sm font-semibold text-[#685856] hover:bg-[#f5efeb] hover:text-[#302929] disabled:opacity-60"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              disabled={props.memproses}
+              onClick={() => props.onKonfirmasi()}
+              className="min-h-11 cursor-pointer rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 active:bg-red-900 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {props.memproses ? "Membatalkan..." : "Ya, batalkan"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Portal>
   );
 }
