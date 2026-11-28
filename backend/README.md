@@ -34,7 +34,8 @@ Backend Express.js + PostgreSQL untuk fitur **Kontak WhatsApp**, **Berita**, dan
    psql -U postgres -d listra_db -f dummy.sql      # opsional: data contoh development
    ```
 
-   Reset database: `dropdb -U postgres --force listra_db`, lalu ulangi langkah ini.
+   Reset database: `./nuke-db.sh` dari root repo (lihat [`NUKE.md`](../NUKE.md)),
+   atau `dropdb -U postgres --force listra_db` lalu ulangi langkah ini.
 
 4. Jalankan server (development):
 
