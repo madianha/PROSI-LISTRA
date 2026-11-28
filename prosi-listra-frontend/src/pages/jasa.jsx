@@ -62,9 +62,9 @@ export default function Katalog() {
         <p>Tari bisa diiringi live music, dan pemain musik juga bisa dipesan tanpa tari. Rincian dibahas lewat WhatsApp.</p>
       </CustomHeader>
 
-      {/* lg:grid-cols-[260px_...] = di layar lebar filter di kiri (260px), daftar jasa mengisi sisanya */}
-      <div className="px-5 py-8 sm:px-8">
-      <div className="mx-auto grid w-full max-w-[1110px] grid-cols-1 items-start gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+      {/* lg:grid-cols-[300px_...] = di layar lebar filter di kiri (300px), daftar jasa mengisi sisanya; max-w-[1600px] = cukup lebar untuk 3 kartu sebaris */}
+      <div className="px-5 py-8 sm:px-8 lg:px-10">
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-1 items-start gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
         <div>
           {/* tombol buka/tutup filter: hanya di layar kecil (lg:hidden); di layar lebar filter selalu tampil */}
           <button
@@ -132,8 +132,9 @@ export default function Katalog() {
                   </p>
                 }
               >
-                <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2">
-                  <For each={filteredServices()}>{(service, i) => <CatalogueCard {...service} prioritas={i() < 2} />}</For>
+                {/* xl:grid-cols-3 = 3 kartu sebaris di desktop */}
+                <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <For each={filteredServices()}>{(service, i) => <CatalogueCard {...service} prioritas={i() < 3} />}</For>
                 </div>
               </Show>
             </Match>
