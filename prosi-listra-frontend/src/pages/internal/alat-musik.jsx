@@ -15,17 +15,21 @@ const TOMBOL_AKSI =
   "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-[#edd7d7] px-3 text-xs font-semibold text-[#39000a] transition hover:border-[#39000a] hover:bg-rose-50/50";
 
 /**
- * Jendela ubah jumlah satu alat musik. Namanya tidak bisa diubah di sini.
+ * Jendela ubah nama dan jumlah satu alat musik.
  * props.alat     = baris yang diubah ({ id_alat_musik, nama_alat_musik, jumlah })
- * props.onSimpan = async (jumlah) => ..., lempar Error bila gagal (pesannya tampil di jendela)
+ * props.onSimpan = async ({ nama_alat_musik?, jumlah }) => ..., lempar Error bila gagal (pesannya tampil di jendela).
+ *                  nama_alat_musik hanya dikirim bila namanya diganti.
  * props.onTutup  = dipanggil saat Batal, Esc, atau klik di luar jendela
  */
-function UbahJumlahModal(props) {
+function UbahAlatModal(props) {
   const idJudul = createUniqueId();
+  const idKolomNama = createUniqueId();
   const idKolom = createUniqueId();
+  const [nama, setNama] = createSignal(props.alat.nama_alat_musik);
   const [jumlah, setJumlah] = createSignal(props.alat.jumlah);
   const [menyimpan, setMenyimpan] = createSignal(false);
   const [pesanError, setPesanError] = createSignal("");
+  let kolomNama;
   let kolomJumlah;
   let tombolSimpan;
 
@@ -37,19 +41,19 @@ function UbahJumlahModal(props) {
   const tekanTombol = (e) => {
     if (e.key === "Escape") return tutup();
     // Tab berputar di dalam jendela, tidak lari ke halaman di belakangnya:
-    // Tab di Simpan kembali ke kolom Jumlah, Shift+Tab di kolom Jumlah pindah ke Simpan
+    // Tab di Simpan kembali ke kolom Nama (yang pertama), Shift+Tab di kolom Nama pindah ke Simpan
     if (e.key !== "Tab") return;
-    if (e.shiftKey && document.activeElement === kolomJumlah) {
+    if (e.shiftKey && document.activeElement === kolomNama) {
       e.preventDefault();
       tombolSimpan.focus();
     } else if (!e.shiftKey && document.activeElement === tombolSimpan) {
       e.preventDefault();
-      kolomJumlah.focus();
+      kolomNama.focus();
     }
   };
 
   onMount(() => {
-    kolomJumlah.focus(); // langsung bisa mengetik jumlah baru
+    kolomJumlah.focus(); // yang paling sering diubah jumlahnya, jadi langsung bisa mengetik jumlah baru
     document.addEventListener("keydown", tekanTombol);
   });
 
@@ -62,7 +66,10 @@ function UbahJumlahModal(props) {
     setPesanError("");
     setMenyimpan(true);
     try {
-      await props.onSimpan(Number(jumlah()));
+      const namaBaru = nama().trim();
+      const data = { jumlah: Number(jumlah()) };
+      if (namaBaru !== props.alat.nama_alat_musik) data.nama_alat_musik = namaBaru;
+      await props.onSimpan(data);
     } catch (error) {
       setPesanError(error.message);
     } finally {
@@ -89,6 +96,20 @@ function UbahJumlahModal(props) {
           <h2 id={idJudul} className="font-serif text-xl font-bold wrap-break-word text-[#39000a]">
             {props.alat.nama_alat_musik}
           </h2>
+
+          <label for={idKolomNama} className="mt-4 mb-1 block text-xs font-semibold text-[#302929]">
+            Nama
+          </label>
+          <input
+            id={idKolomNama}
+            ref={kolomNama}
+            type="text"
+            required
+            maxLength={50}
+            value={nama()}
+            onInput={(e) => setNama(e.currentTarget.value)}
+            className="min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-[#302929] focus:border-[#39000a] focus:ring-1 focus:ring-[#39000a] focus:outline-none"
+          />
 
           <label for={idKolom} className="mt-4 mb-1 block text-xs font-semibold text-[#302929]">
             Jumlah
@@ -147,7 +168,7 @@ export default function InternalAlatMusik() {
   const pageSize = 15;
 
   const [alatMusikList, { refetch, mutate }] = createResource(listAlatMusik);
-  // baris yang sedang diubah jumlahnya; null = jendela Ubah tertutup
+  // baris yang sedang diubah; null = jendela Ubah tertutup
   const [diubah, setDiubah] = createSignal(null);
 
   const totalPages = () => Math.max(1, Math.ceil((alatMusikList()?.length || 0) / pageSize));
@@ -211,9 +232,9 @@ export default function InternalAlatMusik() {
     document.getElementById(`ubah-alat-${id}`)?.focus();
   };
 
-  const simpanJumlah = async (jumlah) => {
+  const simpanUbah = async (data) => {
     const id = diubah().id_alat_musik;
-    const baru = await updateAlatMusik(id, { jumlah });
+    const baru = await updateAlatMusik(id, data);
     // ganti baris itu saja dengan data dari server, tanpa memuat ulang seluruh daftar
     mutate((daftar) => daftar.map((a) => (a.id_alat_musik === id ? baru : a)));
     tutupUbah();
@@ -448,9 +469,9 @@ export default function InternalAlatMusik() {
         </div>
       </Show>
 
-      {/* Jendela Ubah jumlah, tampil selama diubah() berisi satu baris */}
+      {/* Jendela Ubah nama dan jumlah, tampil selama diubah() berisi satu baris */}
       <Show when={diubah()}>
-        {(alat) => <UbahJumlahModal alat={alat()} onSimpan={simpanJumlah} onTutup={tutupUbah} />}
+        {(alat) => <UbahAlatModal alat={alat()} onSimpan={simpanUbah} onTutup={tutupUbah} />}
       </Show>
     </div>
   );

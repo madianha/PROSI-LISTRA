@@ -155,13 +155,47 @@ describe("Internal Alat Musik - ubah jumlah", () => {
 
     fireEvent.click(tombolUbah("Angklung"));
     const jendela = screen.getByRole("dialog", { name: "Angklung" });
-    const kolom = within(jendela).getByLabelText("Jumlah");
+    // kolom Nama = elemen pertama di jendela, Simpan = terakhir
+    const kolomNama = within(jendela).getByLabelText("Nama");
     const simpan = within(jendela).getByRole("button", { name: "Simpan" });
 
     simpan.focus();
     fireEvent.keyDown(simpan, { key: "Tab" });
-    expect(document.activeElement).toBe(kolom);
-    fireEvent.keyDown(kolom, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(kolomNama);
+    fireEvent.keyDown(kolomNama, { key: "Tab", shiftKey: true });
     expect(document.activeElement).toBe(simpan);
+  });
+
+  it("nama bisa diganti bersama jumlah; nama baru tampil di daftar", async () => {
+    updateAlatMusik.mockResolvedValue({ id_alat_musik: 1, nama_alat_musik: "Kendang Sunda", jumlah: 5 });
+    renderRoute(InternalAlatMusik);
+    await screen.findByText("Kendang");
+
+    fireEvent.click(tombolUbah("Kendang"));
+    const jendela = screen.getByRole("dialog", { name: "Kendang" });
+    const kolomNama = within(jendela).getByLabelText("Nama");
+    expect(kolomNama.value).toBe("Kendang");
+
+    fireEvent.input(kolomNama, { target: { value: " Kendang Sunda " } });
+    fireEvent.input(within(jendela).getByLabelText("Jumlah"), { target: { value: "5" } });
+    fireEvent.click(within(jendela).getByRole("button", { name: "Simpan" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(updateAlatMusik).toHaveBeenCalledWith(1, { nama_alat_musik: "Kendang Sunda", jumlah: 5 });
+    expect(within(baris("Kendang Sunda")).getByText("5")).toBeTruthy();
+  });
+
+  it("nama yang sudah dipakai alat lain: pesan dari server tampil, jendela tetap terbuka", async () => {
+    updateAlatMusik.mockRejectedValue(new Error("Alat musik dengan nama tersebut sudah ada."));
+    renderRoute(InternalAlatMusik);
+    await screen.findByText("Kendang");
+
+    fireEvent.click(tombolUbah("Kendang"));
+    const jendela = screen.getByRole("dialog", { name: "Kendang" });
+    fireEvent.input(within(jendela).getByLabelText("Nama"), { target: { value: "Angklung" } });
+    fireEvent.click(within(jendela).getByRole("button", { name: "Simpan" }));
+
+    expect((await within(jendela).findByRole("alert")).textContent).toBe("Alat musik dengan nama tersebut sudah ada.");
+    expect(updateAlatMusik).toHaveBeenCalledWith(1, { nama_alat_musik: "Angklung", jumlah: 2 });
   });
 });
