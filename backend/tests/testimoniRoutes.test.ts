@@ -13,11 +13,11 @@ vi.mock("../src/repositories/testimoniRepository", () => ({
   deleteTestimoni: vi.fn(),
 }));
 
-// pemeriksaan bot di-mock: test tidak menghubungi Cloudflare
-vi.mock("../src/services/turnstile", () => ({ verifikasiTurnstile: vi.fn() }));
+// pemeriksaan bot di-mock: test tidak menghubungi Google
+vi.mock("../src/services/recaptcha", () => ({ verifikasiRecaptcha: vi.fn() }));
 
 import app from "../src/app";
-import { verifikasiTurnstile } from "../src/services/turnstile";
+import { verifikasiRecaptcha } from "../src/services/recaptcha";
 import { signJwt } from "../src/controllers/authController";
 import * as repo from "../src/repositories/testimoniRepository";
 
@@ -42,7 +42,7 @@ const body = { nama_klien: "Ibu Ratna", isi_testimoni: "Penampilannya memukau.",
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(verifikasiTurnstile).mockResolvedValue(true);
+  vi.mocked(verifikasiRecaptcha).mockResolvedValue(true);
 });
 
 describe("GET /api/testimoni (publik)", () => {
@@ -69,22 +69,22 @@ describe("POST /api/testimoni", () => {
     });
   });
 
-  it("pengunjung: token Turnstile diteruskan ke Cloudflare", async () => {
+  it("pengunjung: token reCAPTCHA diteruskan ke Google", async () => {
     mocked.createTestimoni.mockResolvedValue(baris);
-    await request(app).post("/api/testimoni").send({ ...body, turnstile_token: "tok-123" });
-    expect(verifikasiTurnstile).toHaveBeenCalledWith("tok-123", expect.anything());
+    await request(app).post("/api/testimoni").send({ ...body, captcha_token: "tok-123" });
+    expect(verifikasiRecaptcha).toHaveBeenCalledWith("tok-123", expect.anything());
   });
 
   it("pengunjung: ditolak bila gagal pemeriksaan bot, tidak disimpan", async () => {
-    vi.mocked(verifikasiTurnstile).mockResolvedValue(false);
+    vi.mocked(verifikasiRecaptcha).mockResolvedValue(false);
     const res = await request(app).post("/api/testimoni").send(body);
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/bukan robot/);
     expect(mocked.createTestimoni).not.toHaveBeenCalled();
   });
 
-  it("secret Turnstile belum diisi di production = 500, bukan menggantung", async () => {
-    vi.mocked(verifikasiTurnstile).mockRejectedValue(new Error("TURNSTILE_SECRET_KEY belum diisi"));
+  it("secret reCAPTCHA belum diisi di production = 500, bukan menggantung", async () => {
+    vi.mocked(verifikasiRecaptcha).mockRejectedValue(new Error("RECAPTCHA_SECRET_KEY belum diisi"));
     vi.spyOn(console, "error").mockImplementation(() => {});
     const res = await request(app).post("/api/testimoni").send(body);
     expect(res.status).toBe(500);
@@ -95,7 +95,7 @@ describe("POST /api/testimoni", () => {
     mocked.createTestimoni.mockResolvedValue(baris);
     const res = await request(app).post("/api/testimoni").set("Authorization", login).send(body);
     expect(res.status).toBe(201);
-    expect(verifikasiTurnstile).not.toHaveBeenCalled();
+    expect(verifikasiRecaptcha).not.toHaveBeenCalled();
   });
 
   it("pengurus login: tetap menunggu dan tidak tampil, boleh memilih sumber whatsapp, tanpa pemeriksaan bot", async () => {
@@ -111,7 +111,7 @@ describe("POST /api/testimoni", () => {
       sumber: "whatsapp",
       is_aktif: false,
     });
-    expect(verifikasiTurnstile).not.toHaveBeenCalled();
+    expect(verifikasiRecaptcha).not.toHaveBeenCalled();
   });
 
   it.each([

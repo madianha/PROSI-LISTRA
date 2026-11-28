@@ -4,11 +4,11 @@ import { renderRoute } from "../test/renderRoute";
 
 vi.mock("../api/testimoni", () => ({ listTestimoni: vi.fn(), kirimTestimoni: vi.fn() }));
 
-// Widget Cloudflare diganti tombol palsu: klik = lolos, dapat token "tok-uji"
-const turnstileReset = vi.fn();
-vi.mock("../components/Turnstile", () => ({
+// Widget Google reCAPTCHA diganti tombol palsu: klik = lolos, dapat token "tok-uji"
+const recaptchaReset = vi.fn();
+vi.mock("../components/Recaptcha", () => ({
   default: (props) => {
-    props.ref?.({ reset: turnstileReset });
+    props.ref?.({ reset: recaptchaReset });
     return (
       <button type="button" onClick={() => props.onToken("tok-uji")}>
         Saya bukan robot
@@ -64,7 +64,7 @@ describe("Halaman Testimoni publik", () => {
 
     await waitFor(() =>
       expect(kirimTestimoni).toHaveBeenCalledWith(
-        expect.objectContaining({ nama_klien: "Budi", isi_testimoni: "Keren sekali", rating: 4, turnstile_token: "tok-uji" }),
+        expect.objectContaining({ nama_klien: "Budi", isi_testimoni: "Keren sekali", rating: 4, captcha_token: "tok-uji" }),
       ),
     );
     // pengunjung tidak bisa memilih sumber / tampil
@@ -85,7 +85,7 @@ describe("Halaman Testimoni publik", () => {
 
     expect(await within(form).findByRole("alert")).toHaveProperty("textContent", "Isi testimoni wajib diisi.");
     // token sudah terpakai, jadi widget diminta centang ulang
-    expect(turnstileReset).toHaveBeenCalled();
+    expect(recaptchaReset).toHaveBeenCalled();
   });
 
   it("tombol Kirim terkunci sampai lolos centang bukan robot", async () => {

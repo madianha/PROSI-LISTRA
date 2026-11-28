@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { bacaPengguna } from "../middleware/wajibLogin";
 import * as repo from "../repositories/testimoniRepository";
-import { verifikasiTurnstile } from "../services/turnstile";
+import { verifikasiRecaptcha } from "../services/recaptcha";
 import { STATUS_TESTIMONI, SUMBER_TESTIMONI, validateTestimoni } from "../validation/testimoniValidation";
 
 const TIDAK_DITEMUKAN = { message: "Testimoni tidak ditemukan." };
@@ -44,8 +44,8 @@ export async function listSemua(_req: Request, res: Response): Promise<void> {
 /**
  * POST /api/testimoni
  * Semua testimoni baru masuk antrean: "menunggu" dan tidak tampil sampai diterima pengurus.
- * Pengunjung (tanpa login): wajib lolos Turnstile, sumber selalu "web".
- * Pengurus yang login (mis. menyalin testimoni dari WhatsApp): tanpa Turnstile, sumber boleh dipilih.
+ * Pengunjung (tanpa login): wajib lolos Google reCAPTCHA, sumber selalu "web".
+ * Pengurus yang login (mis. menyalin testimoni dari WhatsApp): tanpa reCAPTCHA, sumber boleh dipilih.
  */
 export async function createTestimoni(req: Request, res: Response): Promise<void> {
   const hasil = validateTestimoni(req.body);
@@ -56,13 +56,13 @@ export async function createTestimoni(req: Request, res: Response): Promise<void
 
   let extra = { status: "menunggu", sumber: "web", is_aktif: false };
   if (!bacaPengguna(req)) {
-    // pengunjung wajib lolos pemeriksaan bot (Cloudflare Turnstile); pengurus yang login tidak perlu
+    // pengunjung wajib lolos pemeriksaan bot (Google reCAPTCHA); pengurus yang login tidak perlu
     let lolos: boolean;
     try {
-      lolos = await verifikasiTurnstile(req.body?.turnstile_token, req.ip);
+      lolos = await verifikasiRecaptcha(req.body?.captcha_token, req.ip);
     } catch (error) {
-      // mis. TURNSTILE_SECRET_KEY belum diisi di production
-      console.error("Turnstile belum dikonfigurasi:", error);
+      // mis. RECAPTCHA_SECRET_KEY belum diisi di production
+      console.error("reCAPTCHA belum dikonfigurasi:", error);
       res.status(500).json(ERROR_SERVER);
       return;
     }

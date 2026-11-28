@@ -2,7 +2,7 @@ import { createSignal, createUniqueId, For, onCleanup, onMount, Show } from "sol
 import { Portal } from "solid-js/web";
 import { faStar, faTimes } from "@fortawesome/free-solid-svg-icons";
 import Icon from "./Icon";
-import Turnstile from "./Turnstile";
+import Recaptcha from "./Recaptcha";
 
 // kelas input yang sama untuk semua kolom
 const INPUT =
@@ -14,7 +14,7 @@ const LABEL = "mb-1 block text-xs font-semibold text-[#302929]";
  * props.judul    = judul jendela
  * props.awal     = (opsional) baris testimoni yang diubah; isinya mengisi form
  * props.internal = (opsional) tampilkan pilihan Sumber, untuk pengurus.
- *                  Form publik (bukan internal) wajib lolos centang "bukan robot" (Turnstile).
+ *                  Form publik (bukan internal) wajib lolos Google reCAPTCHA.
  * props.onKirim  = async (data) => ..., lempar Error bila gagal (pesannya ditampilkan)
  * props.onTutup  = dipanggil saat Batal, Esc, atau klik di luar jendela
  */
@@ -33,9 +33,10 @@ export default function TestimoniForm(props) {
   });
   const [mengirim, setMengirim] = createSignal(false);
   const [pesanError, setPesanError] = createSignal("");
-  // token Turnstile; null = belum dicentang / kedaluwarsa. Tidak dipakai di form internal.
+  // token reCAPTCHA; null = belum dicentang / kedaluwarsa. Tidak dipakai di form internal.
   const [token, setToken] = createSignal(null);
-  let turnstile;
+  const [captchaError, setCaptchaError] = createSignal("");
+  let recaptcha;
   const ubah = (kolom, nilai) => setData((d) => ({ ...d, [kolom]: nilai }));
   let kolomPertama;
   let jendela;
@@ -92,12 +93,12 @@ export default function TestimoniForm(props) {
         rating: d.rating,
         isi_testimoni: d.isi_testimoni,
         // sumber hanya dipakai backend bila pengirimnya login
-        ...(props.internal ? { sumber: d.sumber } : { turnstile_token: token() }),
+        ...(props.internal ? { sumber: d.sumber } : { captcha_token: token() }),
       });
     } catch (error) {
       setPesanError(error.message);
       // token sudah terpakai oleh kiriman yang gagal, jadi minta centang ulang
-      turnstile?.reset();
+      recaptcha?.reset();
     } finally {
       setMengirim(false);
     }
@@ -255,10 +256,13 @@ export default function TestimoniForm(props) {
             </Show>
           </div>
 
-          {/* Form publik: centang "bukan robot" dari Cloudflare sebelum bisa mengirim */}
+          {/* Form publik: centang Google reCAPTCHA sebelum bisa mengirim */}
           <Show when={!props.internal}>
             <div className="mt-4">
-              <Turnstile onToken={setToken} ref={(r) => (turnstile = r)} />
+              <Recaptcha onToken={setToken} onError={setCaptchaError} ref={(r) => (recaptcha = r)} />
+              <Show when={captchaError()}>
+                <p role="alert" className="mt-2 text-xs text-red-700">{captchaError()}</p>
+              </Show>
             </div>
           </Show>
 
