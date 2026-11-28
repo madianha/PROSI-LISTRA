@@ -69,8 +69,12 @@ function Pembuka() {
         onPause={() => setBerputar(false)}
         className="absolute inset-0 -z-20 h-full w-full object-cover"
       />
-      {/* gelap tipis di bagian paling atas, selalu ada: tulisan putih di menu tetap terbaca di atas video yang terang */}
-      <div className="absolute inset-x-0 top-0 -z-10 h-28 bg-linear-to-b from-black/50 to-transparent" />
+      {/* gradient hitam ke transparan membantu menu putih terbaca saat halaman di posisi paling atas */}
+      <div
+        className={`absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b from-black/70 via-black/30 to-transparent transition-opacity duration-500 ${
+          !terungkap() ? "opacity-100" : "opacity-0"
+        }`}
+      />
       {/* bayangan hitam 60% di atas video, muncul saat digulir: teks putih tetap terbaca di bagian video yang terang */}
       <div className={`absolute inset-0 -z-10 bg-black/60 ${muncul()}`} />
 
