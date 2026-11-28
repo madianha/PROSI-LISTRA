@@ -7,6 +7,7 @@ import {
   formatTanggal,
   geserBulan,
   gridBulan,
+  parseJam,
   rentangBulan,
   selisihHari,
   teksKecukupan,
@@ -46,6 +47,15 @@ describe("utils kalender", () => {
     expect(formatRentang("2026-11-30", "2026-12-02")).toBe("30 Nov – 2 Des 2026");
     expect(formatRentang("2026-12-31", "2027-01-01")).toBe("31 Des 2026 – 1 Jan 2027");
     expect(formatJam("16:00")).toBe("16.00");
+  });
+
+  it("parseJam: ketikan jam 24 jam jadi HH:MM, selain jam yang sah jadi kosong", () => {
+    for (const teks of ["16.00", "16:00", "1600", "16", " 16.00 "]) expect(parseJam(teks)).toBe("16:00");
+    expect(parseJam("9.30")).toBe("09:30");
+    expect(parseJam("930")).toBe("09:30");
+    expect(parseJam("0")).toBe("00:00");
+    expect(parseJam("23.59")).toBe("23:59");
+    for (const teks of ["24.00", "7.75", "16.", "4 PM", "abc", "", null]) expect(parseJam(teks)).toBe("");
   });
 
   it("teksKecukupan: kurang, cukup, atau tidak perlu performer", () => {
