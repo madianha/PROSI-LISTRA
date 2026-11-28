@@ -11,6 +11,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import Icon from "../../Icon";
+import InputJam from "./InputJam";
 import { listAnggota } from "../../../api/anggota";
 import { listJasa } from "../../../api/jasa";
 import { daftarTanggal, formatJam, formatTanggal, hariIni, NAMA_TIPE, selisihHari, teksKecukupan } from "../../../utils/kalender";
@@ -679,36 +680,36 @@ function BarisJasa(props) {
 
   return (
     <div className="rounded-lg bg-[#fbf8f6] p-3">
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
+      {/* items-start = kolom jam tetap sejajar walau salah satunya menampilkan pesan "Jam 00.00–23.59" di bawahnya */}
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="w-32">
           <label className={LABEL} for={`${id}-mulai`}>
             Jam mulai
           </label>
-          <input
+          <InputJam
             id={`${id}-mulai`}
-            type="time"
             value={props.baris.jam_mulai}
-            onInput={(e) => props.onUbah({ jam_mulai: e.currentTarget.value })}
-            className={`${INPUT} w-32`}
+            onUbah={(jam) => props.onUbah({ jam_mulai: jam })}
+            class={INPUT}
           />
         </div>
-        <div>
+        <div className="w-32">
           <label className={LABEL} for={`${id}-selesai`}>
             Jam selesai
           </label>
-          <input
+          <InputJam
             id={`${id}-selesai`}
-            type="time"
             value={props.baris.jam_selesai}
-            onInput={(e) => props.onUbah({ jam_selesai: e.currentTarget.value })}
-            className={`${INPUT} w-32`}
+            onUbah={(jam) => props.onUbah({ jam_selesai: jam })}
+            class={INPUT}
           />
         </div>
         <button
           type="button"
           onClick={props.onHapus}
           aria-label={`Hapus kegiatan ${props.baris.jam_mulai || ""} pada ${formatTanggal(props.baris.tanggal)}`}
-          className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm text-red-700 hover:bg-red-50"
+          // mt-4 = tengah tombol sejajar dengan tengah kolom jam (di bawah labelnya)
+          className="mt-4 ml-auto inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm text-red-700 hover:bg-red-50"
         >
           <Icon icon={faTrash} class="text-xs" /> Hapus
         </button>

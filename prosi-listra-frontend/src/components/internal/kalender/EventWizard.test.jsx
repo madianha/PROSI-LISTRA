@@ -141,6 +141,36 @@ describe("EventWizard", () => {
     expect(screen.getByRole("alert").textContent).toMatch(/Jam selesai harus setelah jam mulai/);
   });
 
+  it("kolom jam format 24 jam: ketikan dirapikan jadi 16.30, jam yang tidak sah ditandai dan ditolak", async () => {
+    render(() => <EventWizard onSimpan={vi.fn()} onTutup={() => {}} />);
+    fireEvent.click(screen.getByLabelText(/Acara LISTRA/));
+    klik(/Lanjut/);
+    isi(/Nama event/, "Latihan");
+    isi(/Tanggal mulai/, "2026-11-28");
+    fireEvent.click(screen.getByLabelText(/PJ Tidak Spesifik/));
+    klik(/Lanjut/);
+
+    const mulai = screen.getByLabelText("Jam mulai");
+    const selesai = screen.getByLabelText("Jam selesai");
+    // bukan <input type="time">, yang di browser berbahasa Inggris tampil AM/PM
+    expect(mulai.type).toBe("text");
+
+    fireEvent.input(mulai, { target: { value: "1630" } });
+    fireEvent.blur(mulai);
+    expect(mulai.value).toBe("16.30");
+    expect(mulai.getAttribute("aria-invalid")).toBe("false");
+
+    fireEvent.input(selesai, { target: { value: "25.00" } });
+    fireEvent.blur(selesai);
+    expect(selesai.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText("Jam 00.00–23.59")).toBeTruthy();
+    klik(/Lanjut/);
+    expect(screen.getByRole("alert").textContent).toMatch(/Isi jam mulai dan jam selesai/);
+
+    fireEvent.input(selesai, { target: { value: "18.00" } });
+    expect(screen.queryByText("Jam 00.00–23.59")).toBeNull();
+  });
+
   it("mode ubah: terisi dari event, bisa disimpan langsung; pesan error server ditampilkan", async () => {
     const onSimpan = vi.fn().mockRejectedValue(new Error("PJ harus anggota Kepengurusan yang aktif."));
     const acara = {

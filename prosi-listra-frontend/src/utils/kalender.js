@@ -88,6 +88,19 @@ export function formatJam(jam) {
   return (jam ?? "").replace(":", ".");
 }
 
+/**
+ * Ketikan jam 24 jam -> "HH:MM" (format yang disimpan backend), atau "" bila bukan jam yang sah.
+ * "16.00", "16:00", "1600", "16" -> "16:00"; "930", "9.30" -> "09:30"; "24.00", "7.75" -> ""
+ */
+export function parseJam(teks) {
+  const cocok = /^(\d{1,2})(?:[.:]?(\d{2}))?$/.exec((teks ?? "").replace(/\s/g, ""));
+  if (!cocok) return "";
+  const jam = Number(cocok[1]);
+  const menit = Number(cocok[2] ?? 0);
+  if (jam > 23 || menit > 59) return "";
+  return `${String(jam).padStart(2, "0")}:${String(menit).padStart(2, "0")}`;
+}
+
 /** "3 / 5 · kurang 2", "5 / 5 · cukup"; null bila tidak ada jasa yang perlu performer. */
 export function teksKecukupan({ terisi, dibutuhkan }) {
   if (!dibutuhkan) return null;
