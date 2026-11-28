@@ -13,7 +13,7 @@ import {
 import Icon from "../../Icon";
 import { listAnggota } from "../../../api/anggota";
 import { listJasa } from "../../../api/jasa";
-import { daftarTanggal, formatJam, formatTanggal, NAMA_TIPE, selisihHari, teksKecukupan } from "../../../utils/kalender";
+import { daftarTanggal, formatJam, formatTanggal, hariIni, NAMA_TIPE, selisihHari, teksKecukupan } from "../../../utils/kalender";
 
 /*
  * Wizard Buat/Ubah Event: Jenis Acara -> Info -> Hari & Jasa -> Performer.
@@ -112,12 +112,20 @@ export default function EventWizard(props) {
     form.baris.filter((b) => b.tanggal >= form.tanggal_mulai && b.tanggal <= form.tanggal_selesai);
   const barisPerluPerformer = () => barisDalamRentang().filter((b) => b.id_jasa && !b.is_tidak_spesifik);
 
+  const minMulai = () => (props.acara ? undefined : hariIni());
+  const minSelesai = () => {
+    const batas = minMulai();
+    if (!batas) return form.tanggal_mulai || undefined;
+    return form.tanggal_mulai && form.tanggal_mulai > batas ? form.tanggal_mulai : batas;
+  };
+
   // ---------- validasi per langkah (backend tetap memeriksa ulang) ----------
   function cekLangkah(n) {
     if (n === 1 && !form.tipe_acara) return "Pilih jenis acara terlebih dahulu.";
     if (n === 2) {
       if (!form.nama_acara.trim()) return "Nama event wajib diisi.";
       if (!form.tanggal_mulai || !form.tanggal_selesai) return "Tanggal mulai dan tanggal selesai wajib diisi.";
+      if (!props.acara && form.tanggal_mulai < hariIni()) return "Tanggal mulai tidak boleh di masa lalu.";
       if (form.tanggal_selesai < form.tanggal_mulai) return "Tanggal selesai tidak boleh sebelum tanggal mulai.";
       if (selisihHari(form.tanggal_mulai, form.tanggal_selesai) + 1 > MAKS_HARI) return `Rentang event paling lama ${MAKS_HARI} hari.`;
       if (form.tipe_acara === "job_external" && form.acara_pj.length === 0)
@@ -355,6 +363,7 @@ export default function EventWizard(props) {
                     <input
                       id="w-mulai"
                       type="date"
+                      min={minMulai()}
                       value={form.tanggal_mulai}
                       onInput={(e) => {
                         const nilai = e.currentTarget.value;
@@ -371,7 +380,7 @@ export default function EventWizard(props) {
                     <input
                       id="w-selesai"
                       type="date"
-                      min={form.tanggal_mulai || undefined}
+                      min={minSelesai()}
                       value={form.tanggal_selesai}
                       onInput={(e) => setForm("tanggal_selesai", e.currentTarget.value)}
                       className={INPUT}

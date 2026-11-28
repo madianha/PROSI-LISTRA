@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../api/anggota", () => ({ listAnggota: vi.fn() }));
 vi.mock("../../../api/jasa", () => ({ listJasa: vi.fn() }));
@@ -21,8 +21,14 @@ const klik = (nama) => fireEvent.click(screen.getByRole("button", { name: nama }
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-28T10:00:00"));
   listAnggota.mockResolvedValue(anggota);
   listJasa.mockResolvedValue(jasa);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("EventWizard", () => {
@@ -174,5 +180,63 @@ describe("EventWizard", () => {
     isi(/Tanggal selesai/, "2026-12-07");
     klik(/Lanjut/);
     expect(screen.getByRole("region", { name: "Hari 7" })).toBeTruthy();
+  });
+
+  it("Buat Event Baru: melarang tanggal masa lalu, mengatur batas min, dan menyesuaikan tanggal selesai", () => {
+    render(() => <EventWizard onSimpan={vi.fn()} onTutup={() => {}} />);
+    fireEvent.click(screen.getByLabelText(/Acara LISTRA/));
+    klik(/Lanjut/);
+
+    const mulai = screen.getByLabelText(/Tanggal mulai/);
+    const selesai = screen.getByLabelText(/Tanggal selesai/);
+    expect(mulai.getAttribute("min")).toBe("2026-11-28");
+    expect(selesai.getAttribute("min")).toBe("2026-11-28");
+
+    // Ketik tanggal masa lalu secara manual tetap ditolak validasi dan min selesai tetap hari ini
+    isi(/Nama event/, "Latihan Kemarin");
+    isi(/Tanggal mulai/, "2026-11-27");
+    expect(selesai.getAttribute("min")).toBe("2026-11-28");
+    fireEvent.click(screen.getByLabelText(/PJ Tidak Spesifik/));
+    klik(/Lanjut/);
+    expect(screen.getByRole("alert").textContent).toBe("Tanggal mulai tidak boleh di masa lalu.");
+
+    // Tanggal mulai digeser melewati tanggal selesai: tanggal selesai ikut disesuaikan dan min mengikuti tanggal mulai
+    isi(/Tanggal mulai/, "2026-12-02");
+    isi(/Tanggal selesai/, "2026-12-04");
+    expect(selesai.getAttribute("min")).toBe("2026-12-02");
+    isi(/Tanggal mulai/, "2026-12-06");
+    expect(selesai.value).toBe("2026-12-06");
+    expect(selesai.getAttribute("min")).toBe("2026-12-06");
+
+    // Hari ini boleh lanjut
+    isi(/Tanggal mulai/, "2026-11-28");
+    isi(/Tanggal selesai/, "2026-11-28");
+    klik(/Lanjut/);
+    expect(screen.getByRole("region", { name: "Hari 1" })).toBeTruthy();
+  });
+
+  it("mode ubah: event masa lalu tetap bisa disimpan tanpa terblokir batas hari ini", async () => {
+    const onSimpan = vi.fn().mockResolvedValue();
+    const acaraLama = {
+      id_acara: 10,
+      tipe_acara: "listra",
+      nama_acara: "Latihan Lama",
+      nama_klien: null,
+      lokasi: "Studio",
+      is_privat: false,
+      tanggal_mulai: "2025-05-01",
+      tanggal_selesai: "2025-05-01",
+      acara_pj: [],
+      acara_jasa: [
+        { id_acara_jasa: 2, tanggal: "2025-05-01", jam_mulai: "10:00", jam_selesai: "12:00", is_tidak_spesifik: true, id_jasa: 3, jasa: jasa[0], acara_performer: [] },
+      ],
+    };
+    render(() => <EventWizard acara={acaraLama} langkahAwal={2} onSimpan={onSimpan} onTutup={() => {}} />);
+
+    expect(screen.getByLabelText(/Tanggal mulai/).getAttribute("min")).toBeNull();
+    expect(screen.getByLabelText(/Tanggal selesai/).getAttribute("min")).toBe("2025-05-01");
+
+    klik("Simpan event");
+    await waitFor(() => expect(onSimpan).toHaveBeenCalled());
   });
 });
