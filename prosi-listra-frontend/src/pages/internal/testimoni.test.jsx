@@ -186,7 +186,7 @@ describe("Halaman Kelola Testimoni", () => {
     );
     expect(kirimTestimoni.mock.calls[0][0]).not.toHaveProperty("is_aktif");
     // pengurus sudah login: tanpa centang bukan robot
-    expect(kirimTestimoni.mock.calls[0][0]).not.toHaveProperty("turnstile_token");
+    expect(kirimTestimoni.mock.calls[0][0]).not.toHaveProperty("captcha_token");
     expect(await screen.findByText("Dewi")).toBeTruthy();
     expect(within(kartu("Dewi")).getByText("Ditunggu")).toBeTruthy();
   });
